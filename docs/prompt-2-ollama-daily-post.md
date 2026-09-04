@@ -2,13 +2,13 @@
 
 **What this does:** This is the prompt template your Node.js library (Prompt 3) sends to your local Ollama model each day, along with one selected knowledge-base topic and recent post history. Ollama's only job is to turn that one topic into good, platform-agnostic post content — the coverage/rotation logic itself lives in code (Prompt 3), not in the model, because a small local model can't reliably track "what haven't I covered yet" across sessions.
 
-**Inputs:** `./marketing/knowledge-base.json` (from Prompt 1) + `./marketing/post-history.json` (created/updated automatically)
+**Inputs:** topic chunks from the RidgeHQ business vault (`src/loadKnowledgeBase.js`, see `docs/business-context-reference.md`) + `./data/post-history.json` (created/updated automatically). *Historical note: pre-repo-split these were `./marketing/knowledge-base.json` from Prompt 1 + `./marketing/post-history.json`.*
 
 **Output:** one JSON object per day, consumed by the Node.js formatters in Prompt 3
 
 ---
 
-## History file schema — `./marketing/post-history.json`
+## History file schema — `./data/post-history.json`
 
 ```json
 {

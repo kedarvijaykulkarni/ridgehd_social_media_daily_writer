@@ -1,6 +1,6 @@
 // Fills the Prompt 2 template (docs/prompt-2-ollama-daily-post.md) verbatim
 // with the selected topic + the last 5 history entries' headlines.
-export function buildOllamaPrompt({ topic, knowledgeBase, history }) {
+export function buildOllamaPrompt({ topic, knowledgeBase, history, productName = 'AquaRoster' }) {
   const kbById = new Map(knowledgeBase.map((e) => [e.id, e]));
   const recentPosts = [...(history.posts ?? [])]
     .sort((a, b) => new Date(a.date) - new Date(b.date))
@@ -11,7 +11,7 @@ export function buildOllamaPrompt({ topic, knowledgeBase, history }) {
     : '(none yet — this is the first post)';
 
   return `SYSTEM:
-You are the social media copywriter for AquaRoster, a B2B SaaS operations
+You are the social media copywriter for ${productName}, a B2B SaaS operations
 platform for dive centers. You write for dive shop owners and operations
 managers, never for end-consumer divers. Tone: confident, specific, no hype,
 no exclamation-point-per-sentence energy. Never invent statistics, customer
