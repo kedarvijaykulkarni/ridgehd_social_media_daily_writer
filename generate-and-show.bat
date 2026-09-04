@@ -4,9 +4,10 @@ setlocal
 chcp 65001 >nul
 
 rem Run from this script's own directory — this repo is standalone, no
-rem fixed absolute path.
-set "APP_DIR=%~dp0"
-if "%APP_DIR:~-1%"=="\" set "APP_DIR=%APP_DIR:~0,-1%"
+rem fixed absolute path. %~dp0 always ends with a backslash, so cd /d
+rem takes it as-is; then anchor APP_DIR to the resolved current dir.
+cd /d "%~dp0"
+set "APP_DIR=%CD%"
 
 if not exist "%APP_DIR%\package.json" (
   echo Could not find social-daily app at:
@@ -16,12 +17,12 @@ if not exist "%APP_DIR%\package.json" (
   exit /b 1
 )
 
-cd /d "%APP_DIR%"
-
 for /f %%I in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd"') do set "RUN_DATE=%%I"
-set "OUTPUT_DIR=%APP_DIR%\output\%RUN_DATE%"
-set "IMAGE_PROMPT=%OUTPUT_DIR%\image-prompt.txt"
-set "SOCIAL_POSTS=%OUTPUT_DIR%\social-posts.txt"
+rem Local var only — do NOT name this OUTPUT_DIR, that env var is read by
+rem the app and would make it nest the date folder twice.
+set "RUN_OUTPUT_DIR=%APP_DIR%\output\%RUN_DATE%"
+set "IMAGE_PROMPT=%RUN_OUTPUT_DIR%\image-prompt.txt"
+set "SOCIAL_POSTS=%RUN_OUTPUT_DIR%\social-posts.txt"
 
 echo Running social daily generator...
 echo.
