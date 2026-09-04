@@ -46,3 +46,13 @@ test('carries takeaways, the CTA, and a voice-adjust reviewer note', () => {
   assert.match(md, /See how the copilot handles a weather day\./);
   assert.match(md, /first person|voice/i);
 });
+
+test('degrades cleanly when the model dropped soft fields (no hook, no cta)', () => {
+  const bare = { ...ARTICLE };
+  delete bare.linkedin_hook;
+  delete bare.cta;
+  const md = renderLinkedInArticle({ topic: TOPIC, date: '2026-09-04', article: bare, productName: 'AquaRoster' });
+  assert.match(md, /^# Running a dive center on an AI copilot$/m);
+  assert.match(md, /What changes when the assistant can act/); // falls back to dek as the opener
+  assert.match(md, /^## The problem$/m);
+});

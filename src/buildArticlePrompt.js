@@ -83,5 +83,6 @@ Return ONLY valid JSON, no markdown fences, no preamble, matching exactly:
   "cta": "one short, non-pushy closing call to action"
 }
 
-Aim for 4–6 sections. Do not include the title again as the first section.`;
+Aim for 4–6 sections. Do not include the title again as the first section.
+Every key above is REQUIRED — include all of them, especially "cta".`;
 }

@@ -33,6 +33,18 @@ test('validateArticleShape defaults optional array fields', () => {
   assert.deepEqual(a.key_takeaways, []);
 });
 
+test('validateArticleShape tolerates missing soft string fields (cta, dek, ...)', () => {
+  const input = wellFormed();
+  delete input.cta;
+  delete input.dek;
+  input.meta_description = '   '; // blank counts as absent
+  const a = validateArticleShape(input);
+  assert.equal(a.title, wellFormed().title);
+  assert.ok(!('cta' in a), 'blank/missing cta should be normalised to absent');
+  assert.ok(!('dek' in a));
+  assert.ok(!('meta_description' in a));
+});
+
 test('validateArticleShape rejects a missing title', () => {
   const input = wellFormed();
   delete input.title;

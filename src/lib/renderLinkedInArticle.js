@@ -24,11 +24,13 @@ export function renderLinkedInArticle({ topic, date, article, productName = 'Aqu
 
   const takeaways = takeawaysMarkdown(article.key_takeaways);
 
+  const opener = (article.linkedin_hook || article.dek || '').trim();
+
   const parts = [
     note,
     voiceNote,
     `# ${article.title}`,
-    article.linkedin_hook ? article.linkedin_hook.trim() : null,
+    opener || null,
     sectionsMarkdown(article.sections),
     takeaways || null,
     article.cta ? `**${article.cta.trim()}**` : null,

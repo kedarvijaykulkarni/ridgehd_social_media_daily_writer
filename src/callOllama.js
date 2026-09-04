@@ -1,7 +1,11 @@
 const DEFAULT_HOST = 'http://localhost:11434';
 const DEFAULT_MODEL = 'gemma4:latest';
 const REQUIRED_FIELDS = ['core_message', 'hook_line', 'call_to_action', 'image_prompt'];
-const ARTICLE_REQUIRED_STRINGS = ['title', 'dek', 'linkedin_hook', 'meta_description', 'slug', 'cta'];
+// The article's structural spine — a small local model routinely drops one
+// of the softer fields (cta, dek, meta_description...). Those degrade
+// gracefully in the renderers, so only title + sections are hard failures.
+const ARTICLE_REQUIRED_STRINGS = ['title'];
+const ARTICLE_OPTIONAL_STRINGS = ['dek', 'linkedin_hook', 'meta_description', 'slug', 'cta'];
 
 function stripCodeFences(text) {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
@@ -45,7 +49,9 @@ function validateShape(obj) {
 }
 
 // Long-form article shape (see buildArticlePrompt.js). Exported so it can be
-// unit-tested without a running model.
+// unit-tested without a running model. Only `title` and a non-empty
+// `sections` array are hard requirements; softer fields are normalised to
+// absent (the renderers guard for that) rather than throwing.
 export function validateArticleShape(obj) {
   const missing = ARTICLE_REQUIRED_STRINGS.filter((f) => typeof obj[f] !== 'string' || !obj[f].trim());
   if (missing.length) {
@@ -59,6 +65,9 @@ export function validateArticleShape(obj) {
   );
   if (badSection !== -1) {
     throw new Error(`Ollama article response section ${badSection} is missing a heading or body`);
+  }
+  for (const f of ARTICLE_OPTIONAL_STRINGS) {
+    if (typeof obj[f] !== 'string' || !obj[f].trim()) delete obj[f];
   }
   obj.tags = Array.isArray(obj.tags) ? obj.tags : [];
   obj.key_takeaways = Array.isArray(obj.key_takeaways) ? obj.key_takeaways : [];
@@ -95,7 +104,10 @@ async function requestParsed(prompt, opts, validate) {
   try {
     return validate(parseModelResponse(first));
   } catch (firstErr) {
-    const stricter = `${prompt}\n\nYour previous response could not be parsed as JSON. Return ONLY a single valid JSON object. No markdown fences. No preamble. No explanation before or after the JSON.`;
+    const stricter =
+      `${prompt}\n\nYour previous response was rejected: ${firstErr.message}. ` +
+      `Return ONLY one complete, valid JSON object with every required key present. ` +
+      `No markdown fences. No preamble. No explanation before or after the JSON.`;
     const second = await requestOllama(host, model, stricter);
     try {
       return validate(parseModelResponse(second));
