@@ -16,3 +16,10 @@ export function charCount(text) {
 export function toGraphemes(text) {
   return [...segmenter.segment(text ?? '')].map((s) => s.segment);
 }
+
+// Approximate word count for long-form drafts — whitespace-delimited runs.
+// Only used to give a human reviewer a rough length signal, never enforced.
+export function countWords(text) {
+  const trimmed = (text ?? '').trim();
+  return trimmed ? trimmed.split(/\s+/).length : 0;
+}

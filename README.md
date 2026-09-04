@@ -47,6 +47,36 @@ step.
    recommended pixel dimensions for each platform, and which AI image tool
    to paste it into — see below), then appends to
    `data/post-history.json` so tomorrow's run picks a new topic.
+7. **With `--long-form`**, a second Ollama pass on the *same* topic also
+   writes `blog-post.md` and `linkedin-article.md` — see below.
+
+## Long-form: blog post + LinkedIn article
+
+`npm run generate:long` (or `generate --long-form`) does everything the
+normal run does **plus** one extra Ollama call — `src/buildArticlePrompt.js`
+→ `src/callOllama.js`'s `callOllamaArticle` → a single article object,
+rendered two ways:
+
+| File | Voice | Extras |
+|---|---|---|
+| `blog-post.md` | company / brand voice, opens with the `dek` | YAML frontmatter for the site CMS: `description` (SEO meta ≤155 chars), `slug`, `canonical_url` = `BLOG_BASE_URL/<slug>` (default `https://www.ridgehq.app/blog/<slug>`), `tags`, `date`, `draft: true` |
+| `linkedin-article.md` | opens with a first-person `linkedin_hook` | no frontmatter (LinkedIn's editor is rich text) |
+
+Both share the same `## section` bodies, key-takeaways list, and CTA. Both
+carry a review banner (HTML comment) with an approximate word count and the
+CLAUDE.md rule 4 fact-check reminder; if the source topic isn't `shipped`,
+the banner adds a roadmap-framing warning.
+
+**Honesty limitations (same posture as the Reddit formatter):**
+
+- The section bodies are voice-neutral. The LinkedIn renderer does **not**
+  rewrite them into first person — it flags that for you.
+- Long-form gives a local model much more room to embroider. Fact-check
+  every specific claim (acronyms, "we built X", security guarantees)
+  against `wiki/business-context.md` §2 before publishing — the model
+  will invent plausible detail the vault doesn't support.
+- Only `shipped` chunks are ever passed as supporting material; the
+  primary topic is the same one that day's 4 social posts use.
 
 ## Image prompt: sizes + which AI tool to use
 
@@ -94,14 +124,17 @@ RidgeHQ name is cleared. See `CLAUDE.md` and
 ## Usage
 
 ```bash
-npm run generate:dry-run   # prints all 4 drafts + image prompt, writes nothing
-npm run generate           # writes output/YYYY-MM-DD/* and updates history
-npm test                   # unit tests (loader + hashtags)
+npm run generate:dry-run        # prints all 4 drafts + image prompt, writes nothing
+npm run generate                # writes output/YYYY-MM-DD/* and updates history
+npm run generate:long           # + blog-post.md and linkedin-article.md
+npm run generate:long:dry-run   # long-form, prints everything, writes nothing
+npm test                        # unit tests
 ```
 
 On Windows, double-click or run `generate-and-show.bat` from this folder to
-generate today's drafts and print `image-prompt.txt` and `social-posts.txt`
-in the same console.
+generate today's drafts (long-form included) and print `image-prompt.txt`,
+`social-posts.txt`, `blog-post.md` and `linkedin-article.md` in the same
+console.
 
 Run `--dry-run` for at least a week and read every output before wiring up
 any real posting — this catches prompt-drift or formatter bugs while the
@@ -139,5 +172,6 @@ cost of a mistake is zero.
 | `OLLAMA_MODEL` | `gemma4:latest` | `qwen3.5:35b` is higher quality but much slower; the `*-coder` models aren't a good fit for marketing copy. |
 | `BUSINESS_VAULT_PATH` | `D:\work\RidgeHQAPP\Brain\RidgeHQAPP` | Absolute path to your local RidgeHQ business vault (the dir containing `wiki/`). Read-only. |
 | `PRODUCT_NAME` | `AquaRoster` | Templated into prompts and drafts. Keep as-is for public copy until the RidgeHQ name is cleared. |
+| `BLOG_BASE_URL` | `https://www.ridgehq.app/blog` | Long-form only — builds `canonical_url` (`<base>/<slug>`) in `blog-post.md` frontmatter. |
 | `POST_HISTORY_PATH` | `./data/post-history.json` | Read + write. `data/` is gitignored. |
 | `OUTPUT_DIR` | `./output` | Gitignored — daily drafts are transient/reviewable, not source. |

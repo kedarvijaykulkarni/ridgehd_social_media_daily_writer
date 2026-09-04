@@ -8,13 +8,16 @@ import { fileURLToPath } from 'node:url';
 import { selectTopic, recordUsage } from './selectTopic.js';
 import { loadKnowledgeBase } from './loadKnowledgeBase.js';
 import { buildOllamaPrompt } from './buildOllamaPrompt.js';
-import { callOllama } from './callOllama.js';
+import { buildArticlePrompt } from './buildArticlePrompt.js';
+import { callOllama, callOllamaArticle } from './callOllama.js';
 import { formatX } from './platformFormatters/x.js';
 import { formatLinkedin } from './platformFormatters/linkedin.js';
 import { formatInstagram } from './platformFormatters/instagram.js';
 import { formatReddit } from './platformFormatters/reddit.js';
 import { renderSocialText } from './lib/renderSocialText.js';
 import { renderImagePrompt } from './lib/renderImagePrompt.js';
+import { renderBlogPost } from './lib/renderBlogPost.js';
+import { renderLinkedInArticle } from './lib/renderLinkedInArticle.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(__dirname, '..');
@@ -34,6 +37,7 @@ const BUSINESS_VAULT_PATH = resolveConfigPath('BUSINESS_VAULT_PATH', DEFAULT_VAU
 const POST_HISTORY_PATH = resolveConfigPath('POST_HISTORY_PATH', './data/post-history.json');
 const OUTPUT_DIR = resolveConfigPath('OUTPUT_DIR', './output');
 const PRODUCT_NAME = process.env.PRODUCT_NAME?.trim() || 'AquaRoster';
+const BLOG_BASE_URL = process.env.BLOG_BASE_URL?.trim() || 'https://www.ridgehq.app/blog';
 
 async function loadHistory() {
   try {
@@ -51,7 +55,7 @@ function todayString() {
   return new Date().toISOString().slice(0, 10);
 }
 
-async function runGenerate({ dryRun }) {
+async function runGenerate({ dryRun, longForm }) {
   const knowledgeBase = await loadKnowledgeBase(BUSINESS_VAULT_PATH);
   const byStatus = knowledgeBase.reduce((acc, c) => {
     acc[c.status] = (acc[c.status] ?? 0) + 1;
@@ -85,25 +89,51 @@ async function runGenerate({ dryRun }) {
   const socialText = renderSocialText({ topic, date, drafts, productName: PRODUCT_NAME });
   const imagePromptText = renderImagePrompt({ topic, date, imagePrompt: shared.image_prompt, productName: PRODUCT_NAME });
 
+  // Long-form: one extra Ollama pass on the SAME topic -> a website blog
+  // post + a LinkedIn article (separate from the short LinkedIn post above).
+  let blogPostMd = null;
+  let linkedinArticleMd = null;
+  if (longForm) {
+    console.log(`${LOG} Long-form: generating blog post + LinkedIn article for "${topic.id}"...`);
+    const article = await callOllamaArticle(
+      buildArticlePrompt({ topic, knowledgeBase, history, productName: PRODUCT_NAME }),
+    );
+    blogPostMd = renderBlogPost({ topic, date, article, productName: PRODUCT_NAME, blogBaseUrl: BLOG_BASE_URL });
+    linkedinArticleMd = renderLinkedInArticle({ topic, date, article, productName: PRODUCT_NAME });
+  }
+
   if (dryRun) {
     console.log('\n=== DRY RUN — nothing written, history unchanged ===\n');
     console.log(socialText);
     console.log(imagePromptText);
+    if (longForm) {
+      console.log('\n=== blog-post.md ===\n');
+      console.log(blogPostMd);
+      console.log('\n=== linkedin-article.md ===\n');
+      console.log(linkedinArticleMd);
+    }
     return;
   }
 
   const runDir = path.join(OUTPUT_DIR, date);
   await mkdir(runDir, { recursive: true });
-  await Promise.all([
+  const writes = [
     writeFile(path.join(runDir, 'social-posts.txt'), socialText),
     writeFile(path.join(runDir, 'image-prompt.txt'), imagePromptText),
-  ]);
+  ];
+  if (longForm) {
+    writes.push(
+      writeFile(path.join(runDir, 'blog-post.md'), blogPostMd),
+      writeFile(path.join(runDir, 'linkedin-article.md'), linkedinArticleMd),
+    );
+  }
+  await Promise.all(writes);
 
   const updatedHistory = recordUsage({ knowledgeBase, history, topic, date });
   await mkdir(path.dirname(POST_HISTORY_PATH), { recursive: true });
   await writeFile(POST_HISTORY_PATH, JSON.stringify(updatedHistory, null, 2));
 
-  console.log(`${LOG} Wrote drafts to ${runDir}`);
+  console.log(`${LOG} Wrote drafts to ${runDir}${longForm ? ' (incl. blog-post.md + linkedin-article.md)' : ''}`);
   console.log(`${LOG} Updated ${POST_HISTORY_PATH} (cycle_number=${updatedHistory.cycle_number})`);
 }
 
@@ -114,9 +144,10 @@ program
   .command('generate')
   .description('Run the full pipeline once: load vault -> select topic -> Ollama -> platform drafts')
   .option('--dry-run', 'Print formatted drafts to console without writing files or updating history', false)
+  .option('--long-form', 'Also generate a website blog post + a LinkedIn article for the same topic', false)
   .action(async (opts) => {
     try {
-      await runGenerate({ dryRun: opts.dryRun });
+      await runGenerate({ dryRun: opts.dryRun, longForm: opts.longForm });
     } catch (err) {
       console.error(`${LOG} ${err.message}`);
       process.exitCode = 1;

@@ -49,6 +49,11 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
               src/platformFormatters/{x,linkedin,instagram,reddit}.js  (real char limits)
                                                           │
                             src/index.js  →  output/YYYY-MM-DD/{social-posts,image-prompt}.txt
+
+  --long-form only: same topic, 2nd Ollama pass
+    src/buildArticlePrompt.js → callOllamaArticle → one article object
+      ├─ src/lib/renderBlogPost.js        → output/YYYY-MM-DD/blog-post.md        (frontmatter, company voice, SEO)
+      └─ src/lib/renderLinkedInArticle.js → output/YYYY-MM-DD/linkedin-article.md (first-person hook, no frontmatter)
 ```
 
 - **`src/loadKnowledgeBase.js`** replaced the old
@@ -61,7 +66,14 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
   gitignored `data/` — not in the vault (whose pages are immutable sources
   or LLM-maintained prose).
 - **`PRODUCT_NAME`** (`.env`, default `AquaRoster`) is templated into
-  `buildOllamaPrompt.js`, `renderSocialText.js`, `renderImagePrompt.js`.
+  `buildOllamaPrompt.js`, `buildArticlePrompt.js`, `renderSocialText.js`,
+  `renderImagePrompt.js`, and both long-form renderers.
+- **`--long-form`** (`generate` flag; `npm run generate:long`) adds one
+  Ollama pass on the same topic → `blog-post.md` + `linkedin-article.md`.
+  Same ✅/❌ claim rail as the short-form path (rule 4). `BLOG_BASE_URL`
+  (`.env`, default `https://www.ridgehq.app/blog`) only feeds the blog
+  post's `canonical_url`. `src/callOllama.js` shares one request/parse/
+  retry helper between `callOllama` (short) and `callOllamaArticle` (long).
 
 ## Rules specific to this app
 
@@ -92,10 +104,12 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
      `business-context.md` §8's staleness warning.
 5. **Respect the documented honesty limitations in `README.md`** (target
    character-count bands, hashtag counts, ad-tone detection are
-   best-effort heuristics; vault extraction is scraping, not parsing) —
-   don't silently "fix" a draft to look more polished by fabricating
-   content the formatter didn't actually produce, and don't paper over a
-   loader throw by hand-feeding topics.
+   best-effort heuristics; vault extraction is scraping, not parsing;
+   the long-form LinkedIn renderer does not rewrite section bodies into
+   first person; long-form gives a local model more room to invent
+   detail) — don't silently "fix" a draft to look more polished by
+   fabricating content the renderer didn't actually produce, and don't
+   paper over a loader throw by hand-feeding topics.
 6. **Product name.** Keep `PRODUCT_NAME` at `AquaRoster` for public copy.
    The vault documents the product as RidgeHQ / RidgeHQAPP but flags
    `ridgehq.com` as an unrelated active business (name-collision risk).
@@ -108,7 +122,16 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
 - `src/__tests__/loadKnowledgeBase.test.js` — vault parsing against
   `src/__tests__/fixtures/vault/` (a miniature vault mirroring the real
   §2 / §5 / §3 structure).
+- `src/__tests__/buildArticlePrompt.test.js` — long-form prompt: primary
+  topic centered, only `shipped` chunks as supporting material, roadmap
+  framing when not shipped, JSON keys requested.
+- `src/__tests__/validateArticleShape.test.js` — article-shape validation
+  (exported from `callOllama.js`).
+- `src/lib/__tests__/renderBlogPost.test.js`,
+  `src/lib/__tests__/renderLinkedInArticle.test.js` — the two long-form
+  renderers (frontmatter vs. none, section rendering, roadmap warning).
 - `src/lib/__tests__/hashtags.test.js` — hashtag sanitization regression.
 
-The Ollama call and end-to-end `generate` are not unit-tested (they need a
-running model). `npm run generate:dry-run` is the manual check.
+The Ollama calls and end-to-end `generate` are not unit-tested (they need
+a running model). `npm run generate:dry-run` / `generate:long:dry-run` are
+the manual checks.

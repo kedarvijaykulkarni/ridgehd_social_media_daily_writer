@@ -10,6 +10,8 @@
   "scripts": {
     "generate": "node src/index.js generate",
     "generate:dry-run": "node src/index.js generate --dry-run",
+    "generate:long": "node src/index.js generate --long-form",
+    "generate:long:dry-run": "node src/index.js generate --long-form --dry-run",
     "test": "node --test src/**/__tests__/*.test.js"
   },
   "engines": {

@@ -36,6 +36,15 @@ just skips their chunks. `wiki/business-context.md` is required; if it's
 missing, or its `✅` / `❌` markers have moved and nothing parses, the
 loader **throws** rather than running on an empty or wrong topic list.
 
+### Long-form (`generate --long-form`)
+
+The blog post + LinkedIn article use the **same chunk list**. The primary
+topic is that day's selected topic; `src/buildArticlePrompt.js` also
+passes the other **`shipped`** chunks (never `planned` / `unverified`) as
+optional supporting material. Same claim rail — plus long-form gives a
+local model far more room to embroider, so fact-check the drafts harder,
+not less.
+
 ## The claim safety rail (CLAUDE.md rule 4)
 
 `business-context.md` §2 is the authority on what may be stated as
