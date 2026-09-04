@@ -7,13 +7,16 @@ import { composeParts, truncateToChars } from '../lib/composeText.js';
 // per-platform is out of scope here). It flags obvious ad-like phrasing so
 // a human catches it before manual cross-posting, per the spec's "must not
 // read like an ad" requirement.
+// Heuristic ad-tone flags. The product-name alternations cover the two
+// candidate names (see PRODUCT_NAME in .env) so a rename doesn't silently
+// weaken the check.
 const PROMOTIONAL_PATTERNS = [
   /\bsign up\b/i,
-  /\btry (aquaroster|it) (free|today|now)\b/i,
+  /\btry (aquaroster|ridgehq|it) (free|today|now)\b/i,
   /\bbook (a demo|now)\b/i,
   /\bclick here\b/i,
   /!{2,}/,
-  /\baquaroster\b.*\baquaroster\b/is,
+  /\b(aquaroster|ridgehq)\b.*\b(aquaroster|ridgehq)\b/is,
 ];
 
 function looksPromotional(text) {

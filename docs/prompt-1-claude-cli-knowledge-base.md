@@ -1,6 +1,15 @@
-# Prompt 1 — Claude CLI: Generate the AquaRoster Marketing Knowledge Base
+# Prompt 1 — Claude CLI: Generate the Marketing Knowledge Base
 
-**What this does:** Run this with Claude Code in the root of the AquaRoster repo. It builds a structured, verified knowledge base of features and differentiators by reading your existing strategy docs *and* the actual codebase — so the output reflects what's really shipped, not just what's documented or planned.
+> ⚠️ **Superseded (repo split).** This app no longer consumes a checked-in
+> `./marketing/knowledge-base.json`. Since moving out of the aquarosters
+> monorepo it reads the RidgeHQ business Obsidian vault directly at runtime
+> via `src/loadKnowledgeBase.js` — see `docs/business-context-reference.md`.
+> This prompt is kept for provenance: it documents how the original
+> knowledge base was built and what the `status: shipped | planned |
+> unverified` safety rail was for (that rail now lives in the vault's
+> `wiki/business-context.md` §2 `✅` / `❌` lists).
+
+**What this did:** Run with Claude Code in the root of the product repo. It built a structured, verified knowledge base of features and differentiators by reading strategy docs *and* the actual codebase — so the output reflected what's really shipped, not just what's documented or planned.
 
 **Where to run it:** Repo root, via `claude` CLI, in a session with read access to `apps/api`, `apps/web`, and your docs folder.
 

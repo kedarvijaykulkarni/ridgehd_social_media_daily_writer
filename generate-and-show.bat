@@ -3,7 +3,10 @@ setlocal
 
 chcp 65001 >nul
 
-set "APP_DIR=D:\work\Bloowatch\aquarosters\apps\social-daily"
+rem Run from this script's own directory — this repo is standalone, no
+rem fixed absolute path.
+set "APP_DIR=%~dp0"
+if "%APP_DIR:~-1%"=="\" set "APP_DIR=%APP_DIR:~0,-1%"
 
 if not exist "%APP_DIR%\package.json" (
   echo Could not find social-daily app at:
@@ -20,7 +23,7 @@ set "OUTPUT_DIR=%APP_DIR%\output\%RUN_DATE%"
 set "IMAGE_PROMPT=%OUTPUT_DIR%\image-prompt.txt"
 set "SOCIAL_POSTS=%OUTPUT_DIR%\social-posts.txt"
 
-echo Running AquaRosters social daily generator...
+echo Running social daily generator...
 echo.
 call npm run generate
 if errorlevel 1 (

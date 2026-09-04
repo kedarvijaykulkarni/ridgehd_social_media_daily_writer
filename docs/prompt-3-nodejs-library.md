@@ -4,6 +4,15 @@
 
 **Give this prompt to Claude Code** (or a developer) to scaffold the library.
 
+> ⚠️ **Partly superseded (repo split).** The scaffold below still describes
+> the pipeline accurately, but two things changed when this app left the
+> aquarosters monorepo: (1) the package is now `social-daily`, not
+> `aquaroster-social-daily`; (2) `./marketing/knowledge-base.json` is
+> replaced by a runtime read of the RidgeHQ business vault
+> (`src/loadKnowledgeBase.js`), and `./marketing/post-history.json` is now
+> `./data/post-history.json`. See `README.md` and
+> `docs/business-context-reference.md`.
+
 ---
 
 ## Confirmed 2026 platform limits (verified, not assumed)
