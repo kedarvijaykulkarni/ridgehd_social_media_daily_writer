@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildArticlePrompt } from '../buildArticlePrompt.js';
+import { selectFocus } from '../seoFocus.js';
 
 const KB = [
   {
@@ -32,31 +33,33 @@ const KB = [
   },
 ];
 
+const FOCUS = selectFocus({ posts: [] });
+
 const HISTORY = {
   posts: [{ date: '2026-09-01', topic_id: 'waiver-system', angle_used: 'architecture' }],
   cycle_number: 1,
 };
 
 test('article prompt centers the primary topic', () => {
-  const prompt = buildArticlePrompt({ topic: KB[0], knowledgeBase: KB, history: HISTORY, productName: 'AquaRoster' });
+  const prompt = buildArticlePrompt({ topic: KB[0], knowledgeBase: KB, history: HISTORY, focus: FOCUS, productName: 'AquaRoster' });
   assert.match(prompt, /AI copilot for read and scheduling operations/);
   assert.match(prompt, /PRIMARY TOPIC/i);
 });
 
 test('article prompt passes other shipped chunks as supporting material', () => {
-  const prompt = buildArticlePrompt({ topic: KB[0], knowledgeBase: KB, history: HISTORY, productName: 'AquaRoster' });
+  const prompt = buildArticlePrompt({ topic: KB[0], knowledgeBase: KB, history: HISTORY, focus: FOCUS, productName: 'AquaRoster' });
   assert.match(prompt, /SUPPORTING MATERIAL/i);
   assert.match(prompt, /Waiver system with per-participant enforcement/);
 });
 
 test('article prompt never offers planned/unverified chunks as supporting material', () => {
-  const prompt = buildArticlePrompt({ topic: KB[0], knowledgeBase: KB, history: HISTORY, productName: 'AquaRoster' });
+  const prompt = buildArticlePrompt({ topic: KB[0], knowledgeBase: KB, history: HISTORY, focus: FOCUS, productName: 'AquaRoster' });
   // the planned chunk may only appear if it were the primary topic — here it is not
   assert.ok(!prompt.includes('QR-linked waiver signing is not built yet'));
 });
 
 test('article prompt templates the product name and requests the JSON keys', () => {
-  const prompt = buildArticlePrompt({ topic: KB[0], knowledgeBase: KB, history: HISTORY, productName: 'RidgeHQ' });
+  const prompt = buildArticlePrompt({ topic: KB[0], knowledgeBase: KB, history: HISTORY, focus: FOCUS, productName: 'RidgeHQ' });
   assert.match(prompt, /copywriter for RidgeHQ/);
   for (const key of ['title', 'dek', 'linkedin_hook', 'meta_description', 'slug', 'tags', 'sections', 'key_takeaways', 'cta']) {
     assert.match(prompt, new RegExp(`"${key}"`), `prompt should request "${key}"`);
@@ -64,11 +67,19 @@ test('article prompt templates the product name and requests the JSON keys', () 
 });
 
 test('article prompt forces roadmap framing when the primary topic is not shipped', () => {
-  const prompt = buildArticlePrompt({ topic: KB[2], knowledgeBase: KB, history: HISTORY, productName: 'AquaRoster' });
+  const prompt = buildArticlePrompt({ topic: KB[2], knowledgeBase: KB, history: HISTORY, focus: FOCUS, productName: 'AquaRoster' });
   assert.match(prompt, /planned|roadmap|coming soon/i);
 });
 
 test('article prompt lists recent headlines to avoid repetition', () => {
-  const prompt = buildArticlePrompt({ topic: KB[0], knowledgeBase: KB, history: HISTORY, productName: 'AquaRoster' });
+  const prompt = buildArticlePrompt({ topic: KB[0], knowledgeBase: KB, history: HISTORY, focus: FOCUS, productName: 'AquaRoster' });
   assert.match(prompt, /RECENTLY COVERED/i);
+});
+
+test('article prompt targets the focus vertical, its SEO keywords, and the platform page', () => {
+  const prompt = buildArticlePrompt({ topic: KB[0], knowledgeBase: KB, history: HISTORY, focus: FOCUS, productName: 'RidgeHQ' });
+  assert.match(prompt, new RegExp(`TODAY'S AUDIENCE: ${FOCUS.vertical.name}`));
+  assert.ok(prompt.includes(`"${FOCUS.vertical.keywords[0]}"`), 'primary keyword requested verbatim');
+  assert.ok(prompt.includes(FOCUS.platform.name), 'platform capability included');
+  assert.doesNotMatch(prompt, /platform\s+for dive centers\./);
 });

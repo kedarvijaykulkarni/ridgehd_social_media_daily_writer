@@ -4,6 +4,7 @@ import {
   LINKEDIN_TARGET_MAX,
   INSTAGRAM_TARGET,
 } from '../platformLimits.js';
+import { keywordCoverage } from '../seoFocus.js';
 
 const RULE = '='.repeat(64);
 
@@ -56,13 +57,33 @@ function renderReddit(draft) {
   ].join('\n');
 }
 
+// Which landing page today's drafts target, and — per platform — which of
+// its SEO phrases actually made it into the copy (heuristic substring check).
+function focusLines(focus, drafts) {
+  const texts = {
+    X: drafts.x.text,
+    LinkedIn: drafts.linkedin.text,
+    Instagram: drafts.instagram.text,
+    Reddit: `${drafts.reddit.title} ${drafts.reddit.body}`,
+  };
+  return [
+    `Website focus: ${focus.vertical.name} -> ${focus.vertical.url}`,
+    `Primary SEO phrase: "${focus.vertical.keywords[0]}"`,
+    ...Object.entries(texts).map(([label, text]) => {
+      const { found } = keywordCoverage(text, focus.vertical.keywords);
+      return `  ${label}: ${found.length ? `keywords present: ${found.join('; ')}` : 'NO focus keyword present — add one by hand'}`;
+    }),
+  ];
+}
+
 // One reviewable plain-text file covering all 4 platform drafts, with each
 // platform's formatting/hashtags baked in exactly as it will be posted, plus
 // the char-count/limit metadata a human reviewer needs before copy-pasting.
-export function renderSocialText({ topic, date, drafts, productName = 'AquaRoster' }) {
+export function renderSocialText({ topic, date, drafts, productName = 'AquaRoster', focus }) {
   const header = [
     `${productName} social drafts — ${date}`,
     `Topic: ${topic.id}${topic.headline ? ` — ${topic.headline}` : ''}`,
+    ...(focus ? focusLines(focus, drafts) : []),
     '',
   ].join('\n');
 

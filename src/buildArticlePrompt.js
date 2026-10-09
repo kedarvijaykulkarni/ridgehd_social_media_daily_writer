@@ -6,6 +6,8 @@
 // primary topic is not "shipped" the whole piece stays in roadmap framing.
 // Only "shipped" chunks are ever offered as supporting material.
 
+import { POSITIONING, focusPromptBlock } from './seoFocus.js';
+
 const MAX_SUPPORTING = 6;
 const SUPPORTING_DETAIL_CHARS = 240;
 
@@ -14,7 +16,7 @@ function clip(text, n) {
   return clean.length > n ? `${clean.slice(0, n - 1).trimEnd()}…` : clean;
 }
 
-export function buildArticlePrompt({ topic, knowledgeBase, history, productName = 'AquaRoster' }) {
+export function buildArticlePrompt({ topic, knowledgeBase, history, focus, productName = 'AquaRoster' }) {
   const kbById = new Map(knowledgeBase.map((e) => [e.id, e]));
 
   const supporting = knowledgeBase
@@ -38,9 +40,9 @@ export function buildArticlePrompt({ topic, knowledgeBase, history, productName 
         '("we\'re building", "coming soon"). Never state it as a present-tense capability.';
 
   return `SYSTEM:
-You are the social media copywriter for ${productName}, a B2B SaaS operations
-platform for dive centers. You write for dive shop owners and operations
-managers, never for end-consumer divers. Tone: confident, specific, no hype,
+You are the social media copywriter for ${productName}, ${POSITIONING}.
+You write for owners and operations managers of these businesses, never for
+end consumers. Tone: confident, specific, no hype,
 no exclamation-point-per-sentence energy. Never invent statistics, customer
 quotes, or features beyond what is given to you below. Never mention internal
 codenames, or competitors by name in a disparaging way.
@@ -63,6 +65,11 @@ context; do NOT invent anything beyond them, and keep the article anchored
 to the PRIMARY TOPIC above):
 ${supporting || '(none)'}
 
+${focusPromptBlock({ focus, productName, includePlatform: true })}
+- The blog post must rank for the PRIMARY phrase: put it (or a close variant)
+  in "title", in "meta_description", and in the first section's body; put
+  "${productName}" in "meta_description" too.
+
 RECENTLY COVERED TOPICS (do not rehash these angles):
 ${recentHeadlines}
 
@@ -75,7 +82,7 @@ Return ONLY valid JSON, no markdown fences, no preamble, matching exactly:
   "linkedin_hook": "1–3 sentence first-person opener for the LinkedIn version, no hashtags",
   "meta_description": "<= 155 characters, plain-language SEO summary that names the concrete value",
   "slug": "kebab-case-url-slug derived from the title, <= 60 characters",
-  "tags": ["3–6 lowercase topical tags"],
+  "tags": ["3–6 lowercase topical tags, including the activity (e.g. \"${focus.vertical.keywords[0]}\")"],
   "sections": [
     { "heading": "H2 heading, plain and descriptive", "body": "2–4 short paragraphs of prose (use \\n\\n between paragraphs)" }
   ],

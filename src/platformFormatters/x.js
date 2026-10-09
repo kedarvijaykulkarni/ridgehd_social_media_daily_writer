@@ -2,16 +2,27 @@ import { X_MAX, X_TARGET } from '../platformLimits.js';
 import { charCount } from '../lib/charCount.js';
 import { splitSentences, composeCompressed } from '../lib/composeText.js';
 import { buildHashtagPool } from '../lib/hashtags.js';
+import { focusHashtags, BRAND_HASHTAGS } from '../seoFocus.js';
 
 // X: compress hard, drop anything non-essential. Max 2-3 hashtags — more
-// reads as spammy on X specifically.
-export function formatX(shared) {
+// reads as spammy on X specifically. #RidgeHQ and the landing-page link
+// (from `focus`, see seoFocus.js) are always kept. Char counts are raw, so a
+// URL is over-counted vs X's 23-char t.co wrap — conservative, never over.
+export function formatX(shared, focus) {
   const hook = shared.hook_line.trim();
   const sentences = splitSentences(shared.core_message.trim());
   const cta = shared.call_to_action.trim();
-  const hashtags = buildHashtagPool(shared).slice(0, 3);
+  const hashtags = buildHashtagPool(shared, focusHashtags(focus)).slice(0, 3);
 
-  const { text, hashtagsUsed } = composeCompressed({ hook, sentences, cta, hashtags, max: X_MAX });
+  const { text, hashtagsUsed } = composeCompressed({
+    hook,
+    sentences,
+    cta,
+    hashtags,
+    max: X_MAX,
+    link: focus?.vertical?.url ?? null,
+    keepTags: BRAND_HASHTAGS.length,
+  });
   const count = charCount(text);
 
   if (count > X_MAX) {
