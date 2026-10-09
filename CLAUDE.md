@@ -65,6 +65,17 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
   It's the only file this tool writes besides `output/`. Lives in
   gitignored `data/` — not in the vault (whose pages are immutable sources
   or LLM-maintained prose).
+- **`src/seoFocus.js`** is the website side of each run: a hand-kept map of
+  ridgehq.app `/solutions/*` verticals and `/platform/*` + `/tools/roi-calculator`
+  pages, each with published blurb copy and Google Search Console keywords.
+  Every run rotates one vertical (audience + link for every draft) and one
+  platform page (long-form section + internal link), least-used first via
+  `vertical_id` / `platform_id` in `data/post-history.json`. `#RidgeHQ` is
+  pinned on X/LinkedIn/Instagram and both long-form drafts; Reddit stays
+  hashtag- and link-free (self-promo rules). Keyword coverage is reported in
+  each output, never auto-"fixed". When the site adds a page or Search
+  Console shows new queries, update this file — only add phrases the linked
+  page truthfully serves (rule 4).
 - **`PRODUCT_NAME`** (`.env`, default `AquaRoster`) is templated into
   `buildOllamaPrompt.js`, `buildArticlePrompt.js`, `renderSocialText.js`,
   `renderImagePrompt.js`, and both long-form renderers.

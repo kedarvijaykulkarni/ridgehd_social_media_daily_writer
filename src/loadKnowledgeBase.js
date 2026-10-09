@@ -71,8 +71,8 @@ function categoryFor(text) {
 }
 
 const AUDIENCE_ANGLE = {
-  shipped: 'Dive center operators can rely on this today when moving off spreadsheets or a legacy booking tool.',
-  planned: 'On the roadmap for dive center operators — present it as coming soon, never as available today.',
+  shipped: 'Activity business operators can rely on this today when moving off spreadsheets or a legacy booking tool.',
+  planned: 'On the roadmap for activity business operators — present it as coming soon, never as available today.',
   unverified: 'Not yet verified against the codebase — present cautiously, never as a firm capability claim.',
 };
 
@@ -82,7 +82,7 @@ function visualThemeFor(headline) {
     .slice(0, 8)
     .join(' ')
     .replace(/[,;:.\s]+$/, '');
-  return `${short} — dive center setting, no text, no UI chrome, no logos`;
+  return `${short} — no text, no UI chrome, no logos`;
 }
 
 function makeChunk({ id, category, status, headline, detail }) {

@@ -2,20 +2,22 @@ import { LINKEDIN_MAX, LINKEDIN_TARGET_MIN, LINKEDIN_TARGET_MAX } from '../platf
 import { charCount } from '../lib/charCount.js';
 import { composeParts, trimHashtagsToFit } from '../lib/composeText.js';
 import { buildHashtagPool } from '../lib/hashtags.js';
+import { focusHashtags, BRAND_HASHTAGS } from '../seoFocus.js';
 
 // LinkedIn: keep more context/story — never drop content, only trim the
 // hashtag tail if somehow over the hard limit. Note: this formatter never
 // fabricates filler to reach the 1,300-1,900 char engagement sweet spot —
 // it only guarantees the hard 3,000 char cap. `meets_target_band` tells you
 // honestly whether today's draft happened to land in that range.
-export function formatLinkedin(shared) {
+// #RidgeHQ and the landing-page link (from `focus`) are always kept.
+export function formatLinkedin(shared, focus) {
   const hook = shared.hook_line.trim();
   const body = shared.core_message.trim();
   const cta = shared.call_to_action.trim();
-  const hashtags = buildHashtagPool(shared).slice(0, 5);
+  const hashtags = buildHashtagPool(shared, focusHashtags(focus)).slice(0, 5);
 
-  const base = composeParts([hook, body, cta]);
-  const { text, hashtags: used } = trimHashtagsToFit(base, hashtags, LINKEDIN_MAX);
+  const base = composeParts([hook, body, cta, focus?.vertical?.url ?? null]);
+  const { text, hashtags: used } = trimHashtagsToFit(base, hashtags, LINKEDIN_MAX, '\n\n', BRAND_HASHTAGS.length);
   const count = charCount(text);
 
   if (count > LINKEDIN_MAX) {

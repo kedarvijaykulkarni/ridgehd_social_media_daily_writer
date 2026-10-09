@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 import { selectTopic, recordUsage } from './selectTopic.js';
 import { loadKnowledgeBase } from './loadKnowledgeBase.js';
+import { selectFocus } from './seoFocus.js';
 import { buildOllamaPrompt } from './buildOllamaPrompt.js';
 import { buildArticlePrompt } from './buildArticlePrompt.js';
 import { callOllama, callOllamaArticle } from './callOllama.js';
@@ -75,18 +76,23 @@ async function runGenerate({ dryRun, longForm }) {
       `(status=${topic.status}, prior used_count=${priorUsedCount}, cycle=${history.cycle_number ?? 1})`,
   );
 
-  const prompt = buildOllamaPrompt({ topic, knowledgeBase, history, productName: PRODUCT_NAME });
+  const focus = selectFocus(history);
+  console.log(
+    `${LOG} Website focus: ${focus.vertical.id} (${focus.vertical.url}) + platform ${focus.platform.id}`,
+  );
+
+  const prompt = buildOllamaPrompt({ topic, knowledgeBase, history, focus, productName: PRODUCT_NAME });
   const shared = await callOllama(prompt);
 
   const drafts = {
-    x: formatX(shared),
-    linkedin: formatLinkedin(shared),
-    instagram: formatInstagram(shared),
+    x: formatX(shared, focus),
+    linkedin: formatLinkedin(shared, focus),
+    instagram: formatInstagram(shared, focus),
     reddit: formatReddit(shared),
   };
 
   const date = todayString();
-  const socialText = renderSocialText({ topic, date, drafts, productName: PRODUCT_NAME });
+  const socialText = renderSocialText({ topic, date, drafts, productName: PRODUCT_NAME, focus });
   const imagePromptText = renderImagePrompt({ topic, date, imagePrompt: shared.image_prompt, productName: PRODUCT_NAME });
 
   // Long-form: one extra Ollama pass on the SAME topic -> a website blog
@@ -96,10 +102,10 @@ async function runGenerate({ dryRun, longForm }) {
   if (longForm) {
     console.log(`${LOG} Long-form: generating blog post + LinkedIn article for "${topic.id}"...`);
     const article = await callOllamaArticle(
-      buildArticlePrompt({ topic, knowledgeBase, history, productName: PRODUCT_NAME }),
+      buildArticlePrompt({ topic, knowledgeBase, history, focus, productName: PRODUCT_NAME }),
     );
-    blogPostMd = renderBlogPost({ topic, date, article, productName: PRODUCT_NAME, blogBaseUrl: BLOG_BASE_URL });
-    linkedinArticleMd = renderLinkedInArticle({ topic, date, article, productName: PRODUCT_NAME });
+    blogPostMd = renderBlogPost({ topic, date, article, productName: PRODUCT_NAME, blogBaseUrl: BLOG_BASE_URL, focus });
+    linkedinArticleMd = renderLinkedInArticle({ topic, date, article, productName: PRODUCT_NAME, focus });
   }
 
   if (dryRun) {
@@ -129,7 +135,7 @@ async function runGenerate({ dryRun, longForm }) {
   }
   await Promise.all(writes);
 
-  const updatedHistory = recordUsage({ knowledgeBase, history, topic, date });
+  const updatedHistory = recordUsage({ knowledgeBase, history, topic, date, focus });
   await mkdir(path.dirname(POST_HISTORY_PATH), { recursive: true });
   await writeFile(POST_HISTORY_PATH, JSON.stringify(updatedHistory, null, 2));
 

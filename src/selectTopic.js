@@ -40,8 +40,12 @@ export function selectTopic(knowledgeBase, history) {
 // `status: shipped` entry's derived used_count is >= cycle_number, the cycle
 // increments and rotation starts over (this is what eventually lets
 // planned/unverified entries surface, once shipped coverage catches up).
-export function recordUsage({ knowledgeBase, history, topic, date }) {
-  const posts = [...(history.posts ?? []), { date, topic_id: topic.id, angle_used: topic.category }];
+// `focus` (seoFocus.js) is recorded too, so the vertical / platform-page
+// rotation advances independently of the topic rotation.
+export function recordUsage({ knowledgeBase, history, topic, date, focus }) {
+  const entry = { date, topic_id: topic.id, angle_used: topic.category };
+  if (focus) Object.assign(entry, { vertical_id: focus.vertical.id, platform_id: focus.platform.id });
+  const posts = [...(history.posts ?? []), entry];
   let cycleNumber = history.cycle_number ?? 1;
 
   const shipped = knowledgeBase.filter((e) => e.status === 'shipped');
