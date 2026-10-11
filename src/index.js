@@ -10,13 +10,15 @@ import { loadKnowledgeBase } from './loadKnowledgeBase.js';
 import { selectFocus } from './seoFocus.js';
 import { buildOllamaPrompt } from './buildOllamaPrompt.js';
 import { buildArticlePrompt } from './buildArticlePrompt.js';
-import { callOllama, callOllamaArticle } from './callOllama.js';
+import { buildVideoScriptPrompt } from './buildVideoScriptPrompt.js';
+import { callOllama, callOllamaArticle, callOllamaVideoScript } from './callOllama.js';
 import { formatX } from './platformFormatters/x.js';
 import { formatLinkedin } from './platformFormatters/linkedin.js';
 import { formatInstagram } from './platformFormatters/instagram.js';
 import { formatReddit } from './platformFormatters/reddit.js';
 import { renderSocialText } from './lib/renderSocialText.js';
 import { renderImagePrompt } from './lib/renderImagePrompt.js';
+import { renderVideoScript } from './lib/renderVideoScript.js';
 import { renderBlogPost } from './lib/renderBlogPost.js';
 import { renderLinkedInArticle } from './lib/renderLinkedInArticle.js';
 import { videoMeta } from './lib/videoMeta.js';
@@ -96,6 +98,13 @@ async function runGenerate({ dryRun, longForm }) {
   const socialText = renderSocialText({ topic, date, drafts, productName: PRODUCT_NAME, focus });
   const imagePromptText = renderImagePrompt({ topic, date, imagePrompt: shared.image_prompt, productName: PRODUCT_NAME });
 
+  // 1-minute video script: one more Ollama pass, built from the same shared
+  // object (headline + image prompt + hook/core message/CTA).
+  const video = videoMeta({ topic, shared });
+  console.log(`${LOG} Video: generating 1-minute script for "${topic.id}"...`);
+  const script = await callOllamaVideoScript(buildVideoScriptPrompt({ topic, shared, video, productName: PRODUCT_NAME }));
+  const videoScriptText = renderVideoScript({ topic, date, video, script, productName: PRODUCT_NAME });
+
   // Long-form: one extra Ollama pass on the SAME topic -> a website blog
   // post + a LinkedIn article (separate from the short LinkedIn post above).
   let blogPostMd = null;
@@ -112,7 +121,7 @@ async function runGenerate({ dryRun, longForm }) {
       productName: PRODUCT_NAME,
       blogBaseUrl: BLOG_BASE_URL,
       focus,
-      video: videoMeta({ topic, shared }),
+      video,
     });
     linkedinArticleMd = renderLinkedInArticle({ topic, date, article, productName: PRODUCT_NAME, focus });
   }
@@ -121,6 +130,7 @@ async function runGenerate({ dryRun, longForm }) {
     console.log('\n=== DRY RUN — nothing written, history unchanged ===\n');
     console.log(socialText);
     console.log(imagePromptText);
+    console.log(videoScriptText);
     if (longForm) {
       console.log('\n=== blog-post.md ===\n');
       console.log(blogPostMd);
@@ -135,6 +145,7 @@ async function runGenerate({ dryRun, longForm }) {
   const writes = [
     writeFile(path.join(runDir, 'social-posts.txt'), socialText),
     writeFile(path.join(runDir, 'image-prompt.txt'), imagePromptText),
+    writeFile(path.join(runDir, 'video-script.txt'), videoScriptText),
   ];
   if (longForm) {
     writes.push(

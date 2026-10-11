@@ -45,7 +45,8 @@ step.
    platform drafts — text, hashtags, and char-count/limit status, in one
    reviewable file) + `image-prompt.txt` (Ollama's scene/style prompt, the
    recommended pixel dimensions for each platform, and which AI image tool
-   to paste it into — see below), then appends to
+   to paste it into — see below) + `video-script.txt` (a 1-minute script —
+   see below), then appends to
    `data/post-history.json` so tomorrow's run picks a new topic.
 7. **With `--long-form`**, a second Ollama pass on the *same* topic also
    writes `blog-post.md` and `linkedin-article.md` — see below.
@@ -77,6 +78,21 @@ the banner adds a roadmap-framing warning.
   will invent plausible detail the vault doesn't support.
 - Only `shipped` chunks are ever passed as supporting material; the
   primary topic is the same one that day's 4 social posts use.
+
+## Video script: 1-minute, six 10-second blocks
+
+`video-script.txt` comes from one more Ollama pass
+(`src/buildVideoScriptPrompt.js` → `callOllamaVideoScript`), fed only from
+the day's short-form object: the topic headline is the subject, the
+`image_prompt` is the visual direction, and the hook line, core message and
+CTA are the information. It returns a Visual + Audio line for each block
+(Hook → Problem → Main action → Demo → Payoff → CTA); the CTA shows and
+names `ridgehq.app` and `CONTACT_EMAIL` (`src/seoFocus.js`). The file opens
+with the YouTube title (topic headline) and description (hook line + core
+message) — the same values `blog-post.md`'s `video:` frontmatter carries,
+so upload with exactly those. Like the image prompt, it's a draft for a
+human to produce and upload by hand; non-shipped topics carry a roadmap
+warning.
 
 ## Image prompt: sizes + which AI tool to use
 
@@ -133,7 +149,7 @@ npm test                        # unit tests
 
 On Windows, double-click or run `generate-and-show.bat` from this folder to
 generate today's drafts (long-form included) and print `image-prompt.txt`,
-`social-posts.txt`, `blog-post.md` and `linkedin-article.md` in the same
+`video-script.txt`, `social-posts.txt`, `blog-post.md` and `linkedin-article.md` in the same
 console.
 
 Run `--dry-run` for at least a week and read every output before wiring up
