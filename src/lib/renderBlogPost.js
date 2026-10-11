@@ -9,6 +9,31 @@ import { BRAND_KEYWORDS } from '../seoFocus.js';
 
 const DEFAULT_BLOG_BASE_URL = 'https://www.ridgehq.app/blog';
 
+// The website's blog loader (RidgeHQ_Website src/lib/config/blog.ts) rejects
+// a post whose `pillar` is missing or not one of these.
+export const BLOG_PILLARS = ['Business Economics', 'Operations', 'Technology'];
+const PILLAR_BY_CATEGORY = { 'pricing-model': 'Business Economics', architecture: 'Technology' };
+
+// Model's pick if valid, else derived from the vault chunk's category.
+function pillarFor(article, topic) {
+  return BLOG_PILLARS.includes(article.pillar) ? article.pillar : (PILLAR_BY_CATEGORY[topic.category] ?? 'Operations');
+}
+
+// `title` + `description` are generated; the other three only exist once the
+// video is on YouTube, so they're left blank for the reviewer. The website
+// build refuses a `video:` block with any field blank — fill them from
+// YouTube or delete the block before publishing.
+function videoFrontmatter(video) {
+  return [
+    'video:',
+    '  youtubeId: ""  # TODO: fill after YouTube upload',
+    `  title: ${yamlStr(video.title)}`,
+    `  description: ${yamlStr(video.description)}`,
+    '  uploadDate: ""  # TODO: YouTube upload date, quoted ISO 8601 with offset',
+    '  durationSeconds: ""  # TODO: video length in seconds',
+  ].join('\n');
+}
+
 function yamlStr(value) {
   return `"${String(value ?? '').replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
@@ -33,7 +58,9 @@ function uniq(list) {
 // opener here is the blog `dek`, and only this renderer emits the SEO block.
 // With a `focus` (seoFocus.js) it also emits `keywords`, adds the brand +
 // primary keyword to `tags`, and links the solution/platform pages.
-export function renderBlogPost({ topic, date, article, productName = 'AquaRoster', blogBaseUrl, focus } = {}) {
+// With a `video` ({ title, description }, see videoMeta.js) it emits the
+// `video:` block the website embeds above the post.
+export function renderBlogPost({ topic, date, article, productName = 'AquaRoster', blogBaseUrl, focus, video } = {}) {
   const base = (blogBaseUrl || DEFAULT_BLOG_BASE_URL).replace(/\/+$/, '');
   const slug = slugify(article.slug) || slugify(article.title);
   const tags = uniq([...(article.tags ?? []), ...(focus ? ['ridgehq', focus.vertical.keywords[0]] : [])]).map((t) =>
@@ -52,7 +79,9 @@ export function renderBlogPost({ topic, date, article, productName = 'AquaRoster
     `tags: [${tags.join(', ')}]`,
     keywords.length ? `keywords: [${keywords.join(', ')}]` : null,
     `date: ${yamlStr(date)}`,
+    `pillar: ${yamlStr(pillarFor(article, topic))}`,
     'draft: true',
+    video ? videoFrontmatter(video) : null,
     '---',
   ]
     .filter(Boolean)

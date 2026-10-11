@@ -19,6 +19,7 @@ import { renderSocialText } from './lib/renderSocialText.js';
 import { renderImagePrompt } from './lib/renderImagePrompt.js';
 import { renderBlogPost } from './lib/renderBlogPost.js';
 import { renderLinkedInArticle } from './lib/renderLinkedInArticle.js';
+import { videoMeta } from './lib/videoMeta.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(__dirname, '..');
@@ -104,7 +105,15 @@ async function runGenerate({ dryRun, longForm }) {
     const article = await callOllamaArticle(
       buildArticlePrompt({ topic, knowledgeBase, history, focus, productName: PRODUCT_NAME }),
     );
-    blogPostMd = renderBlogPost({ topic, date, article, productName: PRODUCT_NAME, blogBaseUrl: BLOG_BASE_URL, focus });
+    blogPostMd = renderBlogPost({
+      topic,
+      date,
+      article,
+      productName: PRODUCT_NAME,
+      blogBaseUrl: BLOG_BASE_URL,
+      focus,
+      video: videoMeta({ topic, shared }),
+    });
     linkedinArticleMd = renderLinkedInArticle({ topic, date, article, productName: PRODUCT_NAME, focus });
   }
 

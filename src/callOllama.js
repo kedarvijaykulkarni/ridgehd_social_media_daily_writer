@@ -5,7 +5,7 @@ const REQUIRED_FIELDS = ['core_message', 'hook_line', 'call_to_action', 'image_p
 // of the softer fields (cta, dek, meta_description...). Those degrade
 // gracefully in the renderers, so only title + sections are hard failures.
 const ARTICLE_REQUIRED_STRINGS = ['title'];
-const ARTICLE_OPTIONAL_STRINGS = ['dek', 'linkedin_hook', 'meta_description', 'slug', 'cta'];
+const ARTICLE_OPTIONAL_STRINGS = ['dek', 'linkedin_hook', 'meta_description', 'slug', 'cta', 'pillar'];
 
 function stripCodeFences(text) {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);

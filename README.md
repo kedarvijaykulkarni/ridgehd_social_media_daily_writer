@@ -59,7 +59,7 @@ rendered two ways:
 
 | File | Voice | Extras |
 |---|---|---|
-| `blog-post.md` | company / brand voice, opens with the `dek` | YAML frontmatter for the site CMS: `description` (SEO meta ≤155 chars), `slug`, `canonical_url` = `BLOG_BASE_URL/<slug>` (default `https://www.ridgehq.app/blog/<slug>`), `tags`, `date`, `draft: true` |
+| `blog-post.md` | company / brand voice, opens with the `dek` | YAML frontmatter for the site CMS: `description` (SEO meta ≤155 chars), `slug`, `canonical_url` = `BLOG_BASE_URL/<slug>` (default `https://www.ridgehq.app/blog/<slug>`), `tags`, `keywords`, `date`, `pillar` (`Business Economics` / `Operations` / `Technology` — model's pick, else derived from the topic category), `draft: true`, and a `video:` block (`title` = topic headline, `description` = hook line + core message; `youtubeId` / `uploadDate` / `durationSeconds` left blank to fill after the YouTube upload — the website build rejects the post until they're filled or the block is removed) |
 | `linkedin-article.md` | opens with a first-person `linkedin_hook` | no frontmatter (LinkedIn's editor is rich text) |
 
 Both share the same `## section` bodies, key-takeaways list, and CTA. Both

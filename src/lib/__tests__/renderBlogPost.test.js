@@ -62,3 +62,39 @@ test('no roadmap warning for a shipped topic', () => {
   const md = renderBlogPost({ topic: SHIPPED_TOPIC, date: '2026-09-04', article: ARTICLE, productName: 'AquaRoster' });
   assert.doesNotMatch(md, /ROADMAP/);
 });
+
+test('emits a valid pillar: the model pick, else derived from the topic category', () => {
+  const picked = renderBlogPost({ topic: SHIPPED_TOPIC, date: '2026-09-04', article: { ...ARTICLE, pillar: 'Technology' } });
+  assert.match(picked, /^pillar: "Technology"$/m);
+
+  const invalid = renderBlogPost({
+    topic: { ...SHIPPED_TOPIC, category: 'pricing-model' },
+    date: '2026-09-04',
+    article: { ...ARTICLE, pillar: 'Marketing' },
+  });
+  assert.match(invalid, /^pillar: "Business Economics"$/m);
+
+  const fallback = renderBlogPost({ topic: SHIPPED_TOPIC, date: '2026-09-04', article: ARTICLE });
+  assert.match(fallback, /^pillar: "Operations"$/m);
+});
+
+test('emits a video block with title + description and blank YouTube-only fields', () => {
+  const md = renderBlogPost({
+    topic: SHIPPED_TOPIC,
+    date: '2026-09-04',
+    article: ARTICLE,
+    video: { title: 'Waiver system lacks: QR-linked signing', description: 'Move beyond "paperwork".' },
+  });
+  const frontmatter = md.split(/^---$/m)[1];
+  assert.match(frontmatter, /^video:$/m);
+  assert.match(frontmatter, /^ {2}youtubeId: ""/m);
+  assert.match(frontmatter, /^ {2}title: "Waiver system lacks: QR-linked signing"$/m);
+  assert.match(frontmatter, /^ {2}description: "Move beyond \\"paperwork\\"\."$/m);
+  assert.match(frontmatter, /^ {2}uploadDate: ""/m);
+  assert.match(frontmatter, /^ {2}durationSeconds: ""/m);
+});
+
+test('no video block without a video', () => {
+  const md = renderBlogPost({ topic: SHIPPED_TOPIC, date: '2026-09-04', article: ARTICLE });
+  assert.doesNotMatch(md, /^video:/m);
+});

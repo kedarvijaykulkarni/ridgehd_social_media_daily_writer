@@ -7,6 +7,7 @@
 // Only "shipped" chunks are ever offered as supporting material.
 
 import { POSITIONING, focusPromptBlock } from './seoFocus.js';
+import { BLOG_PILLARS } from './lib/renderBlogPost.js';
 
 const MAX_SUPPORTING = 6;
 const SUPPORTING_DETAIL_CHARS = 240;
@@ -82,6 +83,7 @@ Return ONLY valid JSON, no markdown fences, no preamble, matching exactly:
   "linkedin_hook": "1–3 sentence first-person opener for the LinkedIn version, no hashtags",
   "meta_description": "<= 155 characters, plain-language SEO summary that names the concrete value",
   "slug": "kebab-case-url-slug derived from the title, <= 60 characters",
+  "pillar": "exactly one of: ${BLOG_PILLARS.join(' | ')} — the blog section this article belongs in",
   "tags": ["3–6 lowercase topical tags, including the activity (e.g. \"${focus.vertical.keywords[0]}\")"],
   "sections": [
     { "heading": "H2 heading, plain and descriptive", "body": "2–4 short paragraphs of prose (use \\n\\n between paragraphs)" }
