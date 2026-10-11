@@ -22,6 +22,7 @@ rem Local var only — do NOT name this OUTPUT_DIR, that env var is read by
 rem the app and would make it nest the date folder twice.
 set "RUN_OUTPUT_DIR=%APP_DIR%\output\%RUN_DATE%"
 set "IMAGE_PROMPT=%RUN_OUTPUT_DIR%\image-prompt.txt"
+set "VIDEO_SCRIPT=%RUN_OUTPUT_DIR%ideo-script.txt"
 set "SOCIAL_POSTS=%RUN_OUTPUT_DIR%\social-posts.txt"
 set "BLOG_POST=%RUN_OUTPUT_DIR%\blog-post.md"
 set "LINKEDIN_ARTICLE=%RUN_OUTPUT_DIR%\linkedin-article.md"
@@ -45,6 +46,17 @@ if exist "%IMAGE_PROMPT%" (
   type "%IMAGE_PROMPT%"
 ) else (
   echo Missing file: "%IMAGE_PROMPT%"
+)
+
+echo.
+echo.
+echo ================================================================
+echo video-script.txt
+echo ================================================================
+if exist "%VIDEO_SCRIPT%" (
+  type "%VIDEO_SCRIPT%"
+) else (
+  echo Missing file: "%VIDEO_SCRIPT%"
 )
 
 echo.

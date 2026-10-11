@@ -83,3 +83,8 @@ test('article prompt targets the focus vertical, its SEO keywords, and the platf
   assert.ok(prompt.includes(FOCUS.platform.name), 'platform capability included');
   assert.doesNotMatch(prompt, /platform\s+for dive centers\./);
 });
+
+test('asks the model for one of the website blog pillars', () => {
+  const prompt = buildArticlePrompt({ topic: KB[0], knowledgeBase: KB, history: { posts: [] }, focus: FOCUS });
+  assert.match(prompt, /"pillar": "exactly one of: Business Economics \| Operations \| Technology/);
+});

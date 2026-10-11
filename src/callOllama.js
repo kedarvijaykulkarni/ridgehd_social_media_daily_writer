@@ -1,3 +1,5 @@
+import { VIDEO_SEGMENTS } from './buildVideoScriptPrompt.js';
+
 const DEFAULT_HOST = 'http://localhost:11434';
 const DEFAULT_MODEL = 'gemma4:latest';
 const REQUIRED_FIELDS = ['core_message', 'hook_line', 'call_to_action', 'image_prompt'];
@@ -5,7 +7,7 @@ const REQUIRED_FIELDS = ['core_message', 'hook_line', 'call_to_action', 'image_p
 // of the softer fields (cta, dek, meta_description...). Those degrade
 // gracefully in the renderers, so only title + sections are hard failures.
 const ARTICLE_REQUIRED_STRINGS = ['title'];
-const ARTICLE_OPTIONAL_STRINGS = ['dek', 'linkedin_hook', 'meta_description', 'slug', 'cta'];
+const ARTICLE_OPTIONAL_STRINGS = ['dek', 'linkedin_hook', 'meta_description', 'slug', 'cta', 'pillar'];
 
 function stripCodeFences(text) {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
@@ -74,6 +76,21 @@ export function validateArticleShape(obj) {
   return obj;
 }
 
+// Video script shape (see buildVideoScriptPrompt.js): exactly one
+// { visual, audio } pair per 10-second block. Exported for unit tests.
+export function validateVideoScriptShape(obj, segmentCount = VIDEO_SEGMENTS.length) {
+  if (!Array.isArray(obj.segments) || obj.segments.length !== segmentCount) {
+    throw new Error(`Ollama video script must have exactly ${segmentCount} segments`);
+  }
+  const bad = obj.segments.findIndex(
+    (s) => !s || typeof s.visual !== 'string' || !s.visual.trim() || typeof s.audio !== 'string' || !s.audio.trim(),
+  );
+  if (bad !== -1) {
+    throw new Error(`Ollama video script segment ${bad} is missing a visual or audio line`);
+  }
+  return obj;
+}
+
 async function requestOllama(host, model, prompt) {
   let res;
   try {
@@ -127,4 +144,9 @@ export async function callOllama(prompt, opts = {}) {
 // Long-form: the article object (buildArticlePrompt).
 export async function callOllamaArticle(prompt, opts = {}) {
   return requestParsed(prompt, opts, validateArticleShape);
+}
+
+// Video script: the 1-minute script object (buildVideoScriptPrompt).
+export async function callOllamaVideoScript(prompt, opts = {}) {
+  return requestParsed(prompt, opts, (obj) => validateVideoScriptShape(obj));
 }
