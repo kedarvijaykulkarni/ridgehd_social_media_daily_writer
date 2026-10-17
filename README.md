@@ -181,8 +181,17 @@ npm run generate:long:dry-run   # long-form, prints everything, writes nothing
 npm run generate:ph             # + producthunt-post.txt (if not in cooldown)
 npm run generate:ph:dry-run     # producthunt, prints everything, writes nothing
 npm run generate:long:ph        # long-form + producthunt together
-npm run generate:long:ph:dry-run
+npm run generate:long:ph:dry-run # long-form + producthunt, prints everything, writes nothing
 npm test                        # unit tests
+```
+
+There is no `npm run generate:long --producthunt` shortcut — npm does not
+forward a bare flag to the underlying script; it logs `Unknown cli config`
+and silently drops it. Either use one of the dedicated scripts above, or
+pass the flag through npm's own `--` separator:
+
+```bash
+npm run generate:long -- --producthunt
 ```
 
 On Windows, double-click or run `generate-and-show.bat` from this folder to
