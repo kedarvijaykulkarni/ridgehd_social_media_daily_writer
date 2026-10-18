@@ -32,6 +32,13 @@ test('roadmap framing for a non-shipped topic, present tense allowed when shippe
   assert.match(shipped, /SHIPPED/);
 });
 
+test('demands one continuous scene and requests a bible plus ends_on', () => {
+  const prompt = buildVideoScriptPrompt({ topic: PLANNED, shared: SHARED, video: VIDEO });
+  assert.match(prompt, /ONE continuous 60-second film/);
+  assert.match(prompt, /ONE narrator in ONE voice/);
+  for (const k of ['bible', 'setting', 'look', 'camera', 'voice', 'ends_on']) assert.ok(prompt.includes(`"${k}"`), k);
+});
+
 test('requests JSON segments', () => {
   const prompt = buildVideoScriptPrompt({ topic: PLANNED, shared: SHARED, video: VIDEO });
   assert.match(prompt, /"segments"/);

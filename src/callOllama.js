@@ -94,11 +94,14 @@ export function validateVideoScriptShape(obj, segmentCount = VIDEO_SEGMENTS.leng
   if (!Array.isArray(obj.segments) || obj.segments.length !== segmentCount) {
     throw new Error(`Ollama video script must have exactly ${segmentCount} segments`);
   }
-  const bad = obj.segments.findIndex(
-    (s) => !s || typeof s.visual !== 'string' || !s.visual.trim() || typeof s.audio !== 'string' || !s.audio.trim(),
+  const missingBible = ['setting', 'look', 'camera', 'voice'].find(
+    (k) => typeof obj.bible?.[k] !== 'string' || !obj.bible[k].trim(),
   );
+  if (missingBible) throw new Error(`Ollama video script bible is missing "${missingBible}"`);
+  const filled = (v) => typeof v === 'string' && v.trim();
+  const bad = obj.segments.findIndex((s) => !s || !filled(s.visual) || !filled(s.audio) || !filled(s.ends_on));
   if (bad !== -1) {
-    throw new Error(`Ollama video script segment ${bad} is missing a visual or audio line`);
+    throw new Error(`Ollama video script segment ${bad} is missing a visual, audio or ends_on line`);
   }
   return obj;
 }
