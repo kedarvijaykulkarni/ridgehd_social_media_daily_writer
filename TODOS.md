@@ -4,7 +4,7 @@ Reviewed execution order for this repository. GitHub issues are authoritative fo
 
 ## Open
 
-- [ ] [#5](https://github.com/kedarvijaykulkarni/ridgehd_social_media_daily_writer/issues/5) — SOCIAL-01 first slice: root `AGENTS.md` with the generated shared operating rules, `@AGENTS.md` import in `CLAUDE.md`, generated `ridgehq-next-issue` skill, this queue. Implemented; awaiting owner review on branch `codex/5-shared-operating-rules`.
+- [ ] [#5](https://github.com/kedarvijaykulkarni/ridgehd_social_media_daily_writer/issues/5) — SOCIAL-01 first slice: root `AGENTS.md` with the generated shared operating rules, `@AGENTS.md` import in `CLAUDE.md`, generated `ridgehq-next-issue` skill, this queue. Implemented; awaiting owner review in [PR #6](https://github.com/kedarvijaykulkarni/ridgehd_social_media_daily_writer/pull/6) (branch `codex/5-shared-operating-rules`).
 
 ## Planned, not yet filed (gated)
 
