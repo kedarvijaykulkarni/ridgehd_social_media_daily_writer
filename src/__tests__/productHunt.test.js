@@ -1,6 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { selectProductHuntFormat, productHuntCooldown, PRODUCTHUNT_FORMATS } from '../productHunt.js';
+import {
+  selectProductHuntFormat,
+  productHuntCooldown,
+  productHuntDiscussionCooldown,
+  discussionIsProductFree,
+  PRODUCTHUNT_FORMATS,
+} from '../productHunt.js';
 import { recordUsage } from '../selectTopic.js';
 
 const TOPIC = { id: 't1', category: 'feature', status: 'shipped', headline: 'Waiver system' };
@@ -61,4 +67,31 @@ test('cooldown ignores non-forum posts and uses the most recent forum post', () 
   const result = productHuntCooldown(history, { cooldownDays: 2, today: '2026-10-11' });
   assert.equal(result.lastPostDate, '2026-10-10');
   assert.equal(result.inCooldown, true);
+});
+
+test('discussion cooldown is independent of the self-promotion cooldown', () => {
+  const history = { posts: [{ date: '2026-10-10', producthunt_format_id: 'playbook' }] };
+  const result = productHuntDiscussionCooldown(history, { cooldownDays: 4, today: '2026-10-11' });
+  assert.equal(result.inCooldown, false);
+  assert.equal(result.lastPostDate, null);
+});
+
+test('discussion cooldown holds for 4 days after a General post', () => {
+  const history = { posts: [{ date: '2026-10-10', producthunt_discussion: true }] };
+  assert.equal(productHuntDiscussionCooldown(history, { cooldownDays: 4, today: '2026-10-13' }).inCooldown, true);
+  assert.equal(productHuntDiscussionCooldown(history, { cooldownDays: 4, today: '2026-10-14' }).inCooldown, false);
+});
+
+test('recordUsage records the discussion flag only when a discussion was generated', () => {
+  const withIt = recordUsage({ knowledgeBase: KB, history: { posts: [] }, topic: TOPIC, date: '2026-10-01', producthuntDiscussion: true });
+  assert.equal(withIt.posts[0].producthunt_discussion, true);
+  const without = recordUsage({ knowledgeBase: KB, history: { posts: [] }, topic: TOPIC, date: '2026-10-01' });
+  assert.ok(!('producthunt_discussion' in without.posts[0]));
+});
+
+test('discussionIsProductFree rejects drafts that name the product or RidgeHQ', () => {
+  const clean = { title: 'How do you isolate client data?', body: 'We all share a database.', cta: 'Thoughts?' };
+  assert.equal(discussionIsProductFree(clean, 'AquaRoster'), true);
+  assert.equal(discussionIsProductFree({ ...clean, body: 'AquaRoster does this.' }, 'AquaRoster'), false);
+  assert.equal(discussionIsProductFree({ ...clean, cta: 'Try RidgeHQ' }, 'AquaRoster'), false);
 });

@@ -8,11 +8,17 @@ import { fileURLToPath } from 'node:url';
 import { selectTopic, recordUsage } from './selectTopic.js';
 import { loadKnowledgeBase } from './loadKnowledgeBase.js';
 import { selectFocus } from './seoFocus.js';
-import { selectProductHuntFormat, productHuntCooldown } from './productHunt.js';
+import {
+  selectProductHuntFormat,
+  productHuntCooldown,
+  productHuntDiscussionCooldown,
+  discussionIsProductFree,
+  DISCUSSION_FORMAT,
+} from './productHunt.js';
 import { buildOllamaPrompt } from './buildOllamaPrompt.js';
 import { buildArticlePrompt } from './buildArticlePrompt.js';
 import { buildVideoScriptPrompt } from './buildVideoScriptPrompt.js';
-import { buildProductHuntPrompt } from './buildProductHuntPrompt.js';
+import { buildProductHuntPrompt, buildProductHuntDiscussionPrompt } from './buildProductHuntPrompt.js';
 import { callOllama, callOllamaArticle, callOllamaVideoScript, callOllamaProductHunt } from './callOllama.js';
 import { formatX } from './platformFormatters/x.js';
 import { formatLinkedin } from './platformFormatters/linkedin.js';
@@ -23,7 +29,7 @@ import { renderImagePrompt } from './lib/renderImagePrompt.js';
 import { renderVideoScript } from './lib/renderVideoScript.js';
 import { renderBlogPost } from './lib/renderBlogPost.js';
 import { renderLinkedInArticle } from './lib/renderLinkedInArticle.js';
-import { renderProductHuntPost } from './lib/renderProductHuntPost.js';
+import { renderProductHuntPost, renderProductHuntDiscussion } from './lib/renderProductHuntPost.js';
 import { videoMeta } from './lib/videoMeta.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -46,6 +52,7 @@ const OUTPUT_DIR = resolveConfigPath('OUTPUT_DIR', './output');
 const PRODUCT_NAME = process.env.PRODUCT_NAME?.trim() || 'AquaRoster';
 const BLOG_BASE_URL = process.env.BLOG_BASE_URL?.trim() || 'https://www.ridgehq.app/blog';
 const PRODUCTHUNT_COOLDOWN_DAYS = Number(process.env.PRODUCTHUNT_COOLDOWN_DAYS) || 2;
+const PRODUCTHUNT_DISCUSSION_COOLDOWN_DAYS = Number(process.env.PRODUCTHUNT_DISCUSSION_COOLDOWN_DAYS) || 4;
 
 async function loadHistory() {
   try {
@@ -133,24 +140,51 @@ async function runGenerate({ dryRun, longForm, productHunt }) {
   // Product Hunt forum post: gated by a cooldown (PH's own rules cap a
   // dedicated forum at ~2-3 posts/week — see src/productHunt.js) so this
   // silently skips rather than over-posting when run daily.
-  let productHuntText = null;
+  // Two independent blocks in one file, each with its own cooldown: a
+  // Self-Promotion product post and a product-free General discussion.
+  const phBlocks = [];
   let phFormat = null;
+  let phDiscussion = false;
   if (productHunt) {
     const cooldown = productHuntCooldown(history, { cooldownDays: PRODUCTHUNT_COOLDOWN_DAYS, today: date });
     if (cooldown.inCooldown) {
       console.log(
-        `${LOG} Product Hunt: skipped — last forum post was ${cooldown.daysSinceLastPost} day(s) ago ` +
+        `${LOG} Product Hunt: self-promotion skipped — last one was ${cooldown.daysSinceLastPost} day(s) ago ` +
           `(cooldown ${cooldown.cooldownDays} day(s), last on ${cooldown.lastPostDate}).`,
       );
     } else {
       phFormat = selectProductHuntFormat(history);
-      console.log(`${LOG} Product Hunt: generating "${phFormat.id}" forum post for "${topic.id}"...`);
+      console.log(`${LOG} Product Hunt: generating "${phFormat.id}" self-promotion post for "${topic.id}"...`);
       const phPost = await callOllamaProductHunt(
         buildProductHuntPrompt({ topic, history, format: phFormat, productName: PRODUCT_NAME }),
       );
-      productHuntText = renderProductHuntPost({ topic, date, format: phFormat, post: phPost, productName: PRODUCT_NAME });
+      phBlocks.push(renderProductHuntPost({ topic, date, format: phFormat, post: phPost, productName: PRODUCT_NAME }));
+    }
+
+    const discussionCooldown = productHuntDiscussionCooldown(history, {
+      cooldownDays: PRODUCTHUNT_DISCUSSION_COOLDOWN_DAYS,
+      today: date,
+    });
+    if (discussionCooldown.inCooldown) {
+      console.log(
+        `${LOG} Product Hunt: General discussion skipped — last one was ${discussionCooldown.daysSinceLastPost} day(s) ago ` +
+          `(cooldown ${discussionCooldown.cooldownDays} day(s), last on ${discussionCooldown.lastPostDate}).`,
+      );
+    } else {
+      console.log(`${LOG} Product Hunt: generating General discussion question from theme "${topic.id}"...`);
+      const discussion = await callOllamaProductHunt(buildProductHuntDiscussionPrompt({ topic, history }));
+      if (discussionIsProductFree(discussion, PRODUCT_NAME)) {
+        phDiscussion = true;
+        phBlocks.push(renderProductHuntDiscussion({ topic, date, format: DISCUSSION_FORMAT, post: discussion }));
+      } else {
+        console.log(
+          `${LOG} Product Hunt: General discussion dropped — the model named the product, which would read as ` +
+            'promotion there. Re-run to try again.',
+        );
+      }
     }
   }
+  const productHuntText = phBlocks.length ? phBlocks.join('\n\n') : null;
 
   if (dryRun) {
     console.log('\n=== DRY RUN — nothing written, history unchanged ===\n');
@@ -188,7 +222,7 @@ async function runGenerate({ dryRun, longForm, productHunt }) {
   }
   await Promise.all(writes);
 
-  const updatedHistory = recordUsage({ knowledgeBase, history, topic, date, focus, producthuntFormat: phFormat });
+  const updatedHistory = recordUsage({ knowledgeBase, history, topic, date, focus, producthuntFormat: phFormat, producthuntDiscussion: phDiscussion });
   await mkdir(path.dirname(POST_HISTORY_PATH), { recursive: true });
   await writeFile(POST_HISTORY_PATH, JSON.stringify(updatedHistory, null, 2));
 

@@ -42,10 +42,11 @@ export function selectTopic(knowledgeBase, history) {
 // planned/unverified entries surface, once shipped coverage catches up).
 // `focus` (seoFocus.js) is recorded too, so the vertical / platform-page
 // rotation advances independently of the topic rotation.
-export function recordUsage({ knowledgeBase, history, topic, date, focus, producthuntFormat }) {
+export function recordUsage({ knowledgeBase, history, topic, date, focus, producthuntFormat, producthuntDiscussion }) {
   const entry = { date, topic_id: topic.id, angle_used: topic.category };
   if (focus) Object.assign(entry, { vertical_id: focus.vertical.id, platform_id: focus.platform.id });
   if (producthuntFormat) entry.producthunt_format_id = producthuntFormat.id;
+  if (producthuntDiscussion) entry.producthunt_discussion = true;
   const posts = [...(history.posts ?? []), entry];
   let cycleNumber = history.cycle_number ?? 1;
 

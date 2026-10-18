@@ -103,6 +103,14 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
   incidental. When it does generate, the format (behind-the-scenes /
   playbook / changelog / feedback-ask) rotates least-recently-used via the
   same `pickLeastUsed` helper `seoFocus.js` uses for the website focus.
+  `producthunt-post.txt` holds up to **two labeled blocks**: that
+  Self-Promotion post, plus a product-free **General discussion** question
+  (`buildProductHuntDiscussionPrompt`, own `producthunt_discussion` history
+  flag, `PRODUCTHUNT_DISCUSSION_COOLDOWN_DAYS` default `4`). PH rejects
+  promotional posts in General — a rejected "Tenant A / Tenant B" thread
+  was the trigger — so the discussion block must never name the product;
+  `discussionIsProductFree` drops it if the model does. Keep that
+  separation when editing either prompt.
 
 ## Rules specific to this app
 

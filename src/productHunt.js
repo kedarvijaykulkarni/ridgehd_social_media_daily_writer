@@ -60,10 +60,20 @@ export function selectProductHuntFormat(history) {
   return pickLeastUsed(PRODUCTHUNT_FORMATS, posts, 'producthunt_format_id');
 }
 
-// Most recent post date carrying a producthunt_format_id, or null if the
-// forum has never been posted to.
-function lastProductHuntPostDate(history) {
-  const posts = (history.posts ?? []).filter((p) => p.producthunt_format_id);
+// The second block of producthunt-post.txt: a product-free question for the
+// General topic. PH's forum guidelines reject posts that exist mainly to
+// promote ("Using forums primarily to promote products"), so promotion lives
+// only in the Self-Promotion block above and this one must read as a genuine
+// peer question. Single format, no rotation; it has its own history field
+// (`producthunt_discussion`) and its own, longer cooldown.
+export const DISCUSSION_FORMAT = {
+  id: 'discussion_question',
+  name: 'General discussion question (no product mention)',
+};
+
+// Most recent post date carrying `field`, or null if never posted.
+function lastPostDateWith(history, field) {
+  const posts = (history.posts ?? []).filter((p) => p[field]);
   if (!posts.length) return null;
   return posts.reduce((latest, p) => (new Date(p.date) > new Date(latest) ? p.date : latest), posts[0].date);
 }
@@ -81,10 +91,29 @@ function daysBetween(dateA, dateB) {
 // `cooldownDays` is the minimum gap between forum posts — default 2 caps
 // frequency at roughly 3x/week per PH's own guidance for a dedicated forum.
 export function productHuntCooldown(history, { cooldownDays = 2, today = new Date().toISOString().slice(0, 10) } = {}) {
-  const lastPostDate = lastProductHuntPostDate(history);
+  return cooldownFor(history, 'producthunt_format_id', cooldownDays, today);
+}
+
+// Same shape, for the General-topic discussion block. Default 4 days: the
+// guidelines allow "restricting contributing privileges" for repeated
+// violations, and General is moderated harder than a product's own forum.
+export function productHuntDiscussionCooldown(history, { cooldownDays = 4, today = new Date().toISOString().slice(0, 10) } = {}) {
+  return cooldownFor(history, 'producthunt_discussion', cooldownDays, today);
+}
+
+function cooldownFor(history, field, cooldownDays, today) {
+  const lastPostDate = lastPostDateWith(history, field);
   if (!lastPostDate) {
     return { inCooldown: false, lastPostDate: null, daysSinceLastPost: null, cooldownDays };
   }
   const daysSinceLastPost = daysBetween(lastPostDate, today);
   return { inCooldown: daysSinceLastPost < cooldownDays, lastPostDate, daysSinceLastPost, cooldownDays };
+}
+
+// The prompt bans the product name, but a local model can ignore that.
+// Returns true when the draft is safe to hand over; a leak means the post
+// would read as promotion in General, so the caller drops the block.
+export function discussionIsProductFree(post, productName) {
+  const text = `${post.title} ${post.body} ${post.cta ?? ''}`.toLowerCase();
+  return !['ridgehq', productName.toLowerCase()].some((name) => text.includes(name));
 }

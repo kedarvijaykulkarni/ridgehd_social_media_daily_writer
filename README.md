@@ -108,6 +108,23 @@ itself bans hard-selling, bare links, upvote requests, and generic
 peers, not an ad. Same claim-safety rule as everywhere else: non-`shipped`
 topics stay in roadmap framing.
 
+**Two blocks, two destinations.** Product Hunt's forum guidelines reject
+posts that mainly promote, and General is for genuine questions and insights
+— a feature pitch posted there gets rejected. So `producthunt-post.txt`
+holds up to two separately labeled drafts, each with its own cooldown:
+
+1. **Self-Promotion** (the format rotation above) → your product forum /
+   Self-Promotion topic. Cooldown `PRODUCTHUNT_COOLDOWN_DAYS` (default 2).
+2. **General discussion** — an open question on the topic's underlying
+   problem, with **no product mention**. Cooldown
+   `PRODUCTHUNT_DISCUSSION_COOLDOWN_DAYS` (default 4), tracked via
+   `producthunt_discussion` in `data/post-history.json`. If the local model
+   names the product anyway, that block is dropped (re-run to retry) rather
+   than edited.
+
+Either block can be absent on a given day. Reply in the threads you post —
+the guidelines ask authors to take part.
+
 The output file is a draft only — same "no auto-publish" rule as every
 other file this tool writes. It includes a reminder banner to verify claims
 against the vault and to add any link yourself with real context, since the
