@@ -1,5 +1,7 @@
 # CLAUDE.md — social-media-daily-writer
 
+@AGENTS.md
+
 A standalone Node.js CLI. It reads a marketing knowledge base and writes
 draft social posts to local files. It does **not** touch a database, an
 API, or a frontend.
