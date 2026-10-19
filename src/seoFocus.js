@@ -222,7 +222,8 @@ export const PLATFORM_PAGES = [
 
 // Least-used first (counted from post-history's `historyKey` field), then
 // least-recently-used, then list order — same rule as selectTopic.js.
-function pickLeastUsed(list, posts, historyKey) {
+// Exported so other rotations (productHunt.js) can reuse it.
+export function pickLeastUsed(list, posts, historyKey) {
   const stats = list.map((entry, index) => {
     const uses = posts.filter((p) => p[historyKey] === entry.id);
     const last = uses.length ? Math.max(...uses.map((p) => new Date(p.date).getTime())) : -Infinity;

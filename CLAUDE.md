@@ -54,6 +54,11 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
     src/buildArticlePrompt.js → callOllamaArticle → one article object
       ├─ src/lib/renderBlogPost.js        → output/YYYY-MM-DD/blog-post.md        (frontmatter, company voice, SEO)
       └─ src/lib/renderLinkedInArticle.js → output/YYYY-MM-DD/linkedin-article.md (first-person hook, no frontmatter)
+
+  --producthunt only: same topic, cooldown-gated extra Ollama pass
+    src/productHunt.js (cooldown + least-recently-used format rotation)
+      → src/buildProductHuntPrompt.js → callOllamaProductHunt → { title, body, cta? }
+      → src/lib/renderProductHuntPost.js → output/YYYY-MM-DD/producthunt-post.txt
 ```
 
 - **`src/loadKnowledgeBase.js`** replaced the old
@@ -85,6 +90,27 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
   (`.env`, default `https://www.ridgehq.app/blog`) only feeds the blog
   post's `canonical_url`. `src/callOllama.js` shares one request/parse/
   retry helper between `callOllama` (short) and `callOllamaArticle` (long).
+- **`--producthunt`** (`generate` flag; `npm run generate:ph`, combinable
+  with `--long-form`) writes a draft for RidgeHQ's own Product Hunt forum
+  (`src/productHunt.js`'s `FORUM_URL`). This is the only draft type that can
+  produce nothing: `productHuntCooldown` in `src/productHunt.js` checks the
+  most recent `data/post-history.json` entry carrying a
+  `producthunt_format_id` against `PRODUCTHUNT_COOLDOWN_DAYS` (`.env`,
+  default `2`) before generating anything — Product Hunt's own community
+  rules flag/lock accounts that post too often, drop bare links, ask for
+  upvotes, or copy-paste engagement text, so this cooldown and the prompt's
+  own style bans in `buildProductHuntPrompt.js` are deliberate, not
+  incidental. When it does generate, the format (behind-the-scenes /
+  playbook / changelog / feedback-ask) rotates least-recently-used via the
+  same `pickLeastUsed` helper `seoFocus.js` uses for the website focus.
+  `producthunt-post.txt` holds up to **two labeled blocks**: that
+  Self-Promotion post, plus a product-free **General discussion** question
+  (`buildProductHuntDiscussionPrompt`, own `producthunt_discussion` history
+  flag, `PRODUCTHUNT_DISCUSSION_COOLDOWN_DAYS` default `4`). PH rejects
+  promotional posts in General — a rejected "Tenant A / Tenant B" thread
+  was the trigger — so the discussion block must never name the product;
+  `discussionIsProductFree` drops it if the model does. Keep that
+  separation when editing either prompt.
 
 ## Rules specific to this app
 
@@ -138,6 +164,10 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
   framing when not shipped, JSON keys requested.
 - `src/__tests__/validateArticleShape.test.js` — article-shape validation
   (exported from `callOllama.js`).
+- `src/__tests__/productHunt.test.js` — format rotation and posting
+  cooldown (`src/productHunt.js`).
+- `src/__tests__/validateProductHuntShape.test.js` — Product Hunt post
+  shape validation (exported from `callOllama.js`).
 - `src/lib/__tests__/renderBlogPost.test.js`,
   `src/lib/__tests__/renderLinkedInArticle.test.js` — the two long-form
   renderers (frontmatter vs. none, section rendering, roadmap warning).

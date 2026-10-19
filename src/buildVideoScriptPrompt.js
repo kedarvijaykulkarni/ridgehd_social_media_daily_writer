@@ -3,6 +3,12 @@
 // video's subject, `image_prompt` is the visual direction, and hook line +
 // core message + CTA are the information the script may draw on — nothing
 // else, so the script can't claim more than the posts do.
+//
+// Continuity: video models generate each 10-second block as a separate clip
+// and know nothing about the others, so scene, look and voice drift. The
+// model therefore writes one "bible" (fixed setting / look / camera / voice)
+// and each block's `ends_on` frame; renderVideoScript repeats the bible in
+// every clip prompt and starts each clip from the previous `ends_on`.
 
 import { SITE_URL, CONTACT_EMAIL } from './seoFocus.js';
 
@@ -54,16 +60,38 @@ RULES
 - ${statusRule}
 - Use only the INFORMATION above. Never invent features, statistics, prices,
   customer quotes, or integrations.
+- CONTINUITY: this is ONE continuous 60-second film shot in ONE location, not
+  six separate scenes. Every block shows the SAME setting, the SAME objects in
+  the SAME positions, the SAME lighting and the SAME color palette; only the
+  camera moves or one element changes per block. Never introduce a new
+  location, time of day, or art style. Block N must begin exactly where
+  block N-1 ended.
+- Each visual is a full, self-contained shot description (name the setting and
+  key objects again — do not say "the same" or "as before") with a single
+  camera move.
+- All six audio lines are ONE narrator in ONE voice speaking one continuous
+  script; each line flows from the previous one and the whole reads as one piece.
 - No identifiable people on screen. The Ending/CTA visual shows the brand,
   "${SITE_HOST}" and "${CONTACT_EMAIL}"; its audio names both.
 
 OUTPUT
 Return ONLY valid JSON, no markdown fences, no preamble, matching exactly —
-one entry per time block above, in order (${VIDEO_SEGMENTS.length} entries):
+a "bible" (fixed for the whole video) and one segment per time block above,
+in order (${VIDEO_SEGMENTS.length} entries):
 
 {
+  "bible": {
+    "setting": "the single location and its fixed objects and layout, specific enough to redraw identically",
+    "look": "art style, color palette, time of day and lighting, lens look — fixed for all blocks",
+    "camera": "lens, framing style and movement language used throughout",
+    "voice": "the narrator: gender, age range, accent, pace, tone — e.g. warm male, 30s, neutral international English, calm measured pace"
+  },
   "segments": [
-    { "visual": "what is on screen for this 10-second block", "audio": "the voice-over line for this block" }
+    {
+      "visual": "full shot description for this 10-second block, in the bible's setting and look",
+      "audio": "the voice-over line for this block",
+      "ends_on": "the exact final frame of this block (what is in frame, where the camera is) — the next block starts from it"
+    }
   ]
 }`;
 }

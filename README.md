@@ -50,6 +50,9 @@ step.
    `data/post-history.json` so tomorrow's run picks a new topic.
 7. **With `--long-form`**, a second Ollama pass on the *same* topic also
    writes `blog-post.md` and `linkedin-article.md` — see below.
+8. **With `--producthunt`**, a third Ollama pass writes `producthunt-post.txt`
+   for the RidgeHQ Product Hunt forum — see below. This one can also write
+   nothing: it enforces a posting cooldown first.
 
 ## Long-form: blog post + LinkedIn article
 
@@ -78,6 +81,54 @@ the banner adds a roadmap-framing warning.
   will invent plausible detail the vault doesn't support.
 - Only `shipped` chunks are ever passed as supporting material; the
   primary topic is the same one that day's 4 social posts use.
+
+## Product Hunt forum post
+
+`npm run generate:ph` (or `generate --producthunt`, combinable with
+`--long-form`) writes `producthunt-post.txt` for RidgeHQ's own forum at
+<https://www.producthunt.com/p/ridgehq-app> — `src/buildProductHuntPrompt.js`
+→ `callOllamaProductHunt` → `src/lib/renderProductHuntPost.js`.
+
+This is the one draft type that can produce **nothing**, by design: Product
+Hunt's own community rules flag or lock accounts that post too often, ask
+for upvotes, drop bare links, or copy-paste the same engagement text
+everywhere (see `src/productHunt.js` for the research this is based on).
+So before generating anything, `src/productHunt.js`'s `productHuntCooldown`
+checks the most recent post in `data/post-history.json` that carried a
+`producthunt_format_id` against `PRODUCTHUNT_COOLDOWN_DAYS` (`.env`, default
+`2` days — roughly a 3x/week ceiling). Still inside the cooldown → it logs
+why and skips, without affecting the rest of that day's run.
+
+When it does generate, the format rotates least-recently-used across four
+styles (same rotation rule as the website-focus vertical/platform pages in
+`src/seoFocus.js`): **behind-the-scenes / build-in-public**, **industry
+playbook**, **changelog / update**, and **weekly feedback ask**. The prompt
+itself bans hard-selling, bare links, upvote requests, and generic
+"great product!" filler — it's written as a maker sharing something with
+peers, not an ad. Same claim-safety rule as everywhere else: non-`shipped`
+topics stay in roadmap framing.
+
+**Two blocks, two destinations.** Product Hunt's forum guidelines reject
+posts that mainly promote, and General is for genuine questions and insights
+— a feature pitch posted there gets rejected. So `producthunt-post.txt`
+holds up to two separately labeled drafts, each with its own cooldown:
+
+1. **Self-Promotion** (the format rotation above) → your product forum /
+   Self-Promotion topic. Cooldown `PRODUCTHUNT_COOLDOWN_DAYS` (default 2).
+2. **General discussion** — an open question on the topic's underlying
+   problem, with **no product mention**. Cooldown
+   `PRODUCTHUNT_DISCUSSION_COOLDOWN_DAYS` (default 4), tracked via
+   `producthunt_discussion` in `data/post-history.json`. If the local model
+   names the product anyway, that block is dropped (re-run to retry) rather
+   than edited.
+
+Either block can be absent on a given day. Reply in the threads you post —
+the guidelines ask authors to take part.
+
+The output file is a draft only — same "no auto-publish" rule as every
+other file this tool writes. It includes a reminder banner to verify claims
+against the vault and to add any link yourself with real context, since the
+prompt is told never to include one.
 
 ## Video script: 1-minute, six 10-second blocks
 
@@ -144,7 +195,20 @@ npm run generate:dry-run        # prints all 4 drafts + image prompt, writes not
 npm run generate                # writes output/YYYY-MM-DD/* and updates history
 npm run generate:long           # + blog-post.md and linkedin-article.md
 npm run generate:long:dry-run   # long-form, prints everything, writes nothing
+npm run generate:ph             # + producthunt-post.txt (if not in cooldown)
+npm run generate:ph:dry-run     # producthunt, prints everything, writes nothing
+npm run generate:long:ph        # long-form + producthunt together
+npm run generate:long:ph:dry-run # long-form + producthunt, prints everything, writes nothing
 npm test                        # unit tests
+```
+
+There is no `npm run generate:long --producthunt` shortcut — npm does not
+forward a bare flag to the underlying script; it logs `Unknown cli config`
+and silently drops it. Either use one of the dedicated scripts above, or
+pass the flag through npm's own `--` separator:
+
+```bash
+npm run generate:long -- --producthunt
 ```
 
 On Windows, double-click or run `generate-and-show.bat` from this folder to

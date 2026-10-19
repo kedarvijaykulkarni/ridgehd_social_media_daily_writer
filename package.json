@@ -12,6 +12,10 @@
     "generate:dry-run": "node src/index.js generate --dry-run",
     "generate:long": "node src/index.js generate --long-form",
     "generate:long:dry-run": "node src/index.js generate --long-form --dry-run",
+    "generate:ph": "node src/index.js generate --producthunt",
+    "generate:ph:dry-run": "node src/index.js generate --producthunt --dry-run",
+    "generate:long:ph": "node src/index.js generate --long-form --producthunt",
+    "generate:long:ph:dry-run": "node src/index.js generate --long-form --producthunt --dry-run",
     "test": "node --test src/**/__tests__/*.test.js"
   },
   "engines": {
