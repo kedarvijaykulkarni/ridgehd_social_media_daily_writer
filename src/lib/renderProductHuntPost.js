@@ -32,7 +32,7 @@ function reviewerNote({ productName, date, topic, format }) {
   return lines.join('\n');
 }
 
-export function renderProductHuntPost({ topic, date, format, post, productName = 'AquaRoster' }) {
+export function renderProductHuntPost({ topic, date, format, post, productName = 'RidgeHQ' }) {
   const parts = [
     reviewerNote({ productName, date, topic, format }),
     `TITLE: ${post.title.trim()}`,

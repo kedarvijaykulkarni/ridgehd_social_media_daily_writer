@@ -83,7 +83,7 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
   each output, never auto-"fixed". When the site adds a page or Search
   Console shows new queries, update this file — only add phrases the linked
   page truthfully serves (rule 4).
-- **`PRODUCT_NAME`** (`.env`, default `AquaRoster`) is templated into
+- **`PRODUCT_NAME`** (`.env`, default `RidgeHQ`) is templated into
   `buildOllamaPrompt.js`, `buildArticlePrompt.js`, `renderSocialText.js`,
   `renderImagePrompt.js`, and both long-form renderers.
 - **`--long-form`** (`generate` flag; `npm run generate:long`) adds one
@@ -149,11 +149,11 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
    detail) — don't silently "fix" a draft to look more polished by
    fabricating content the renderer didn't actually produce, and don't
    paper over a loader throw by hand-feeding topics.
-6. **Product name.** Keep `PRODUCT_NAME` at `AquaRoster` for public copy.
-   The vault documents the product as RidgeHQ / RidgeHQAPP but flags
-   `ridgehq.com` as an unrelated active business (name-collision risk).
-   Switching the default is a deliberate call to make after name
-   clearance, not a cleanup.
+6. **Product name.** `PRODUCT_NAME` defaults to `RidgeHQ`, the public brand
+   (RidgeHQAPP `DECISIONS.md` #165). `AquaRoster` is not a public name.
+   Trademark clearance is undecided, so never claim a registered
+   trademark, and never write "no competitor offers this" or call AI
+   RidgeHQ's only differentiator (#166).
 
 ## Testing
 
