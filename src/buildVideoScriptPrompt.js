@@ -23,7 +23,7 @@ export const VIDEO_SEGMENTS = [
 
 export const SITE_HOST = SITE_URL.replace(/^https?:\/\/(www\.)?/, '');
 
-export function buildVideoScriptPrompt({ topic, shared, video, productName = 'AquaRoster' }) {
+export function buildVideoScriptPrompt({ topic, shared, video, productName = 'RidgeHQ' }) {
   const statusRule =
     topic.status === 'shipped'
       ? 'This topic is SHIPPED — the narration may describe it in the present tense.'

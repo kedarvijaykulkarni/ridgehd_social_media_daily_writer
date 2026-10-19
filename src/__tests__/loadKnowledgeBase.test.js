@@ -94,3 +94,25 @@ test('loadKnowledgeBase throws when business-context.md yields zero chunks', asy
 
   await assert.rejects(() => loadKnowledgeBase(emptyVault), /no topic chunks/i);
 });
+
+test('loadKnowledgeBase emits no differentiator chunk without a sourced line (no invented claim)', async (t) => {
+  const vault = path.join(__dirname, 'fixtures', 'no-differentiator-vault');
+  const { mkdir, writeFile, copyFile, rm } = await import('node:fs/promises');
+  await mkdir(path.join(vault, 'wiki'), { recursive: true });
+  await copyFile(path.join(FIXTURE_VAULT, 'wiki', 'business-context.md'), path.join(vault, 'wiki', 'business-context.md'));
+  await writeFile(
+    path.join(vault, 'wiki', 'competitors.md'),
+    '| **AI copilot in the operational core** | ✅ **UNCLAIMED** | **Nobody.** |\n',
+  );
+  t.after(() => rm(vault, { recursive: true, force: true }));
+
+  const chunks = await loadKnowledgeBase(vault);
+  assert.equal(chunks.filter((c) => c.category === 'differentiator').length, 0);
+});
+
+test('no loaded chunk claims that no competitor offers something', async () => {
+  const chunks = await loadKnowledgeBase(FIXTURE_VAULT);
+  for (const c of chunks) {
+    assert.doesNotMatch(`${c.headline} ${c.detail}`, /no competitor/i);
+  }
+});

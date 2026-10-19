@@ -50,7 +50,7 @@ function renderToolGuidance() {
   ].join('\n');
 }
 
-export function renderImagePrompt({ topic, date, imagePrompt, productName = 'AquaRoster' }) {
+export function renderImagePrompt({ topic, date, imagePrompt, productName = 'RidgeHQ' }) {
   const header = [
     `${productName} image prompt — ${date}`,
     `Topic: ${topic.id}${topic.headline ? ` — ${topic.headline}` : ''}`,

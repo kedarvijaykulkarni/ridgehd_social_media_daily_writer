@@ -204,15 +204,15 @@ function extractDifferentiator(markdown) {
   const claimed = lines.some((l) => /ai copilot/i.test(l) && /unclaimed/i.test(l));
   if (!claimed) return [];
   const defensible = lines.find((l) => /ai built into the core/i.test(l));
+  // No sourced line, no chunk: never invent a "no competitor offers this" claim.
+  if (!defensible) return [];
   return [
     makeChunk({
       id: 'ai-copilot-in-the-operational-core',
       category: 'differentiator',
       status: 'shipped',
       headline: 'An AI copilot built into the operational core, not a bolted-on chatbot',
-      detail: defensible
-        ? toDetail(defensible.replace(/^\s*\d+\.\s*/, ''))
-        : 'The AI copilot runs through the same code paths and permission checks as the UI, with an audit trail separating AI-initiated from human actions. No competitor offers this.',
+      detail: toDetail(defensible.replace(/^\s*\d+\.\s*/, '')),
     }),
   ];
 }

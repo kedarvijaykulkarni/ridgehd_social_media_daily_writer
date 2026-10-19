@@ -60,7 +60,7 @@ function uniq(list) {
 // primary keyword to `tags`, and links the solution/platform pages.
 // With a `video` ({ title, description }, see videoMeta.js) it emits the
 // `video:` block the website embeds above the post.
-export function renderBlogPost({ topic, date, article, productName = 'AquaRoster', blogBaseUrl, focus, video } = {}) {
+export function renderBlogPost({ topic, date, article, productName = 'RidgeHQ', blogBaseUrl, focus, video } = {}) {
   const base = (blogBaseUrl || DEFAULT_BLOG_BASE_URL).replace(/\/+$/, '');
   const slug = slugify(article.slug) || slugify(article.title);
   const tags = uniq([...(article.tags ?? []), ...(focus ? ['ridgehq', focus.vertical.keywords[0]] : [])]).map((t) =>
