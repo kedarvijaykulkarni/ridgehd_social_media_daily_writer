@@ -144,3 +144,24 @@ test('a sourced line that is only a competitor claim yields no chunk', async (t)
   const chunks = await loadKnowledgeBase(vault);
   assert.equal(chunks.filter((c) => c.category === 'differentiator').length, 0);
 });
+
+test('"only differentiator" wording in a sourced line is dropped', async (t) => {
+  const vault = path.join(__dirname, 'fixtures', 'only-diff-vault');
+  const { mkdir, writeFile, copyFile, rm } = await import('node:fs/promises');
+  await mkdir(path.join(vault, 'wiki'), { recursive: true });
+  await copyFile(path.join(FIXTURE_VAULT, 'wiki', 'business-context.md'), path.join(vault, 'wiki', 'business-context.md'));
+  await writeFile(
+    path.join(vault, 'wiki', 'competitors.md'),
+    [
+      '| **AI copilot in the operational core** | ✅ **UNCLAIMED** | **Nobody.** |',
+      '',
+      '1. **AI built into the core** — same code path as the UI. It is our only differentiator.',
+      '',
+    ].join('\n'),
+  );
+  t.after(() => rm(vault, { recursive: true, force: true }));
+
+  const diff = (await loadKnowledgeBase(vault)).find((c) => c.category === 'differentiator');
+  assert.ok(diff);
+  assert.doesNotMatch(diff.detail, /only differentiator/i);
+});

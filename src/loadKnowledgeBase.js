@@ -47,7 +47,7 @@ function toHeadline(text) {
   return headline.length > 160 ? `${headline.slice(0, 157).trimEnd()}...` : headline;
 }
 
-const COMPETITOR_CLAIM = /unclaimed|nobody|no[- ]one|no competitor|none of (the|our) competitors|only (one|product|platform)/i;
+const COMPETITOR_CLAIM = /unclaimed|nobody|no[- ]one|no competitor|none of (the|our) competitors|only (one|product|platform|differentiator)|sole differentiator|unique differentiator/i;
 
 function toDetail(text) {
   const clean = stripMarkdown(text);
