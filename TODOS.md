@@ -5,7 +5,7 @@ Reviewed execution order for this repository. GitHub issues are authoritative fo
 ## Open
 
 - [ ] [#5](https://github.com/kedarvijaykulkarni/ridgehd_social_media_daily_writer/issues/5) — SOCIAL-01 first slice: root `AGENTS.md` with the generated shared operating rules, `@AGENTS.md` import in `CLAUDE.md`, generated `ridgehq-next-issue` skill, this queue. Implemented; awaiting owner review in [PR #6](https://github.com/kedarvijaykulkarni/ridgehd_social_media_daily_writer/pull/6) (branch `codex/5-shared-operating-rules`).
-- [ ] [#7](https://github.com/kedarvijaykulkarni/ridgehd_social_media_daily_writer/issues/7) — SOCIAL-02 first slice: default brand `RidgeHQ` (RidgeHQAPP DECISIONS #165) and no invented "no competitor offers this" fallback. Implemented; awaiting owner review. Not in this slice: drafts-versus-publications, the route/focus manifest (not built yet), and whether the AI-copilot chunk should be offered at all (#166 holds AI claims back).
+- [ ] [#7](https://github.com/kedarvijaykulkarni/ridgehd_social_media_daily_writer/issues/7) — SOCIAL-02 first slice: default brand `RidgeHQ` (RidgeHQAPP DECISIONS #165) and no invented "no competitor offers this" fallback. Implemented; awaiting owner review in [PR #8](https://github.com/kedarvijaykulkarni/ridgehd_social_media_daily_writer/pull/8). Not in this slice: drafts-versus-publications, the route/focus manifest (not built yet), and whether the AI-copilot chunk should be offered at all (#166 holds AI claims back).
 
 ## Planned, not yet filed (gated)
 
