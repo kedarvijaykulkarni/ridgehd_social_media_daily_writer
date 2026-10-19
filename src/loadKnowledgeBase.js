@@ -47,6 +47,8 @@ function toHeadline(text) {
   return headline.length > 160 ? `${headline.slice(0, 157).trimEnd()}...` : headline;
 }
 
+const COMPETITOR_CLAIM = /unclaimed|nobody|no[- ]one|no competitor|none of (the|our) competitors|only (one|product|platform)/i;
+
 function toDetail(text) {
   const clean = stripMarkdown(text);
   return clean.length > 480 ? `${clean.slice(0, 477).trimEnd()}...` : clean;
@@ -206,13 +208,20 @@ function extractDifferentiator(markdown) {
   const defensible = lines.find((l) => /ai built into the core/i.test(l));
   // No sourced line, no chunk: never invent a "no competitor offers this" claim.
   if (!defensible) return [];
+  // Competitor-comparison sentences ("unclaimed by anyone", "no competitor ...")
+  // are not approved claims (RidgeHQAPP DECISIONS #166); keep only the rest.
+  const detail = stripMarkdown(defensible.replace(/^\s*\d+\.\s*/, ''))
+    .split(/(?<=[.!?])\s+/)
+    .filter((sentence) => !COMPETITOR_CLAIM.test(sentence))
+    .join(' ');
+  if (!detail) return [];
   return [
     makeChunk({
       id: 'ai-copilot-in-the-operational-core',
       category: 'differentiator',
       status: 'shipped',
       headline: 'An AI copilot built into the operational core, not a bolted-on chatbot',
-      detail: toDetail(defensible.replace(/^\s*\d+\.\s*/, '')),
+      detail: toDetail(detail),
     }),
   ];
 }

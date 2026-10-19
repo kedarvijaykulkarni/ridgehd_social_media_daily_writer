@@ -116,3 +116,31 @@ test('no loaded chunk claims that no competitor offers something', async () => {
     assert.doesNotMatch(`${c.headline} ${c.detail}`, /no competitor/i);
   }
 });
+
+test('the differentiator chunk drops competitor-comparison sentences from its sourced line', async () => {
+  const chunks = await loadKnowledgeBase(FIXTURE_VAULT);
+  const diff = chunks.find((c) => c.category === 'differentiator');
+  assert.ok(diff, 'expected the differentiator chunk');
+  assert.match(diff.detail, /same code path/i);
+  assert.doesNotMatch(diff.detail, /unclaimed|nobody|no competitor|no one/i);
+});
+
+test('a sourced line that is only a competitor claim yields no chunk', async (t) => {
+  const vault = path.join(__dirname, 'fixtures', 'claim-only-vault');
+  const { mkdir, writeFile, copyFile, rm } = await import('node:fs/promises');
+  await mkdir(path.join(vault, 'wiki'), { recursive: true });
+  await copyFile(path.join(FIXTURE_VAULT, 'wiki', 'business-context.md'), path.join(vault, 'wiki', 'business-context.md'));
+  await writeFile(
+    path.join(vault, 'wiki', 'competitors.md'),
+    [
+      '| **AI copilot in the operational core** | ✅ **UNCLAIMED** | **Nobody.** |',
+      '',
+      '1. **AI built into the core** — no competitor offers this.',
+      '',
+    ].join('\n'),
+  );
+  t.after(() => rm(vault, { recursive: true, force: true }));
+
+  const chunks = await loadKnowledgeBase(vault);
+  assert.equal(chunks.filter((c) => c.category === 'differentiator').length, 0);
+});
