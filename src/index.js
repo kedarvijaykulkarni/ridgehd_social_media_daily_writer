@@ -317,6 +317,18 @@ program
       if (!/^\d{4}-\d{2}-\d{2}$/.test(opts.date)) throw new Error(`--date must be YYYY-MM-DD, got "${opts.date}"`);
       const runDir = path.join(OUTPUT_DIR, opts.date);
       const parsed = parseVideoScript(await readFile(path.join(runDir, 'video-script.txt'), 'utf-8'));
+      // An old script may be about a topic the registry no longer approves
+      // (AI, RLS, scheduling…): judge it by today's approval, not that day's.
+      const today = localDateString();
+      const registry = await loadRegistry(BUSINESS_VAULT_PATH);
+      assertPublicName(registry, today, PRODUCT_NAME);
+      const { chunks } = await loadKnowledgeBase(BUSINESS_VAULT_PATH, { today, registry });
+      if (!chunks.some((c) => c.id === parsed.topic.id)) {
+        throw new Error(
+          `${opts.date}'s video is about "${parsed.topic.id}", which is not approved for social in the registry today — ` +
+            'no cover written. Generate a new run instead.',
+        );
+      }
       // The presenter recorded in that day's script wins over today's .env, so
       // the cover shows the same person as the video; --character-ref is the
       // only override.
