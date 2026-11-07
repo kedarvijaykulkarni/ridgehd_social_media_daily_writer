@@ -5,7 +5,10 @@ import { POSITIONING, focusPromptBlock } from './seoFocus.js';
 // seoFocus.js), and the last 5 history entries' headlines.
 export function buildOllamaPrompt({ topic, knowledgeBase, history, focus, productName = 'RidgeHQ', claimRules = '' }) {
   const kbById = new Map(knowledgeBase.map((e) => [e.id, e]));
+  // Only topics still offered: a dropped topic (e.g. an unapproved AI claim)
+  // must not come back into the prompt as a "recently covered" headline or id.
   const recentPosts = [...(history.posts ?? [])]
+    .filter((p) => kbById.has(p.topic_id))
     .sort((a, b) => new Date(a.date) - new Date(b.date))
     .slice(-5)
     .reverse();

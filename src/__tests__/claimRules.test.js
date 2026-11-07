@@ -127,3 +127,21 @@ test('PRODUCT_NAME must be the approved public name', async () => {
   assert.throws(() => assertPublicName(registry, TODAY, 'AquaRoster'), /not the approved public name/);
   assert.throws(() => assertPublicName(registry, TODAY, 'Ridge'), /not the approved public name/);
 });
+
+test('a dropped topic in history never reappears in RECENTLY COVERED', async () => {
+  const { buildOllamaPrompt } = await import('../buildOllamaPrompt.js');
+  const { buildArticlePrompt } = await import('../buildArticlePrompt.js');
+  const { selectFocus } = await import('../seoFocus.js');
+  const { chunks } = await loadKnowledgeBase(FIXTURE_VAULT, { today: TODAY });
+  const history = {
+    posts: [
+      { date: '2026-11-01', topic_id: 'ai-copilot-in-the-operational-core' },
+      { date: '2026-11-02', topic_id: 'waiver-system' },
+    ],
+  };
+  const args = { topic: chunks[0], knowledgeBase: chunks, history, focus: selectFocus(history) };
+  for (const prompt of [buildOllamaPrompt(args), buildArticlePrompt(args)]) {
+    assert.doesNotMatch(prompt, /ai-copilot-in-the-operational-core/);
+    assert.match(prompt, /RECENTLY COVERED TOPICS[^\n]*\n- Waiver system/);
+  }
+});

@@ -26,7 +26,10 @@ export function buildArticlePrompt({ topic, knowledgeBase, history, focus, produ
     .map((e) => `- ${e.headline} — ${clip(e.detail, SUPPORTING_DETAIL_CHARS)}`)
     .join('\n');
 
+  // Only topics still offered: a dropped topic (e.g. an unapproved AI claim)
+  // must not come back into the prompt as a "recently covered" headline or id.
   const recentPosts = [...(history.posts ?? [])]
+    .filter((p) => kbById.has(p.topic_id))
     .sort((a, b) => new Date(a.date) - new Date(b.date))
     .slice(-5)
     .reverse();
