@@ -78,10 +78,16 @@ and flags harmless uses — human review before posting is still the control.
 The same flags (minus the noisy number rule) also drive **one retry** per
 model answer: the model is shown the offending phrases and asked again.
 A still-flagged retry is kept and flagged; a broken one falls back to the
-first answer — drift never fails the run. Long-form is kept to 500–800
-words, because longer briefs on a three-fact topic were padded with
-invented claims. The cover headline comes from the topic headline, never
-from model copy.
+first answer — drift never fails the run (the shape-retry answer is
+checked too). Visual direction (image prompt, video bible and visuals) is
+checked only for what a picture could show, and image/video scenes have no
+people or person-implying actions unless a presenter is configured.
+Long-form is kept to 500–800 words in 3–4 sections, because longer briefs
+on a three-fact topic were padded with invented claims; a draft outside
+that range carries a "⚠️ LENGTH" note rather than failing. The cover
+headline is the topic headline — rendered exactly when it has five words
+or fewer — never model copy. Reddit's ad-tone check also catches a
+one-mention product pitch with a "See how…" CTA.
 
 To put another topic back into rotation, the owner approves a fact for
 `social` in the registry, then the chunk id is mapped in `TOPIC_FACTS`.
