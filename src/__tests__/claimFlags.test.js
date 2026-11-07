@@ -144,3 +144,17 @@ test('run-4 review: replacement/requirements variants and curly apostrophes are 
   const duty = claimFlags({ draft: 'Operators should ensure their own waiver process fits their needs.' });
   assert.ok(!duty.some((f) => /legal\/compliance/.test(f.rule)), 'operator responsibility is not an assurance claim');
 });
+
+test('only an operator duty escapes the "ensure" rule; product assurances never do', () => {
+  const legal = (text) => claimFlags({ draft: text }).some((f) => /legal\/compliance/.test(f.rule));
+  for (const duty of ['Operators should ensure their own waiver process fits.', 'You must ensure the wording suits your activity.']) {
+    assert.equal(legal(duty), false, duty);
+  }
+  for (const claim of [
+    'RidgeHQ should ensure every participant signs.',
+    'The system must ensure each agreement is recorded.',
+    'RidgeHQ ensures every participant signs.',
+  ]) {
+    assert.equal(legal(claim), true, claim);
+  }
+});
