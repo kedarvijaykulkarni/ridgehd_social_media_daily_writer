@@ -46,7 +46,21 @@ export function formatReddit(shared) {
     throw new Error(`Reddit body exceeds hard limit (${bodyCount}/${REDDIT_BODY_MAX} chars).`);
   }
 
-  const needsReview = looksPromotional(`${shared.core_message} ${shared.call_to_action}`);
+  // Reddit stays link- and hashtag-free (self-promo rules), but core_message
+  // and call_to_action are shared with the other platforms and pass through
+  // verbatim — flag rather than silently rewrite the model's copy.
+  const bodyText = `${shared.core_message} ${shared.call_to_action}`;
+  const hasLinkOrTag = [
+    /https?:\/\/|\bwww\./i,
+    /\b[a-z0-9-]+\.(app|com|io|net|org|co|dev|ai)\b/i, // bare domain: ridgehq.app
+    /(^|[^\w&])#[a-z]\w*/i, // #tag, also inside "(#tag)"
+  ].some((re) => re.test(`${title} ${body}`));
+  const isPromotional = looksPromotional(bodyText);
+  const needsReview = hasLinkOrTag || isPromotional;
+  const reasons = [
+    hasLinkOrTag && 'Body contains a link or hashtag; remove it before posting (Reddit self-promotion rules).',
+    isPromotional && 'Heuristic detected ad-like phrasing/tone; rewrite in first-person conversational voice before posting.',
+  ].filter(Boolean);
 
   return {
     platform: 'reddit',
@@ -60,8 +74,6 @@ export function formatReddit(shared) {
     image_prompt: shared.image_prompt,
     reddit_relevant_subreddits: shared.reddit_relevant_subreddits ?? [],
     needs_manual_review: needsReview,
-    review_reason: needsReview
-      ? 'Heuristic detected ad-like phrasing/tone; rewrite in first-person conversational voice before posting.'
-      : null,
+    review_reason: needsReview ? reasons.join(' ') : null,
   };
 }

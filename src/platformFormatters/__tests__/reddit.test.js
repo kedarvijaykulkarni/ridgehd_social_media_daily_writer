@@ -17,6 +17,26 @@ test('a hook over the 100-char target but under the 300 hard limit is kept whole
   assert.equal(draft.title, hook);
 });
 
+test('a link or hashtag in the Reddit body is flagged for manual review', () => {
+  for (const core of [
+    'Dive shops lose hours on paperwork. #DiveShop',
+    'Details: https://www.ridgehq.app/solutions/dive-centers',
+    'More at www.example.com',
+    'Details at ridgehq.app',
+    'Try (#DiveShop) next season.',
+  ]) {
+    const draft = formatReddit(shared({ core_message: core }));
+    assert.equal(draft.needs_manual_review, true, core);
+    assert.match(draft.review_reason, /link|hashtag/i);
+  }
+  assert.equal(formatReddit(shared({ hook_line: 'See (#RidgeHQ) for waivers?' })).needs_manual_review, true);
+});
+
+test('decimals, abbreviations and "No. 1" are not mistaken for links or hashtags', () => {
+  const draft = formatReddit(shared({ core_message: 'We cut check-in to 2.5 minutes, e.g. for groups. Team No. 1 agreed.' }));
+  assert.equal(draft.needs_manual_review, false);
+});
+
 test('a plain conversational body is not flagged', () => {
   assert.equal(formatReddit(shared()).needs_manual_review, false);
 });
