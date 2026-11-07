@@ -261,13 +261,14 @@ const CLAIM_PATTERNS = [
   { re: /\bRLS\b|row[- ]level|multi[- ]tenan/i, rule: 'security architecture: not approved for social', visual: true },
   // The COPY_RULES categories, from the claims the 2026-11-07 run invented.
   // The COPY_RULES categories, from the claims the 2026-11-07 runs invented.
-  { re: /\bguarantee\w*|\bcomplian(?:t|ce)\b|\bdefensible\b|\bliabilit\w*|\blegal(?:ly)?\b|\bverifiable\b|\bensur(?:e|es|ing)\b/i, rule: 'legal/compliance/assurance outcome: not approved (COPY_RULES)' },
+  { re: /\bguarantee\w*|\bcomplian(?:t|ce)\b|\bdefensible\b|\bliabilit\w*|\blegal(?:ly)?\b|\bverifiable\b|(?<!\b(?:should|must|to help operators) )\bensur(?:e|es|ing)\b/i, rule: 'legal/compliance/assurance outcome: not approved (COPY_RULES)' },
   // Not bare "blocks": a video script is made of 10-second blocks.
-  { re: /\bmandatory\b|\brequired (?:before|consent)\b|\bconsent requirements?\b|\bbefore an? (?:activity|booking|trip) is confirmed\b|\bblocks? (?:a |the )?(?:booking|check-in|signature|participant|activity)/i, rule: 'mandatory/blocking: signatures never block (COPY_RULES)' },
-  // Not bare "workflow": video/image direction says "workflow environment".
-  { re: /\bcheck[- ]in\b|\bintegrat\w*|\bautomat\w*|\baudit\w*|\barchive\w*|\bbooking (?:flow|workflow|records?)\b|\breplac\w*|\bmoving (?:away from|off|past)\b|\bconsolidat\w*|\bunif(?:y|ied|ies)\b|\bsingle platform\b|\breconcil\w*|\bmanages? your operations\b/i, rule: 'workflow/integration/replacement claim: not approved (COPY_RULES)' },
+  { re: /\bmandatory\b|\brequired (?:before|consent)\b|\bconsent requirements?\b|\benforc\w* (?:[\w-]+ ){0,2}requirements?\b|\bbefore an? (?:activity|booking|trip) is confirmed\b|\bblocks? (?:a |the )?(?:booking|check-in|signature|participant|activity)/i, rule: 'mandatory/blocking: signatures never block (COPY_RULES)' },
+  // Bare "workflow" is fine here: scene direction ("workflow environment") is
+  // visual text now, which skips this rule.
+  { re: /\bcheck[- ]in\b|\bintegrat\w*|\bautomat\w*|\baudit\w*|\barchive\w*|\bworkflows?\b|\breplac\w*|\bmov(?:e|ing) (?:away from|off|past|beyond)\b|\btransition\w* (?:away|off)\b|\bmanages? (?:the )?operational flow\b|\bconsolidat\w*|\bunif(?:y|ied|ies)\b|\bsingle platform\b|\breconcil\w*|\bmanages? your operations\b/i, rule: 'workflow/integration/replacement claim: not approved (COPY_RULES)' },
   { re: /\bprofit\w*|\brevenue\b|\bsav(?:e|es|ing) (?:time|hours|money)\b|\bROI\b|\bstreamlin\w*|\befficien\w*|\bcertainty\b|\breliab\w*|\bdependable\b|\brobust\b|\bflawless\b|\bsimpler\b|\beliminat\w*/i, rule: 'customer result/quality claim: invented (COPY_RULES)' },
-  { re: /\bas an? (?:operator|owner|instructor)\b|\bI know\b|\bour (?:dive|school|shop|center|centre|boat)\b|\bwe(?:'ve| have) been (?:talking|speaking)\b|\boperators (?:told|tell) us\b/i, rule: 'invented persona or conversations (COPY_RULES)' },
+  { re: /\bas an? (?:operator|owner|instructor)\b|\bI know\b|\bour (?:dive|school|shop|center|centre|boat)\b|\bwe(?:['’]ve| have) been (?:talking|speaking)\b|\boperators (?:told|tell) us\b/i, rule: 'invented persona or conversations (COPY_RULES)' },
   { re: /\bmedical\b|\bequipment requirements?\b/i, rule: 'invented example: not part of the approved waiver fact (COPY_RULES)' },
   { re: /\b(?:dozens|hundreds|thousands|twenty|thirty|forty|fifty)\b|\b[1-9]\d*\b(?!\s?%)/i, rule: 'number or volume: invented unless from an approved fact (COPY_RULES)' },
 ];

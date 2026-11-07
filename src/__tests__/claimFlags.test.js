@@ -86,9 +86,9 @@ test('"unique risk profiles" is no longer mistaken for an exclusivity claim', ()
 });
 
 test('second-run review: production wording is not flagged, the missed claims are', () => {
-  for (const harmless of ['smooth pan, gentle push-in throughout all blocks', 'highly structured, emphasizing a workflow environment']) {
-    assert.deepEqual(claimFlags({ draft: harmless }), [], harmless);
-  }
+  assert.deepEqual(claimFlags({ draft: 'smooth pan, gentle push-in throughout all blocks' }), []);
+  // Scene direction lives in visual fields, which skip the copy rules.
+  assert.deepEqual(claimFlags({ 'draft (visual)': 'highly structured, emphasizing a workflow environment' }), []);
   // Verbatim from the regenerated output/2026-11-07 drafts.
   const missed = {
     'Moving away from managing documentation with legacy tools or spreadsheets is simpler with RidgeHQ.': /workflow\/integration/,
@@ -127,4 +127,20 @@ test('visual direction is checked only for what a picture could show, not for co
   const problems = claimProblems(script);
   assert.ok(problems.some((p) => /integrated/.test(p)), 'spoken audio still triggers the retry');
   assert.ok(!problems.some((p) => /dependable|reliable workflow/.test(p)), 'visual-only copy words do not');
+});
+
+test('run-4 review: replacement/requirements variants and curly apostrophes are caught, operator duty is not', () => {
+  // Verbatim from output/2026-11-07 run 4 (social posts and video script).
+  const caught = {
+    'Move beyond paper waivers and spreadsheets.': /workflow\/integration/,
+    'helps dive operations managers transition away from manual processing to a defined digital workflow': /workflow\/integration/,
+    'See how structured dive center software manages operational flow.': /workflow\/integration/,
+    'enforces participant-specific requirements': /mandatory\/blocking/,
+    'We’ve been talking with dive center operators': /invented persona/,
+  };
+  for (const [text, rule] of Object.entries(caught)) {
+    assert.ok(claimFlags({ draft: text }).some((f) => rule.test(f.rule)), text);
+  }
+  const duty = claimFlags({ draft: 'Operators should ensure their own waiver process fits their needs.' });
+  assert.ok(!duty.some((f) => /legal\/compliance/.test(f.rule)), 'operator responsibility is not an assurance claim');
 });
