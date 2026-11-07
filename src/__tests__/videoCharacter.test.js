@@ -49,7 +49,7 @@ test('product mode marks the demo blocks as real footage', () => {
 
 test('no character means no people at all, matching the cover prompt', () => {
   const p = buildVideoScriptPrompt({ topic: TOPIC, shared: SHARED, video: VIDEO });
-  assert.match(p, /No people on screen at all: no crew, faces, hands or silhouettes/);
+  assert.match(p, /No people on screen at all: no crew, faces, hands or silhouettes, and no action that needs a person/);
   assert.doesNotMatch(p, /"wardrobe"/);
 });
 

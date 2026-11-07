@@ -199,3 +199,12 @@ test('every prompt also carries the copy rules found missing in the 2026-11-07 o
     assert.match(block, term);
   }
 });
+
+test('the short-form image prompt asks for a people-free, static scene', async () => {
+  const { buildOllamaPrompt } = await import('../buildOllamaPrompt.js');
+  const { selectFocus } = await import('../seoFocus.js');
+  const { chunks } = await loadKnowledgeBase(FIXTURE_VAULT, { today: TODAY });
+  const prompt = buildOllamaPrompt({ topic: chunks[0], knowledgeBase: chunks, history: { posts: [] }, focus: selectFocus({ posts: [] }) });
+  assert.match(prompt, /NO people at all \(no crew, faces, hands or silhouettes\) and no action that needs a person/);
+  assert.doesNotMatch(prompt, /NO real identifiable people/);
+});
