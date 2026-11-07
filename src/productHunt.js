@@ -12,6 +12,7 @@
 // `producthunt_format_id` field.
 
 import { pickLeastUsed } from './seoFocus.js';
+import { localDateString } from './lib/localDate.js';
 
 export const FORUM_URL = 'https://www.producthunt.com/p/ridgehq-app';
 
@@ -90,14 +91,14 @@ function daysBetween(dateA, dateB) {
 // Returns { inCooldown, lastPostDate, daysSinceLastPost, cooldownDays }.
 // `cooldownDays` is the minimum gap between forum posts — default 2 caps
 // frequency at roughly 3x/week per PH's own guidance for a dedicated forum.
-export function productHuntCooldown(history, { cooldownDays = 2, today = new Date().toISOString().slice(0, 10) } = {}) {
+export function productHuntCooldown(history, { cooldownDays = 2, today = localDateString() } = {}) {
   return cooldownFor(history, 'producthunt_format_id', cooldownDays, today);
 }
 
 // Same shape, for the General-topic discussion block. Default 4 days: the
 // guidelines allow "restricting contributing privileges" for repeated
 // violations, and General is moderated harder than a product's own forum.
-export function productHuntDiscussionCooldown(history, { cooldownDays = 4, today = new Date().toISOString().slice(0, 10) } = {}) {
+export function productHuntDiscussionCooldown(history, { cooldownDays = 4, today = localDateString() } = {}) {
   return cooldownFor(history, 'producthunt_discussion', cooldownDays, today);
 }
 

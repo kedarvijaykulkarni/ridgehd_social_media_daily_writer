@@ -34,6 +34,7 @@ import { videoMeta } from './lib/videoMeta.js';
 import { loadCharacter, resolveVisualMode } from './videoCharacter.js';
 import { renderVideoCoverPrompt } from './lib/renderVideoCoverPrompt.js';
 import { parseVideoScript } from './lib/parseVideoScript.js';
+import { localDateString } from './lib/localDate.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(__dirname, '..');
@@ -67,10 +68,6 @@ async function loadHistory() {
     }
     throw err;
   }
-}
-
-function todayString() {
-  return new Date().toISOString().slice(0, 10);
 }
 
 async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
@@ -108,7 +105,7 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
     reddit: formatReddit(shared),
   };
 
-  const date = todayString();
+  const date = localDateString();
   const socialText = renderSocialText({ topic, date, drafts, productName: PRODUCT_NAME, focus });
 
   // 1-minute video script: one more Ollama pass, built from the same shared
