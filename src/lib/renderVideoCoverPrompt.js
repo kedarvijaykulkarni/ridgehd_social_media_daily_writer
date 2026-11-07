@@ -15,7 +15,7 @@ export function coverHook(description) {
 // image-prompt.txt it is a reviewable draft: this tool never calls an image
 // API. `bible`/`character` are optional so the file can also be built from an
 // older video-script.txt that predates the presenter feature.
-export function renderVideoCoverPrompt({ topic, date, video, bible = {}, character = null, productName = 'AquaRoster' }) {
+export function renderVideoCoverPrompt({ topic, date, video, bible = {}, character = null, productName = 'RidgeHQ' }) {
   const hook = coverHook(video.description);
   const person = character
     ? [

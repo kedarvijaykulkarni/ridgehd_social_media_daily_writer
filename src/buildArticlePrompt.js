@@ -17,7 +17,7 @@ function clip(text, n) {
   return clean.length > n ? `${clean.slice(0, n - 1).trimEnd()}…` : clean;
 }
 
-export function buildArticlePrompt({ topic, knowledgeBase, history, focus, productName = 'AquaRoster' }) {
+export function buildArticlePrompt({ topic, knowledgeBase, history, focus, productName = 'RidgeHQ' }) {
   const kbById = new Map(knowledgeBase.map((e) => [e.id, e]));
 
   const supporting = knowledgeBase

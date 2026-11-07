@@ -8,7 +8,7 @@
 
 import { POSITIONING } from './seoFocus.js';
 
-export function buildProductHuntPrompt({ topic, history, format, productName = 'AquaRoster' }) {
+export function buildProductHuntPrompt({ topic, history, format, productName = 'RidgeHQ' }) {
   const recentPosts = [...(history.posts ?? [])]
     .filter((p) => p.producthunt_format_id)
     .sort((a, b) => new Date(a.date) - new Date(b.date))

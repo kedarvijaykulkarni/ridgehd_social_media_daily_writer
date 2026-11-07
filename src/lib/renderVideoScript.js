@@ -6,7 +6,7 @@ const RULE = '-'.repeat(64);
 // Like image-prompt.txt: a reviewable draft for a human to produce and
 // upload by hand. The YouTube title/description block is what the blog
 // post's `video:` frontmatter carries — upload with exactly these.
-export function renderVideoScript({ topic, date, video, script, productName = 'AquaRoster', character = null, mode = 'none' }) {
+export function renderVideoScript({ topic, date, video, script, productName = 'RidgeHQ', character = null, mode = 'none' }) {
   const header = [
     `${productName} video script — ${date}`,
     `Topic: ${topic.id}${topic.headline ? ` — ${topic.headline}` : ''}`,

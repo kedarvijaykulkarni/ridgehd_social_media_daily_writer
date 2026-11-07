@@ -3,7 +3,7 @@ import { POSITIONING, focusPromptBlock } from './seoFocus.js';
 // Fills the Prompt 2 template (docs/prompt-2-ollama-daily-post.md) with the
 // selected topic, today's website focus (vertical + SEO keywords, see
 // seoFocus.js), and the last 5 history entries' headlines.
-export function buildOllamaPrompt({ topic, knowledgeBase, history, focus, productName = 'AquaRoster' }) {
+export function buildOllamaPrompt({ topic, knowledgeBase, history, focus, productName = 'RidgeHQ' }) {
   const kbById = new Map(knowledgeBase.map((e) => [e.id, e]));
   const recentPosts = [...(history.posts ?? [])]
     .sort((a, b) => new Date(a.date) - new Date(b.date))

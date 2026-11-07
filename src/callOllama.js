@@ -109,7 +109,7 @@ export function findRepeatedAudio(lines) {
 // `mode: 'product'` also checks the real-footage blocks: they must open with
 // footagePrefix and carry no quoted UI text or numbers (a best-effort guard
 // against invented UI — CLAUDE.md rule 4 — not proof the brief is accurate).
-export function validateVideoScriptShape(obj, segmentCount = VIDEO_SEGMENTS.length, { withWardrobe = false, mode = 'none', productName = 'AquaRoster' } = {}) {
+export function validateVideoScriptShape(obj, segmentCount = VIDEO_SEGMENTS.length, { withWardrobe = false, mode = 'none', productName = 'RidgeHQ' } = {}) {
   if (!Array.isArray(obj.segments) || obj.segments.length !== segmentCount) {
     throw new Error(`Ollama video script must have exactly ${segmentCount} segments`);
   }

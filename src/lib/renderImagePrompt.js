@@ -73,7 +73,7 @@ function renderCharacterKeyframe({ character, bible }) {
   ].join('\n');
 }
 
-export function renderImagePrompt({ topic, date, imagePrompt, productName = 'AquaRoster', character = null, bible = null }) {
+export function renderImagePrompt({ topic, date, imagePrompt, productName = 'RidgeHQ', character = null, bible = null }) {
   const header = [
     `${productName} image prompt — ${date}`,
     `Topic: ${topic.id}${topic.headline ? ` — ${topic.headline}` : ''}`,

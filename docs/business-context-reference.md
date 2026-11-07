@@ -77,8 +77,9 @@ present-tense fact:
 
 ## Product name
 
-The vault documents the product as **RidgeHQ / RidgeHQAPP**, but also
-flags `ridgehq.com` as an unrelated active business (name-collision risk —
-`competitors.md` §2, `business-context.md` §1). The app keeps the name
-configurable via `PRODUCT_NAME` in `.env`, default `AquaRoster`. Don't
-switch it to `RidgeHQ` for public copy until the name is cleared.
+The public brand is **RidgeHQ** (RidgeHQAPP DECISIONS #165, 2026-10-18);
+**AquaRoster** is not a public name. The vault also flags `ridgehq.com` as
+an unrelated active business (name-collision risk — `competitors.md` §2,
+`business-context.md` §1) and trademark clearance is undecided, so copy
+never claims a registered trademark. The name stays configurable via
+`PRODUCT_NAME` in `.env`, default `RidgeHQ`.

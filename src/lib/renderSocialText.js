@@ -79,7 +79,7 @@ function focusLines(focus, drafts) {
 // One reviewable plain-text file covering all 4 platform drafts, with each
 // platform's formatting/hashtags baked in exactly as it will be posted, plus
 // the char-count/limit metadata a human reviewer needs before copy-pasting.
-export function renderSocialText({ topic, date, drafts, productName = 'AquaRoster', focus }) {
+export function renderSocialText({ topic, date, drafts, productName = 'RidgeHQ', focus }) {
   const header = [
     `${productName} social drafts — ${date}`,
     `Topic: ${topic.id}${topic.headline ? ` — ${topic.headline}` : ''}`,

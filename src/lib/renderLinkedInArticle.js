@@ -16,7 +16,7 @@ import { focusHashtags } from '../seoFocus.js';
 // Honesty limitation (same posture as the Reddit formatter): the section
 // bodies are voice-neutral. This renderer does NOT rewrite them into first
 // person — it flags that for the human instead.
-export function renderLinkedInArticle({ topic, date, article, productName = 'AquaRoster', focus } = {}) {
+export function renderLinkedInArticle({ topic, date, article, productName = 'RidgeHQ', focus } = {}) {
   const note = reviewerNote({
     kind: 'LinkedIn article',
     productName,
