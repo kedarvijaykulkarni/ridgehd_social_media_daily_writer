@@ -11,6 +11,7 @@
 // every clip prompt and starts each clip from the previous `ends_on`.
 
 import { SITE_URL, CONTACT_EMAIL } from './seoFocus.js';
+import { isProductFootage } from './videoCharacter.js';
 
 export const VIDEO_SEGMENTS = [
   { time: '0–10 sec', label: 'Hook' },
@@ -23,12 +24,31 @@ export const VIDEO_SEGMENTS = [
 
 export const SITE_HOST = SITE_URL.replace(/^https?:\/\/(www\.)?/, '');
 
-export function buildVideoScriptPrompt({ topic, shared, video, productName = 'AquaRoster' }) {
+// `character` ({ identity }) + `mode` ('character' | 'product' | 'none') come
+// from videoCharacter.js. With no character the video has no people on screen.
+export function buildVideoScriptPrompt({ topic, shared, video, productName = 'AquaRoster', character = null, mode = 'none' }) {
   const statusRule =
     topic.status === 'shipped'
       ? 'This topic is SHIPPED — the narration may describe it in the present tense.'
       : `This topic is "${topic.status}" — the narration must stay in future/roadmap framing ` +
         '("coming soon", "we\'re building"). Never present it as available today.';
+
+  const footageBlocks = VIDEO_SEGMENTS.map((s, i) => ({ s, i })).filter(({ i }) => isProductFootage(mode, i));
+  const presenterSection = character
+    ? `
+
+PRESENTER (fixed identity — copy nothing from it into the bible, it is added for you)
+${character.identity}
+`
+    : '';
+  const presenterRules = character ? presenterRulesFor({ footageBlocks, productName }) : noPeopleRule(footageBlocks, productName);
+  const wardrobeKey = character
+    ? `,
+    "wardrobe": "ONE complete outfit for the presenter, chosen to suit THIS setting, climate, weather and activity (name every garment, its colour and fit, footwear and accessories; no logos or readable text). Worn unchanged in every block"`
+    : '';
+  const voiceHint = character
+    ? 'the presenter\'s ONE real human speaking voice: gender, age range, accent, pitch, pace, warmth, natural breathing — e.g. warm male, 30s, neutral international English, calm conversational pace. Never robotic, synthetic or text-to-speech sounding'
+    : 'the narrator: gender, age range, accent, pace, tone — e.g. warm male, 30s, neutral international English, calm measured pace';
 
   return `create a 1 min script
 
@@ -46,7 +66,7 @@ ${VIDEO_SEGMENTS.map((s) => `${s.time} — ${s.label}`).join('\n\n')}
 
 Topic: ${video.title}
 
-${shared.image_prompt}
+${shared.image_prompt}${presenterSection}
 
 INFORMATION
 
@@ -66,13 +86,18 @@ RULES
   camera moves or one element changes per block. Never introduce a new
   location, time of day, or art style. Block N must begin exactly where
   block N-1 ended.
+- NO REPEATED DIALOGUE: all six audio lines must be different. Never copy,
+  reuse or lightly reword a line from another block — each one adds a NEW point
+  (hook → problem → what it does → how it helps → payoff → CTA), and no phrase
+  or sentence appears twice in the whole script.
 - Each visual is a full, self-contained shot description (name the setting and
   key objects again — do not say "the same" or "as before") with a single
   camera move.
-- All six audio lines are ONE narrator in ONE voice speaking one continuous
+- All six audio lines are ONE ${character ? 'speaker' : 'narrator'} in ONE voice speaking one continuous
   script; each line flows from the previous one and the whole reads as one piece.
-- No identifiable people on screen. The Ending/CTA visual shows the brand,
-  "${SITE_HOST}" and "${CONTACT_EMAIL}"; its audio names both.
+${presenterRules}
+- The Ending/CTA visual shows the brand, "${SITE_HOST}" and "${CONTACT_EMAIL}";
+  its audio names both.
 
 OUTPUT
 Return ONLY valid JSON, no markdown fences, no preamble, matching exactly —
@@ -84,7 +109,7 @@ in order (${VIDEO_SEGMENTS.length} entries):
     "setting": "the single location and its fixed objects and layout, specific enough to redraw identically",
     "look": "art style, color palette, time of day and lighting, lens look — fixed for all blocks",
     "camera": "lens, framing style and movement language used throughout",
-    "voice": "the narrator: gender, age range, accent, pace, tone — e.g. warm male, 30s, neutral international English, calm measured pace"
+    "voice": "${voiceHint}"${wardrobeKey}
   },
   "segments": [
     {
@@ -94,4 +119,45 @@ in order (${VIDEO_SEGMENTS.length} entries):
     }
   ]
 }`;
+}
+
+function footageList(footageBlocks) {
+  return footageBlocks.map(({ s }) => `"${s.time} — ${s.label}"`).join(', ');
+}
+
+function noPeopleRule(footageBlocks, productName) {
+  const lines = ['- No identifiable people on screen.'];
+  if (footageBlocks.length) lines.push(footageRule(footageBlocks, productName));
+  return lines.join('\n');
+}
+
+// Product footage is the user's real screen recording. The model must not
+// invent what the UI looks like (CLAUDE.md rule 4 — claims come from the vault).
+function footageRule(footageBlocks, productName) {
+  return (
+    `- PRODUCT FOOTAGE blocks (${footageList(footageBlocks)}): the visual is a real screen recording of ` +
+    `${productName} that the producer supplies — begin it with "Screen recording of the real ${productName} product:" ` +
+    'and describe only what the INFORMATION supports (e.g. "the booking calendar", "the staff roster"). ' +
+    'Never describe invented UI text, numbers, prices or screens; never ask for the UI to be AI-generated.'
+  );
+}
+
+function presenterRulesFor({ footageBlocks, productName }) {
+  const rules = [
+    '- PRESENTER: the person in PRESENTER is the ONLY person on screen and is the one speaking. ' +
+      'Same face, age, build, hair and skin tone in every block — never a new or different person, no crowd of extras.',
+    '- WARDROBE: the bible\'s "wardrobe" is ONE outfit suited to the setting, climate and activity, worn unchanged in ' +
+      'every block (same garments, colours, fit; nothing added, removed or swapped). Name it again in every visual.',
+    '- VOICE: the presenter speaks the audio line to camera, lip-synced, in the one human voice from the bible — ' +
+      'natural conversational phrasing with real breath and rhythm, short sentences, contractions allowed. ' +
+      'Each visual states where the presenter stands, gaze, gesture and expression for that block.',
+  ];
+  if (footageBlocks.length) {
+    rules.push(
+      footageRule(footageBlocks, productName),
+      '  In those blocks the presenter is off-screen and the SAME voice continues as voice-over; the block after ' +
+        'footage returns to the presenter in the same wardrobe, position and lighting as the last presenter frame.',
+    );
+  }
+  return rules.join('\n');
 }

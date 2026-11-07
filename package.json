@@ -16,6 +16,7 @@
     "generate:ph:dry-run": "node src/index.js generate --producthunt --dry-run",
     "generate:long:ph": "node src/index.js generate --long-form --producthunt",
     "generate:long:ph:dry-run": "node src/index.js generate --long-form --producthunt --dry-run",
+    "cover": "node src/index.js cover",
     "test": "node --test src/**/__tests__/*.test.js"
   },
   "engines": {

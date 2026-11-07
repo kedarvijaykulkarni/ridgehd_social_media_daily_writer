@@ -114,6 +114,15 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
   `discussionIsProductFree` drops it if the model does. Keep that
   separation when editing either prompt.
 
+- **Video presenter** (`src/videoCharacter.js`): optional `VIDEO_CHARACTER`
+  (+ `VIDEO_CHARACTER_REF`, `VIDEO_VISUAL_MODE`, `generate --video-mode`) puts
+  one fixed AI human presenter in `video-script.txt`. Identity comes verbatim
+  from `.env`; the model only picks a setting-appropriate `wardrobe` and the
+  human `voice`, and the renderer repeats character + wardrobe + voice in every
+  clip. `product` mode marks clips 3-5 as the user's real screen recording
+  (the model must not invent UI). `image-prompt.txt` gains a character
+  keyframe. Unset = old no-people behaviour. Not covered by a live Ollama run.
+
 ## Rules specific to this app
 
 1. **Never auto-publish.** This tool writes reviewable draft files only.

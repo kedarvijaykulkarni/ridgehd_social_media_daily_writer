@@ -88,13 +88,29 @@ export function validateProductHuntShape(obj) {
   return obj;
 }
 
+// Small models loop: the same voice-over line pasted into two blocks. Returns
+// the first pair of 0-based indexes whose lines are identical or near-identical
+// (word-set overlap >= 0.8), else null. Exported for unit tests.
+export function findRepeatedAudio(lines) {
+  const words = lines.map((l) => new Set(String(l).toLowerCase().match(/[a-z0-9']+/g) ?? []));
+  for (let i = 0; i < words.length; i++) {
+    for (let j = i + 1; j < words.length; j++) {
+      const shared = [...words[i]].filter((w) => words[j].has(w)).length;
+      const union = words[i].size + words[j].size - shared;
+      if (union && shared / union >= 0.8) return [i, j];
+    }
+  }
+  return null;
+}
+
 // Video script shape (see buildVideoScriptPrompt.js): exactly one
 // { visual, audio } pair per 10-second block. Exported for unit tests.
-export function validateVideoScriptShape(obj, segmentCount = VIDEO_SEGMENTS.length) {
+export function validateVideoScriptShape(obj, segmentCount = VIDEO_SEGMENTS.length, { withWardrobe = false } = {}) {
   if (!Array.isArray(obj.segments) || obj.segments.length !== segmentCount) {
     throw new Error(`Ollama video script must have exactly ${segmentCount} segments`);
   }
-  const missingBible = ['setting', 'look', 'camera', 'voice'].find(
+  const bibleKeys = withWardrobe ? ['setting', 'look', 'camera', 'voice', 'wardrobe'] : ['setting', 'look', 'camera', 'voice'];
+  const missingBible = bibleKeys.find(
     (k) => typeof obj.bible?.[k] !== 'string' || !obj.bible[k].trim(),
   );
   if (missingBible) throw new Error(`Ollama video script bible is missing "${missingBible}"`);
@@ -102,6 +118,12 @@ export function validateVideoScriptShape(obj, segmentCount = VIDEO_SEGMENTS.leng
   const bad = obj.segments.findIndex((s) => !s || !filled(s.visual) || !filled(s.audio) || !filled(s.ends_on));
   if (bad !== -1) {
     throw new Error(`Ollama video script segment ${bad} is missing a visual, audio or ends_on line`);
+  }
+  const dup = findRepeatedAudio(obj.segments.map((s) => s.audio));
+  if (dup) {
+    throw new Error(
+      `Ollama video script segments ${dup[0]} and ${dup[1]} repeat the same dialogue — every block needs a new line that advances the story`,
+    );
   }
   return obj;
 }
@@ -162,8 +184,9 @@ export async function callOllamaArticle(prompt, opts = {}) {
 }
 
 // Video script: the 1-minute script object (buildVideoScriptPrompt).
+// `opts.withWardrobe`: a presenter is on screen, so the bible must fix an outfit.
 export async function callOllamaVideoScript(prompt, opts = {}) {
-  return requestParsed(prompt, opts, (obj) => validateVideoScriptShape(obj));
+  return requestParsed(prompt, opts, (obj) => validateVideoScriptShape(obj, undefined, { withWardrobe: opts.withWardrobe }));
 }
 
 // Product Hunt forum post: the { title, body, cta? } object (buildProductHuntPrompt).
