@@ -114,7 +114,10 @@ function cooldownFor(history, field, cooldownDays, today) {
 // The prompt bans the product name, but a local model can ignore that.
 // Returns true when the draft is safe to hand over; a leak means the post
 // would read as promotion in General, so the caller drops the block.
+// Letters and digits only, so "Ridge HQ", "Ridge-HQ" and "RIDGE HQ's" match
+// too (a false match only drops the block, the safe direction).
 export function discussionIsProductFree(post, productName) {
-  const text = `${post.title} ${post.body} ${post.cta ?? ''}`.toLowerCase();
-  return !['ridgehq', productName.toLowerCase()].some((name) => text.includes(name));
+  const squash = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const text = squash(`${post.title} ${post.body} ${post.cta ?? ''}`);
+  return !['ridgehq', productName].map(squash).some((name) => name && text.includes(name));
 }

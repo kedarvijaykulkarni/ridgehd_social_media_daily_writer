@@ -95,3 +95,11 @@ test('discussionIsProductFree rejects drafts that name the product or RidgeHQ', 
   assert.equal(discussionIsProductFree({ ...clean, body: 'AquaRoster does this.' }, 'AquaRoster'), false);
   assert.equal(discussionIsProductFree({ ...clean, cta: 'Try RidgeHQ' }, 'AquaRoster'), false);
 });
+
+test('discussionIsProductFree catches spaced, hyphenated and possessive spellings', () => {
+  const clean = { title: 'How do you isolate client data?', body: 'We all share a database.', cta: 'Thoughts?' };
+  for (const body of ['Ridge HQ makes this easy.', 'We use Ridge-HQ.', "RIDGE HQ's approach", 'ridgehq.app']) {
+    assert.equal(discussionIsProductFree({ ...clean, body }, 'RidgeHQ'), false, body);
+  }
+  assert.equal(discussionIsProductFree({ ...clean, body: 'Aqua Roster too.' }, 'AquaRoster'), false);
+});
