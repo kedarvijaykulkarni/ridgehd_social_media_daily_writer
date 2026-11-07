@@ -24,6 +24,13 @@ test('only topics backed by a fact approved for social are offered (DECISIONS #1
   assert.ok(!chunks.some((c) => c.status !== 'shipped'), 'no roadmap topic is approved');
 });
 
+test('an offered topic speaks in the approved statement, not the vault prose behind it', async () => {
+  const { chunks } = await loadKnowledgeBase(FIXTURE_VAULT, { today: TODAY });
+  const waiver = chunks.find((c) => c.id === 'waiver-system');
+  assert.equal(waiver.detail, 'Digital waivers are built in: typed e-signature and per-participant enforcement.');
+  assert.doesNotMatch(waiver.detail, /RLS/);
+});
+
 test('once every fact is past review_by, nothing is approved and the run stops', async () => {
   await assert.rejects(() => loadKnowledgeBase(FIXTURE_VAULT, { today: '2027-01-19' }), /approved for social/);
 });

@@ -73,14 +73,16 @@ export function writingRules(registry, today) {
 }
 
 // Splits loader chunks into the ones an approved fact covers and the rest.
-// Kept chunks carry their fact, so prompts can quote its approved wording.
+// A kept chunk's detail becomes the fact's approved statement: the vault
+// prose behind it can carry internal class names, unapproved claims (RLS)
+// or competitor prices, while the statement is the owner's own wording.
 export function gateTopics(chunks, registry, today) {
   const approved = new Map(approvedFacts(registry, today).map((f) => [f.id, f]));
   const kept = [];
   const dropped = [];
   for (const chunk of chunks) {
     const fact = approved.get(TOPIC_FACTS[chunk.id]);
-    if (fact) kept.push({ ...chunk, fact_id: fact.id });
+    if (fact) kept.push({ ...chunk, fact_id: fact.id, detail: fact.statement });
     else dropped.push(chunk);
   }
   return { kept, dropped };
