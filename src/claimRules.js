@@ -57,27 +57,36 @@ export async function loadRegistry(vaultPath) {
   return registry;
 }
 
-const ID_RE = /^[a-z0-9]+(?:[.-][a-z0-9]+)*$/;
+// Lower-case, dot-separated, at least two parts (brand.public-name).
+const ID_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*(?:\.[a-z0-9]+(?:-[a-z0-9]+)*)+$/;
 const STATES = {
   audience: ['public', 'internal'],
   decision: ['proposed', 'accepted', 'deferred', 'superseded'],
   implementation: ['unknown', 'absent', 'partial', 'implemented'],
+  deployment: ['unknown', 'deployed'],
   verification: ['not-checked', 'source-inspected', 'automated-test', 'live-verified'],
   marketing: ['allowed', 'restricted', 'not-approved'],
 };
+const nonEmpty = (v) => typeof v === 'string' && v.trim() !== '';
 
 function isRealDate(value) {
   return (
     typeof value === 'string' &&
     /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+    value >= '2000-01-01' &&
     !Number.isNaN(Date.parse(`${value}T00:00:00Z`)) &&
     new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value
   );
 }
 
-// The structural rules of wiki/ai-operations/fact-registry.md that decide
-// approval. One bad record rejects the whole registry: a half-valid list
-// could silently drop a writing rule or approve a malformed claim.
+// The subset of wiki/ai-operations/fact-registry.md's record rules that
+// bears on approval: ids, statement, the five states, channels, dates,
+// provenance (repo/revision, verification date, evidence) and supersession.
+// One bad record rejects the whole registry: a half-valid list could
+// silently drop a writing rule or approve a malformed claim. Full schema
+// validation (source notes and headings exist, owner, secret patterns) is
+// RidgeHQAPP's `scripts/ai_ops/brain_facts.py check`; it is not duplicated
+// here, so the two cannot drift apart on rules this tool does not use.
 export function registryProblems(registry) {
   if (registry?.schema_version !== 1) return [`schema_version must be 1, got ${JSON.stringify(registry?.schema_version)}`];
   if (!Array.isArray(registry.facts)) return ['"facts" must be an array'];
@@ -90,8 +99,26 @@ export function registryProblems(registry) {
     else ids.add(f.id);
     if (typeof f?.statement !== 'string' || !f.statement.trim()) problems.push(`${at}: missing statement`);
     if (!STATES.audience.includes(f?.audience)) problems.push(`${at}: invalid audience`);
-    for (const key of ['decision', 'implementation', 'verification', 'marketing']) {
+    for (const key of ['decision', 'implementation', 'deployment', 'verification', 'marketing']) {
       if (!STATES[key].includes(f?.[key]?.state)) problems.push(`${at}: invalid ${key}.state`);
+    }
+    if (['partial', 'implemented'].includes(f?.implementation?.state) &&
+        !(nonEmpty(f.implementation.repo) && nonEmpty(f.implementation.revision))) {
+      problems.push(`${at}: implementation ${f.implementation.state} needs repo and revision`);
+    }
+    if (f?.deployment?.state === 'deployed' && !(nonEmpty(f.deployment.environment) && nonEmpty(f.deployment.revision))) {
+      problems.push(`${at}: deployment deployed needs environment and revision`);
+    }
+    if (STATES.verification.includes(f?.verification?.state) && f.verification.state !== 'not-checked' &&
+        !isRealDate(f.verification.date)) {
+      problems.push(`${at}: verification ${f.verification.state} needs a real date`);
+    }
+    const checked = f?.decision?.state === 'accepted' ||
+      ['partial', 'implemented'].includes(f?.implementation?.state) ||
+      f?.deployment?.state === 'deployed' ||
+      (f?.verification?.state && f.verification.state !== 'not-checked');
+    if (checked && !(Array.isArray(f.evidence) && f.evidence.length && f.evidence.every(nonEmpty))) {
+      problems.push(`${at}: evidence must be a non-empty list for accepted/implemented/deployed/verified records`);
     }
     const channels = f?.marketing?.channels;
     if (channels !== undefined && !(Array.isArray(channels) && channels.every((c) => typeof c === 'string'))) {
@@ -105,8 +132,20 @@ export function registryProblems(registry) {
       problems.push(`${at}: superseded_by must be set exactly when decision.state is superseded`);
     }
   }
-  for (const f of registry.facts) {
-    if (f?.superseded_by && !ids.has(f.superseded_by)) problems.push(`${f.id}: superseded_by names an unknown id`);
+  const next = new Map(registry.facts.filter((f) => f?.superseded_by).map((f) => [f.id, f.superseded_by]));
+  for (const [id, successor] of next) {
+    if (!ids.has(successor)) {
+      problems.push(`${id}: superseded_by names an unknown id`);
+      continue;
+    }
+    const seen = new Set([id]);
+    for (let cur = successor; next.has(cur); cur = next.get(cur)) {
+      if (seen.has(cur)) {
+        problems.push(`${id}: supersession chain loops back`);
+        break;
+      }
+      seen.add(cur);
+    }
   }
   return problems;
 }

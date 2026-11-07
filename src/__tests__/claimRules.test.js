@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { mkdir, copyFile, rm } from 'node:fs/promises';
+import { mkdir, copyFile, rm, writeFile } from 'node:fs/promises';
 import { loadKnowledgeBase } from '../loadKnowledgeBase.js';
 import { loadRegistry, approvedFacts, writingRules, claimRulesBlock, registryProblems } from '../claimRules.js';
 
@@ -76,6 +76,19 @@ test('one malformed record rejects the whole registry', async () => {
     'superseded without successor': (r) => { waivers(r).decision.state = 'superseded'; },
     'unknown successor': (r) => { r.facts.find((f) => f.id === 'support.old-promise').superseded_by = 'no.such-fact'; },
     'wrong schema version': (r) => { r.schema_version = 2; },
+    'implemented without revision': (r) => { delete waivers(r).implementation.revision; },
+    'verified without date': (r) => { delete waivers(r).verification.date; },
+    'accepted without evidence': (r) => { waivers(r).evidence = []; },
+    'invalid deployment state': (r) => { waivers(r).deployment.state = 'live'; },
+    'missing deployment': (r) => { delete waivers(r).deployment; },
+    'id without a dot': (r) => { waivers(r).id = 'waivers'; },
+    'year-zero review_by': (r) => { waivers(r).review_by = '0000-01-01'; },
+    'supersession cycle': (r) => {
+      const old = r.facts.find((f) => f.id === 'support.old-promise');
+      const brand = r.facts.find((f) => f.id === 'brand.public-name');
+      brand.decision.state = 'superseded';
+      brand.superseded_by = old.id; // old -> brand -> old
+    },
   };
   assert.deepEqual(registryProblems(good), []);
   for (const [name, breakIt] of Object.entries(cases)) {
@@ -83,6 +96,17 @@ test('one malformed record rejects the whole registry', async () => {
     breakIt(r);
     assert.ok(registryProblems(r).length > 0, name);
   }
+});
+
+test('loadRegistry rejects a malformed registry file as a whole', async (t) => {
+  const vault = path.join(__dirname, 'fixtures', 'bad-registry-vault');
+  const dir = path.join(vault, 'wiki', 'ai-operations', 'facts');
+  await mkdir(dir, { recursive: true });
+  const r = await loadRegistry(FIXTURE_VAULT);
+  r.facts.find((f) => f.id === 'feature.waivers').evidence = [];
+  await writeFile(path.join(dir, 'registry.json'), JSON.stringify(r));
+  t.after(() => rm(vault, { recursive: true, force: true }));
+  await assert.rejects(() => loadRegistry(vault), /invalid, refusing to trust any of it[\s\S]*evidence/);
 });
 
 test('the claim-rules block quotes approved statements and bans verbatim, never internal scope', async () => {

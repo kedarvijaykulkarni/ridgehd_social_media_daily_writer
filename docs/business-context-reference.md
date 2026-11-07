@@ -41,8 +41,13 @@ that is accepted, `audience: public`, marketing `allowed` on the `social`
 channel, not superseded and not past `review_by` (inclusive), and — for
 `feature.*` — implemented and verified. That mirrors the export's approval
 filter in `fact-registry.md`, not its full tooling: there is no
-`brain_revision` provenance until the tool reads a committed export. The
-whole registry is validated first; one malformed record rejects all of it.
+`brain_revision` provenance until the tool reads a committed export. Every
+record is first checked against the approval-relevant subset of the record
+rules (ids, statement, the five states, channels, real dates, provenance:
+repo/revision, verification date, evidence; supersession links and
+cycles); one failing record rejects the whole registry. Full schema
+validation — source notes/headings exist, owner, secret patterns — stays
+with RidgeHQAPP's `scripts/ai_ops/brain_facts.py check`.
 A kept chunk's `detail` becomes the fact's approved `statement`.
 As of 2026-11-07 that leaves **one topic: waivers** (`feature.waivers`).
 The pricing chunk is extracted but not offered: its headline is no

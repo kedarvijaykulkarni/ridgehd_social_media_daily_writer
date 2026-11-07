@@ -204,8 +204,9 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
   `src/lib/__tests__/renderLinkedInArticle.test.js` — the two long-form
   renderers (frontmatter vs. none, section rendering, roadmap warning).
 - `src/lib/__tests__/hashtags.test.js` — hashtag sanitization regression.
-- `src/__tests__/claimRules.test.js` — registry validation (one isolated
-  negative per rule), the approval gate (other channel, superseded,
+- `src/__tests__/claimRules.test.js` — registry validation (a mutation
+  case per rule this tool checks; full-schema rules are RidgeHQAPP's
+  `brain_facts.py check`), the approval gate (other channel, superseded,
   unverified feature, inclusive `review_by`, missing registry), approved
   wording, no internal `scope`, public-name check, dropped topics kept out
   of RECENTLY COVERED, and the CLAIM RULES block in all four product
