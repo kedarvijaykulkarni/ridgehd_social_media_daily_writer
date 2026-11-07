@@ -29,7 +29,11 @@ topic chunks in the shape the pipeline already expected
 | `wiki/business-context.md` | §2 `✅ Solid and verifiable — sell on this:` bullet list | `status: "shipped"` chunks |
 | `wiki/business-context.md` | §2 `❌ Not yet sellable` table | `status: "planned"` chunks — **except** rows whose consequence says "do not market / do not claim" (e.g. money-moving AI undo), which are dropped entirely |
 | `wiki/competitors.md` | §5 differentiator table row for the AI copilot ("UNCLAIMED") | one `differentiator` chunk |
-| `wiki/pricing.md` | §3 published `Page headline:` + tier table | one `pricing-model` chunk |
+| `wiki/pricing.md` | §3 `### ✅ Published pricing` subsection only: its (wrapped) `Page headline:` paragraph + tier table. Stale tier/unit-economics tables elsewhere in the file are ignored; the chunk headline leads with flat monthly pricing, not 0% commission | one `pricing-model` chunk |
+
+A missing `## 2.` section, `✅ … sell on this` marker or `❌ Not yet sellable`
+marker in `business-context.md` throws — the optional competitor/pricing
+chunks must not mask a broken primary source.
 
 `competitors.md` and `pricing.md` are optional — if missing, the loader
 just skips their chunks. `wiki/business-context.md` is required; if it's

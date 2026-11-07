@@ -189,6 +189,17 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
   `src/lib/__tests__/renderLinkedInArticle.test.js` — the two long-form
   renderers (frontmatter vs. none, section rendering, roadmap warning).
 - `src/lib/__tests__/hashtags.test.js` — hashtag sanitization regression.
+- `src/__tests__/validateShape.test.js` — short-form shape normalisation
+  (malformed hashtag/subreddit arrays) through all four formatters.
+- `src/__tests__/selectTopic.test.js` — same-day re-run replacement
+  (`withoutRunsOn`).
+- `src/platformFormatters/__tests__/reddit.test.js` — Reddit title cut at the
+  hard limit; link/hashtag review flag.
+- `src/lib/__tests__/composeText.test.js` — sentence splitting; X hook
+  truncation fallback.
+- `src/lib/__tests__/renderSocialText.test.js` — roadmap warning header.
+- `src/lib/__tests__/localDate.test.js`, `envNumber.test.js` — local-day
+  dating and env number parsing (cooldown `0`).
 
 The Ollama calls and end-to-end `generate` are not unit-tested (they need
 a running model). `npm run generate:dry-run` / `generate:long:dry-run` are
