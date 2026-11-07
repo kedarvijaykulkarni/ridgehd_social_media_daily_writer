@@ -84,9 +84,13 @@ test('loadKnowledgeBase derives the pricing chunk from pricing.md §3', async ()
 test('the pricing chunk reads only the published §3 table, the full wrapped headline, and does not lead with commission', async () => {
   const pricing = (await loadVaultTopics(FIXTURE_VAULT)).find((c) => c.category === 'pricing-model');
   assert.ok(pricing);
-  assert.doesNotMatch(pricing.detail, /€29|\$32/, 'stale/killed tiers outside the published table must not leak');
-  assert.match(pricing.detail, /€49\/mo.*€89\/mo.*€149\/mo/);
-  assert.match(pricing.detail, /0% commission on direct bookings\. Monthly plans\. No per-staff seat shock\./);
+  // Plan prices (pricing.monthly-plans) are approved for sales/website only,
+  // never social — and stale/killed tiers must never leak either.
+  assert.doesNotMatch(pricing.detail, /[€$]\s?\d/, 'no plan prices in the social pricing topic');
+  assert.equal(
+    pricing.detail,
+    'Simple pricing for real operators. 0% commission on direct bookings. Monthly plans. No per-staff seat shock.',
+  );
   assert.doesNotMatch(pricing.headline, /commission/i, 'competitors.md §5: do not lead with 0% commission');
 });
 

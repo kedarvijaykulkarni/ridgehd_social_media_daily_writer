@@ -266,9 +266,9 @@ function extractPricing(markdown) {
   const blank = lines.findIndex((l, i) => i > headlineIdx && l.trim() === '');
   const paragraph = lines.slice(headlineIdx, blank === -1 ? lines.length : blank).join(' ');
   const sentence = stripMarkdown(paragraph.replace(/.*page headline:\s*/i, '')).replace(/^["'“”]+|["'“”]+$/g, '');
-  const tiers = lines
-    .filter((l) => /\|/.test(l) && /€\s?\d+/.test(l) && /(starter|grow|scale)/i.test(l))
-    .map((l) => stripMarkdown(l).replace(/\s*\|\s*/g, ' · ').replace(/^·\s*|\s*·$/g, ''));
+  // The tier table is deliberately not read: plan prices
+  // (registry pricing.monthly-plans) are approved for sales and the website,
+  // not social, so the chunk carries only the published positioning line.
   return [
     makeChunk({
       id: 'flat-monthly-pricing-zero-commission',
@@ -278,7 +278,7 @@ function extractPricing(markdown) {
       // a supporting point in the detail, never the headline. The id stays
       // unchanged so post-history coverage carries over.
       headline: 'Flat monthly pricing with no per-staff seat shock',
-      detail: toDetail([sentence, ...tiers].filter(Boolean).join(' ')),
+      detail: toDetail(sentence),
     }),
   ];
 }
