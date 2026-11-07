@@ -45,3 +45,18 @@ test('social-posts.txt lists the run\'s claim flags in its header', () => {
   const clean = renderSocialText({ topic, date: '2026-11-07', drafts, claimFlags: [] });
   assert.match(clean, /Claim check \(heuristic\): no flags/);
 });
+
+test('fields outside the post copy are checked too: image prompt, hashtags, video bible', async () => {
+  const { modelText } = await import('../claimRules.js');
+  const shared = {
+    hook_line: 'Waivers?', core_message: 'Signed before the dock.', call_to_action: 'Thoughts?',
+    image_prompt: 'A guest scans a QR code at the dock.',
+    hashtags_saas_niche: ['#AIcopilot', '#AI'],
+  };
+  const script = { bible: { setting: 'a dive shop', look: 'warm', camera: 'handheld', voice: 'calm', wardrobe: 'SMS reminder shirt' }, segments: [] };
+  const rules = claimFlags({ shared: modelText(shared), script: modelText(script) }).map((f) => `${f.label}:${f.rule}`);
+  assert.ok(rules.some((r) => r.startsWith('shared:QR')), 'image_prompt');
+  assert.ok(rules.some((r) => r.startsWith('shared:AI capability')), 'hashtags');
+  assert.ok(rules.some((r) => r.startsWith('script:sms')), 'video bible');
+  assert.deepEqual(claimFlags(null), []);
+});

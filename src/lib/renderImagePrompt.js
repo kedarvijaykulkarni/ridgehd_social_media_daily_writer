@@ -77,6 +77,7 @@ export function renderImagePrompt({ topic, date, imagePrompt, productName = 'Rid
   const header = [
     `${productName} image prompt — ${date}`,
     `Topic: ${topic.id}${topic.headline ? ` — ${topic.headline}` : ''}`,
+    'REVIEW: the image must not depict a capability the registry does not approve for social (see CLAIM CHECK in social-posts.txt).',
     '',
   ].join('\n');
 

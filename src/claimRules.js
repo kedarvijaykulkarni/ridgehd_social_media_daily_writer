@@ -241,10 +241,19 @@ const CLAIM_PATTERNS = [
   { re: /\bRLS\b|row[- ]level|multi[- ]tenan/i, rule: 'security architecture: not approved for social' },
 ];
 
+// Every string inside a model response object (nested fields, arrays),
+// joined, so no model-written field escapes the claim check.
+export function modelText(value) {
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value)) return value.map(modelText).join(' ');
+  if (value && typeof value === 'object') return Object.values(value).map(modelText).join(' ');
+  return '';
+}
+
 // sources: { label: text }. Returns [{ label, rule, excerpt }].
 export function claimFlags(sources) {
   const flags = [];
-  for (const [label, text] of Object.entries(sources)) {
+  for (const [label, text] of Object.entries(sources ?? {})) {
     if (!text) continue;
     for (const { re, rule } of CLAIM_PATTERNS) {
       const m = re.exec(text);
