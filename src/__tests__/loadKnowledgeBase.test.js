@@ -92,7 +92,7 @@ test('loadKnowledgeBase throws when business-context.md yields zero chunks', asy
   await writeFile(path.join(emptyVault, 'wiki', 'business-context.md'), '# nothing to see here\n');
   t.after(() => rm(emptyVault, { recursive: true, force: true }));
 
-  await assert.rejects(() => loadKnowledgeBase(emptyVault), /no topic chunks/i);
+  await assert.rejects(() => loadKnowledgeBase(emptyVault), /§2/);
 });
 
 test('loadKnowledgeBase emits no differentiator chunk without a sourced line (no invented claim)', async (t) => {
@@ -164,4 +164,24 @@ test('"only differentiator" wording in a sourced line is dropped', async (t) => 
   const diff = (await loadKnowledgeBase(vault)).find((c) => c.category === 'differentiator');
   assert.ok(diff);
   assert.doesNotMatch(diff.detail, /only differentiator/i);
+});
+
+test('a moved §2 marker throws even when competitors/pricing chunks would keep the list non-empty', async (t) => {
+  const { mkdir, writeFile, readFile, copyFile, rm } = await import('node:fs/promises');
+  const original = await readFile(path.join(FIXTURE_VAULT, 'wiki', 'business-context.md'), 'utf-8');
+  const cases = {
+    'no-section-two': original.replace('## 2. What you can honestly claim today', '## 2b What you can claim'),
+    'no-shipped-marker': original.replace('sell on this', 'sell this'),
+    'no-planned-marker': original.replace('Not yet sellable', 'Not sellable yet'),
+  };
+  for (const [name, businessContext] of Object.entries(cases)) {
+    const vault = path.join(__dirname, 'fixtures', `moved-marker-${name}`);
+    await mkdir(path.join(vault, 'wiki'), { recursive: true });
+    await writeFile(path.join(vault, 'wiki', 'business-context.md'), businessContext);
+    for (const f of ['competitors.md', 'pricing.md']) {
+      await copyFile(path.join(FIXTURE_VAULT, 'wiki', f), path.join(vault, 'wiki', f));
+    }
+    t.after(() => rm(vault, { recursive: true, force: true }));
+    await assert.rejects(() => loadKnowledgeBase(vault), /§2/, `${name} must throw`);
+  }
 });

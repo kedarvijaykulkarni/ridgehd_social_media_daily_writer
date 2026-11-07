@@ -163,12 +163,29 @@ function tableRowsAfterMarker(lines, markerRe) {
   return rows;
 }
 
+const SHIPPED_MARKER = /✅.*sell on this/i;
+const PLANNED_MARKER = /❌.*not yet sellable/i;
+
+function markerError(reason) {
+  return new Error(
+    `Could not parse ${BUSINESS_CONTEXT} §2: ${reason}. ` +
+      'Have the "## 2." heading or the "✅ ... sell on this" / "❌ Not yet sellable" markers changed? ' +
+      'See docs/business-context-reference.md.',
+  );
+}
+
+// Throws when §2 or either marker is missing: competitor/pricing chunks would
+// otherwise keep the list non-empty and hide a silently wrong topic set.
 function extractFromBusinessContext(markdown) {
   const lines = sectionTwo(markdown);
-  if (!lines) return [];
+  if (!lines) throw markerError('no "## 2." section');
+  if (!lines.some((l) => SHIPPED_MARKER.test(l))) throw markerError('no "✅ ... sell on this" marker');
+  if (!lines.some((l) => PLANNED_MARKER.test(l))) throw markerError('no "❌ Not yet sellable" marker');
+  const shippedBullets = bulletsAfterMarker(lines, SHIPPED_MARKER);
+  if (shippedBullets.length === 0) throw markerError('no bullets after the "✅ ... sell on this" marker');
   const chunks = [];
 
-  for (const bullet of bulletsAfterMarker(lines, /✅.*sell on this/i)) {
+  for (const bullet of shippedBullets) {
     const headline = toHeadline(bullet);
     if (!headline) continue;
     chunks.push(
@@ -182,7 +199,7 @@ function extractFromBusinessContext(markdown) {
     );
   }
 
-  for (const [gap, consequence = ''] of tableRowsAfterMarker(lines, /❌.*not yet sellable/i)) {
+  for (const [gap, consequence = ''] of tableRowsAfterMarker(lines, PLANNED_MARKER)) {
     if (/do not (market|claim)/i.test(consequence)) continue; // vault says: not even as roadmap
     const headline = toHeadline(gap);
     if (!headline) continue;
