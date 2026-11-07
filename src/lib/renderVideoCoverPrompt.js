@@ -48,7 +48,11 @@ export function renderVideoCoverPrompt({ topic, date, video, bible = {}, charact
     '- Palette: deep navy-teal base, ONE sparing coral accent, white text.',
     '',
     'TEXT ON IMAGE (render exactly, spelled correctly, nothing else)',
-    `- Headline: write 3-5 punchy words, ALL CAPS, bold heavy sans-serif, max 2 lines, compressed from this topic: "${hook}". Use only what the topic says — no numbers, percentages, promises or claims from the description.`,
+    // A short approved headline is used as-is: asking for "3-5 words" from
+    // "Waiver system" made Gemini invent the missing words.
+    hook.split(/\s+/).filter(Boolean).length <= 5
+      ? `- Headline (render exactly): "${hook.toUpperCase()}" — ALL CAPS, bold heavy sans-serif, max 2 lines. Add no other words.`
+      : `- Headline: at most 5 words, ALL CAPS, bold heavy sans-serif, max 2 lines, compressed from this topic: "${hook}". Use only words the topic supports — no numbers, percentages, promises or claims from the description.`,
     '- Make ONE key word of the headline coral; the rest white with a thin dark outline/shadow so it reads at 168x94 px.',
     `- Small tag bottom-left: "${SITE_HOST}" (white, small).`,
     '',

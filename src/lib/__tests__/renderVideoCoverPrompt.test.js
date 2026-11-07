@@ -10,8 +10,16 @@ const BIBLE = { setting: 'Surf school beach.', look: 'Golden hour.', camera: 'Do
 
 test('the headline is compressed from the topic headline, never from the model-written description', () => {
   const t = renderVideoCoverPrompt({ topic: TOPIC, date: 'd', video: { ...VIDEO, description: 'Replace spreadsheet waivers with a structured system. More.' } });
-  assert.match(t, /compressed from this topic: "AI permission gating"/);
-  assert.doesNotMatch(t, /compressed from[^\n]*Replace spreadsheet waivers/);
+  assert.match(t, /Headline \(render exactly\): "AI PERMISSION GATING"/);
+  assert.doesNotMatch(t, /Headline[^\n]*Replace spreadsheet waivers/);
+});
+
+test('a short approved headline is rendered exactly; a long one is compressed to at most 5 words', () => {
+  const short = renderVideoCoverPrompt({ topic: { ...TOPIC, headline: 'Waiver system' }, date: 'd', video: VIDEO });
+  assert.match(short, /Headline \(render exactly\): "WAIVER SYSTEM" — ALL CAPS[^\n]*Add no other words\./);
+  assert.doesNotMatch(short, /3-5 punchy words/);
+  const long = renderVideoCoverPrompt({ topic: { ...TOPIC, headline: 'Digital waivers with typed e-signature and per-participant enforcement' }, date: 'd', video: VIDEO });
+  assert.match(long, /Headline: at most 5 words[^\n]*compressed from this topic/);
 });
 
 test('with a presenter: reference, outfit, exact headline rules, site tag', () => {
@@ -19,7 +27,7 @@ test('with a presenter: reference, outfit, exact headline rules, site tag', () =
   assert.match(t, /\(@Olivia\)/);
   assert.match(t, /Outfit: Navy rash vest\./);
   assert.match(t, /Surf school beach\./);
-  assert.match(t, /3-5 punchy words/);
+  assert.match(t, /Headline \(render exactly\)/);
   assert.match(t, /"ridgehq\.app"/);
   assert.doesNotMatch(t, /ROADMAP/);
 });
