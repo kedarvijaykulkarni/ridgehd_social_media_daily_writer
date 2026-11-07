@@ -90,6 +90,12 @@ test('the pricing chunk reads only the published §3 table, the full wrapped hea
   assert.doesNotMatch(pricing.headline, /commission/i, 'competitors.md §5: do not lead with 0% commission');
 });
 
+test('markdown stripping keeps underscores inside identifiers but drops _emphasis_ marks', async () => {
+  const rls = (await loadKnowledgeBase(FIXTURE_VAULT)).find((c) => /^RLS/.test(c.headline));
+  assert.ok(rls);
+  assert.match(rls.detail, /checks tenant_id and always fails closed/);
+});
+
 test('loadKnowledgeBase throws a clear error when the vault directory is missing', async () => {
   await assert.rejects(() => loadKnowledgeBase(path.join(__dirname, 'no-such-vault')), /vault/i);
 });

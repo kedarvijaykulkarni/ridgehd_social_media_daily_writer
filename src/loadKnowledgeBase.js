@@ -34,7 +34,8 @@ const PRICING = path.join('wiki', 'pricing.md');
 function stripMarkdown(text) {
   return text
     .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // [label](url) -> label
-    .replace(/[*_`~]+/g, '') // bold/italic/code/strike marks
+    .replace(/[*`~]+/g, '') // bold/italic/code/strike marks
+    .replace(/(?<!\w)_+|_+(?!\w)/g, '') // _emphasis_, but not min_role / tenant_id
     .replace(/\s+/g, ' ')
     .trim();
 }

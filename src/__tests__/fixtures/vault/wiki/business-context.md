@@ -15,7 +15,7 @@ An AI-native operations platform for dive centers.
 **✅ Solid and verifiable — sell on this:**
 - Core scheduling, bookings, staff, catalog, POS, partners/commissions, accommodation, gear rental — real, tested business logic
 - Order immutability with credit-note-on-change
-- RLS multi-tenancy enforced at the database level
+- RLS multi-tenancy enforced at the database level — every query checks `tenant_id` and _always_ fails closed
 - AI copilot for **read and scheduling operations** — genuinely demoable
 - **Waiver system** — per-participant enforcement, typed e-signature, RLS-protected. Built-in vs. the incumbent's metered add-on — sell on that contrast.
 
