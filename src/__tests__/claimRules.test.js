@@ -172,3 +172,17 @@ test('a dropped topic in history never reappears in RECENTLY COVERED', async () 
     assert.match(prompt, /RECENTLY COVERED TOPICS[^\n]*\n- Waiver system/);
   }
 });
+
+test('Product Hunt General history drops topics that are no longer offered', async () => {
+  const { buildProductHuntDiscussionPrompt } = await import('../buildProductHuntPrompt.js');
+  const { chunks } = await loadKnowledgeBase(FIXTURE_VAULT, { today: TODAY });
+  const history = {
+    posts: [
+      { date: '2026-11-01', topic_id: 'ai-copilot-in-the-operational-core', producthunt_discussion: true },
+      { date: '2026-11-02', topic_id: 'waiver-system', producthunt_discussion: true },
+    ],
+  };
+  const prompt = buildProductHuntDiscussionPrompt({ topic: chunks[0], history, knowledgeBase: chunks });
+  assert.doesNotMatch(prompt, /ai-copilot/);
+  assert.match(prompt, /2026-11-02: theme "waiver-system"/);
+});

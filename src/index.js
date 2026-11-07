@@ -209,7 +209,7 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
       );
     } else {
       console.log(`${LOG} Product Hunt: generating General discussion question from theme "${topic.id}"...`);
-      const discussion = await callOllamaProductHunt(buildProductHuntDiscussionPrompt({ topic, history }));
+      const discussion = await callOllamaProductHunt(buildProductHuntDiscussionPrompt({ topic, history, knowledgeBase }));
       if (discussionIsProductFree(discussion, PRODUCT_NAME)) {
         phDiscussion = true;
         generated['producthunt-post.txt (General)'] = modelText(discussion);
