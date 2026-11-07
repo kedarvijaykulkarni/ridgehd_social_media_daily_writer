@@ -17,6 +17,10 @@ const PROMOTIONAL_PATTERNS = [
   /\bclick here\b/i,
   /!{2,}/,
   /\b(aquaroster|ridgehq)\b.*\b(aquaroster|ridgehq)\b/is,
+  // Run 4 (2026-11-07) named the product once and still read as an ad:
+  // a third-person feature pitch plus a "See how…" call to action.
+  /\b(aquaroster|ridgehq) (features|provides|offers|delivers)\b/i,
+  /\b(see|learn|discover|explore) (how|more about)\b/i,
 ];
 
 function looksPromotional(text) {

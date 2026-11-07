@@ -40,3 +40,13 @@ test('decimals, abbreviations and "No. 1" are not mistaken for links or hashtags
 test('a plain conversational body is not flagged', () => {
   assert.equal(formatReddit(shared()).needs_manual_review, false);
 });
+
+test('a single-mention product pitch with a "See how" CTA is flagged as ad-like', () => {
+  // Verbatim from the run-4 2026-11-07 Reddit body, which was marked "No".
+  const draft = formatReddit(shared({
+    core_message: 'RidgeHQ features a built-in digital waiver system, allowing for typed e-signatures.',
+    call_to_action: 'See how structured dive center software manages operational flow.',
+  }));
+  assert.equal(draft.needs_manual_review, true);
+  assert.match(draft.review_reason, /ad-like/);
+});
