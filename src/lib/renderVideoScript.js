@@ -17,7 +17,7 @@ export function renderVideoScript({ topic, date, video, script, productName = 'R
       `future/"coming soon" framing. Fix any present-tense claim before recording.`,
     );
   }
-  header.push('REVIEW: verify every claim against wiki/business-context.md §2 (CLAUDE.md rule 4).');
+  header.push('REVIEW: every claim must be approved for social in wiki/ai-operations/facts/registry.json (CLAUDE.md rule 4).');
 
   const youtube = [
     RULE,

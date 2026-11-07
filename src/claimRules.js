@@ -7,8 +7,10 @@
 // "waivers are the only feature claim approved for now; other feature and
 // integration claims wait". So a topic is offered only when it maps to a
 // fact that is accepted, public, allowed on social, not superseded and not
-// past its review_by date — the same rules the registry's own export uses
-// (wiki/ai-operations/fact-registry.md). Fail closed: no registry, no run.
+// past its review_by date (and, for feature.*, implemented and verified) —
+// the export's approval filter in wiki/ai-operations/fact-registry.md, read
+// from the registry directly because no export is committed yet (so there
+// is no brain_revision provenance). Fail closed: no valid registry, no run.
 
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';

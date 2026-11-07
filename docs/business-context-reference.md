@@ -38,18 +38,34 @@ is decided by the owner in `wiki/ai-operations/facts/registry.json`
 (DECISIONS.md #165/#166; schema in `wiki/ai-operations/fact-registry.md`).
 `loadKnowledgeBase` keeps only chunks that `TOPIC_FACTS` maps to a fact
 that is accepted, `audience: public`, marketing `allowed` on the `social`
-channel, not superseded and not past `review_by` — the export's own
-rules. A kept chunk's `detail` becomes the fact's approved `statement`.
-As of 2026-11-07 that leaves two topics: waivers (`feature.waivers`) and
-the pricing model (`commission.direct-bookings`). Every product prompt also
-carries a CLAIM RULES block: the approved statements with their scope
-limits, a ban on presenting anything else as available, and the internal
-writing rules verbatim (limited AI undo, no AI exclusivity, no AquaRoster,
-no SMS).
+channel, not superseded and not past `review_by` (inclusive), and — for
+`feature.*` — implemented and verified. That mirrors the export's approval
+filter in `fact-registry.md`, not its full tooling: there is no
+`brain_revision` provenance until the tool reads a committed export. The
+whole registry is validated first; one malformed record rejects all of it.
+A kept chunk's `detail` becomes the fact's approved `statement`.
+As of 2026-11-07 that leaves **one topic: waivers** (`feature.waivers`).
+The pricing chunk is extracted but not offered: its headline is no
+registry fact, and 0% commission (`commission.direct-bookings`) is a
+supporting point, not a headline.
+
+Every product prompt carries a CLAIM RULES block: the approved
+statements (never the internal `scope`), a ban on presenting anything
+else as available, and the internal writing rules verbatim (limited AI
+undo, no AI exclusivity, no AquaRoster, no SMS). Website vertical/platform
+blurbs are not sent to the model. `PRODUCT_NAME` must match
+`brand.public-name`, and `cover` refuses a day whose topic is not approved
+today.
+
+This gate decides *topics and instructions*; it cannot make a local model
+obey them. After generation a lexical **claim check** flags risky wording
+(undo, AI, prices, percentages, QR, SMS, exclusivity, security
+architecture) at the top of `social-posts.txt`. It misses paraphrases —
+human review before posting is still the control.
 
 To put another topic back into rotation, the owner approves a fact for
 `social` in the registry, then the chunk id is mapped in `TOPIC_FACTS`.
-A missing registry, or no approved topic, stops the run.
+A missing or invalid registry, or no approved topic, stops the run.
 
 A missing `## 2.` section, `✅ … sell on this` marker or `❌ Not yet sellable`
 marker in `business-context.md` throws — the optional competitor/pricing
@@ -71,14 +87,15 @@ not less.
 
 ## The claim safety rail (CLAUDE.md rule 4)
 
-`business-context.md` §2 is the authority on what may be stated as
-present-tense fact:
+**The registry is the authority on what may be marketed** (see the
+marketing gate above). `business-context.md` §2 is implementation
+evidence only — what is built, not what is approved:
 
-- **`✅` list → safe to claim.** These map to `status: "shipped"`; the
-  Ollama prompt may write them in the present tense.
-- **`❌` list → never present-tense.** Extracted as `status: "planned"`,
-  which the Ollama prompt template forces into "coming soon" / roadmap
-  framing. The rows the vault says not to market at all are not extracted.
+- **`✅` list → built.** These map to `status: "shipped"`, but are offered
+  only when a registry fact approves them for social.
+- **`❌` list → not built.** Extracted as `status: "planned"`; prompts
+  force roadmap framing for such a topic should one ever be approved. None
+  is today. The rows the vault says not to market at all are not extracted.
 - Everything the model writes still needs a human read before it's
   posted. Pay closest attention to `status: "planned"` drafts — the
   vault's own §2 table can lag the codebase in either direction (a "gap"

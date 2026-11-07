@@ -72,8 +72,10 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
   topics mapped (`TOPIC_FACTS`) to a fact the owner approved for `social`
   in the vault's `wiki/ai-operations/facts/registry.json` are offered,
   speaking in that fact's statement; every product prompt carries its
-  CLAIM RULES block (approved facts + internal never-claim rules). Today
-  that is waivers and the pricing model. See
+  CLAIM RULES block (approved statements + internal never-claim rules).
+  Today that is one topic: waivers. The gate picks topics and instructs the
+  model; it cannot guarantee the output — `claimFlags` marks risky wording
+  in `social-posts.txt` for the human review. See
   `docs/business-context-reference.md`.
 - **`data/post-history.json`** replaced `../../marketing/post-history.json`.
   It's the only file this tool writes besides `output/`. Lives in
@@ -157,7 +159,7 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
    - **Marketing approval is the registry, not §2.** A ✅ row is *built*;
      it is only *sellable* on social when `wiki/ai-operations/facts/registry.json`
      allows it there (DECISIONS #165(4): waivers are the only approved
-     feature claim). `src/claimRules.js` enforces this — don't widen
+     feature claim). `src/claimRules.js` gates topics on it — don't widen
      `TOPIC_FACTS` without a registry fact.
    - `✅ Solid and verifiable — sell on this` → safe to state present-tense
      once the registry approves it.
@@ -202,10 +204,15 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
   `src/lib/__tests__/renderLinkedInArticle.test.js` — the two long-form
   renderers (frontmatter vs. none, section rendering, roadmap warning).
 - `src/lib/__tests__/hashtags.test.js` — hashtag sanitization regression.
-- `src/__tests__/claimRules.test.js` — registry gate (approved/expired/
-  superseded/other-channel facts, missing registry), approved wording, and
-  the CLAIM RULES block in all four product prompts; fixture
+- `src/__tests__/claimRules.test.js` — registry validation (one isolated
+  negative per rule), the approval gate (other channel, superseded,
+  unverified feature, inclusive `review_by`, missing registry), approved
+  wording, no internal `scope`, public-name check, dropped topics kept out
+  of RECENTLY COVERED, and the CLAIM RULES block in all four product
+  prompts; schema-complete fixture
   `fixtures/vault/wiki/ai-operations/facts/registry.json`.
+- `src/__tests__/claimFlags.test.js` — post-generation claim-check
+  heuristic and its `social-posts.txt` header.
 - `src/__tests__/validateShape.test.js` — short-form shape normalisation
   (malformed hashtag/subreddit arrays) through all four formatters.
 - `src/__tests__/selectTopic.test.js` — same-day re-run replacement

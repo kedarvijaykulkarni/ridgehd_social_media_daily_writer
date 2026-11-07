@@ -43,8 +43,8 @@ export function reviewerNote({ kind, productName, date, topic, wordCount, focus,
     );
   }
   lines.push(
-    `  REVIEW BEFORE PUBLISHING: verify every specific claim against the`,
-    `  business vault (wiki/business-context.md §2) per CLAUDE.md rule 4.`,
+    `  REVIEW BEFORE PUBLISHING: every specific claim must be approved for social in`,
+    `  the vault's wiki/ai-operations/facts/registry.json (CLAUDE.md rule 4).`,
   );
   if (topic.status !== 'shipped') {
     lines.push(
