@@ -179,3 +179,36 @@ export function assertPublicName(registry, today, productName) {
     throw new Error(`PRODUCT_NAME "${productName}" is not the approved public name (${REGISTRY}: "${brand.statement}").`);
   }
 }
+
+// Post-generation heuristic, not a gate: the prompts instruct, but a local
+// model can still write a banned claim, and validators only check shape.
+// Each flag names the registry rule behind it, so the reviewer knows what
+// to check before posting (CLAUDE.md rule 4). Matching is lexical and will
+// both miss paraphrases and flag harmless uses.
+const CLAIM_PATTERNS = [
+  { re: /\b(revers\w*|undo\w*|roll(?:ed)?[- ]back)\b/i, rule: 'ai.undo-limited: AI actions are not fully reversible' },
+  { re: /\bAI\b|\bcopilot\b|\bartificial intelligence\b/i, rule: 'AI capability: not approved for social (#165(4))' },
+  { re: /[€$£]\s?\d/, rule: 'price: plan prices are sales/website only' },
+  { re: /\b(?!0%)\d+(?:[.,]\d+)?\s?%/, rule: 'percentage: only "0% commission" is approved' },
+  { re: /\bQR\b/i, rule: 'QR: QR-linked waiver signing is not built' },
+  { re: /\bSMS\b|\btext messag/i, rule: 'sms.not-included' },
+  { re: /\baqua\s?roster\b/i, rule: 'brand.not-aquaroster' },
+  { re: /\bno (?:other )?competitor|\bonly (?:platform|product|tool|one)\b|\bunique(?:ly)?\b/i, rule: 'claims.no-ai-exclusivity / no exclusivity claims' },
+  { re: /\bRLS\b|row[- ]level|multi[- ]tenan/i, rule: 'security architecture: not approved for social' },
+];
+
+// sources: { label: text }. Returns [{ label, rule, excerpt }].
+export function claimFlags(sources) {
+  const flags = [];
+  for (const [label, text] of Object.entries(sources)) {
+    if (!text) continue;
+    for (const { re, rule } of CLAIM_PATTERNS) {
+      const m = re.exec(text);
+      if (!m) continue;
+      const start = Math.max(0, m.index - 40);
+      const excerpt = text.slice(start, m.index + m[0].length + 40).replace(/\s+/g, ' ').trim();
+      flags.push({ label, rule, excerpt });
+    }
+  }
+  return flags;
+}

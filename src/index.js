@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 import { selectTopic, recordUsage, withoutRunsOn } from './selectTopic.js';
 import { loadKnowledgeBase } from './loadKnowledgeBase.js';
-import { loadRegistry, claimRulesBlock, assertPublicName } from './claimRules.js';
+import { loadRegistry, claimRulesBlock, assertPublicName, claimFlags } from './claimRules.js';
 import { selectFocus } from './seoFocus.js';
 import {
   selectProductHuntFormat,
@@ -72,6 +72,14 @@ async function loadHistory() {
   }
 }
 
+// Every string inside a model response object, joined for the claim check.
+function stringsOf(value) {
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value)) return value.map(stringsOf).join(' ');
+  if (value && typeof value === 'object') return Object.values(value).map(stringsOf).join(' ');
+  return '';
+}
+
 async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
   const date = localDateString();
   const registry = await loadRegistry(BUSINESS_VAULT_PATH);
@@ -120,7 +128,10 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
     reddit: formatReddit(shared),
   };
 
-  const socialText = renderSocialText({ topic, date, drafts, productName: PRODUCT_NAME, focus });
+  // Model-written text per output file, for the post-generation claim check.
+  const generated = {
+    'social-posts.txt': [shared.hook_line, shared.core_message, shared.call_to_action].join(' '),
+  };
 
   // 1-minute video script: one more Ollama pass, built from the same shared
   // object (headline + image prompt + hook/core message/CTA).
@@ -133,6 +144,7 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
     buildVideoScriptPrompt({ topic, shared, video, productName: PRODUCT_NAME, character, mode: visualMode, claimRules }),
     { withWardrobe: Boolean(character), mode: visualMode, productName: PRODUCT_NAME },
   );
+  generated['video-script.txt'] = stringsOf(script.segments);
   const videoScriptText = renderVideoScript({
     topic, date, video, script, productName: PRODUCT_NAME, character, mode: visualMode,
   });
@@ -154,6 +166,7 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
     const article = await callOllamaArticle(
       buildArticlePrompt({ topic, knowledgeBase, history, focus, productName: PRODUCT_NAME, claimRules }),
     );
+    generated['blog-post.md + linkedin-article.md'] = stringsOf(article);
     blogPostMd = renderBlogPost({
       topic,
       date,
@@ -187,6 +200,7 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
       const phPost = await callOllamaProductHunt(
         buildProductHuntPrompt({ topic, history, format: phFormat, productName: PRODUCT_NAME, claimRules }),
       );
+      generated['producthunt-post.txt (self-promotion)'] = stringsOf(phPost);
       phBlocks.push(renderProductHuntPost({ topic, date, format: phFormat, post: phPost, productName: PRODUCT_NAME }));
     }
 
@@ -204,6 +218,7 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
       const discussion = await callOllamaProductHunt(buildProductHuntDiscussionPrompt({ topic, history }));
       if (discussionIsProductFree(discussion, PRODUCT_NAME)) {
         phDiscussion = true;
+        generated['producthunt-post.txt (General)'] = stringsOf(discussion);
         phBlocks.push(renderProductHuntDiscussion({ topic, date, format: DISCUSSION_FORMAT, post: discussion }));
       } else {
         console.log(
@@ -214,6 +229,10 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
     }
   }
   const productHuntText = phBlocks.length ? phBlocks.join('\n\n') : null;
+
+  const flags = claimFlags(generated);
+  console.log(`${LOG} Claim check (heuristic): ${flags.length ? `${flags.length} flag(s), listed at the top of social-posts.txt` : 'no flags'}`);
+  const socialText = renderSocialText({ topic, date, drafts, productName: PRODUCT_NAME, focus, claimFlags: flags });
 
   if (dryRun) {
     console.log('\n=== DRY RUN — nothing written, history unchanged ===\n');
