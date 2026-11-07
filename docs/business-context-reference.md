@@ -57,16 +57,24 @@ supporting point, not a headline.
 Every product prompt carries a CLAIM RULES block: the approved
 statements (never the internal `scope`), a ban on presenting anything
 else as available, and the internal writing rules verbatim (limited AI
-undo, no AI exclusivity, no AquaRoster, no SMS). Website vertical/platform
-blurbs are not sent to the model. `PRODUCT_NAME` must match
+undo, no AI exclusivity, no AquaRoster, no SMS), plus this tool's
+`COPY_RULES` from the 2026-11-07 output review: no legal/compliance
+outcomes, nothing "mandatory" or blocking, no check-in/integration/
+automation/replacement claims, no invented numbers, results or
+first-person operator experience, and 0% commission only as a supporting
+detail. Website vertical/platform blurbs are not sent to the model, and
+the rotated platform page is not linked or covered in long-form (no
+approved feature fact). `PRODUCT_NAME` must match
 `brand.public-name`, and `cover` refuses a day whose topic is not approved
 today.
 
 This gate decides *topics and instructions*; it cannot make a local model
 obey them. After generation a lexical **claim check** flags risky wording
 (undo, AI, prices, percentages, QR, SMS, exclusivity, security
-architecture) at the top of `social-posts.txt`. It misses paraphrases —
-human review before posting is still the control.
+architecture, and the `COPY_RULES` categories: legal/compliance,
+mandatory/blocking, workflow/integration/replacement, results, operator
+persona, numbers) at the top of `social-posts.txt`. It misses paraphrases
+and flags harmless uses — human review before posting is still the control.
 
 To put another topic back into rotation, the owner approves a fact for
 `social` in the registry, then the chunk id is mapped in `TOPIC_FACTS`.

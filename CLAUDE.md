@@ -85,9 +85,12 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
   ridgehq.app `/solutions/*` verticals and `/platform/*` + `/tools/roi-calculator`
   pages, each with published blurb copy and Google Search Console keywords.
   Every run rotates one vertical (audience + link for every draft) and one
-  platform page (long-form section + internal link), least-used first via
-  `vertical_id` / `platform_id` in `data/post-history.json`. `#RidgeHQ` is
-  pinned on X/LinkedIn/Instagram and both long-form drafts; Reddit stays
+  platform page, least-used first via `vertical_id` / `platform_id` in
+  `data/post-history.json`. The platform page is recorded but **not used**
+  in any draft while no registry fact approves its feature (no long-form
+  section, link or keywords). Blurbs are never sent to the model.
+  `#RidgeHQ` is pinned on X/LinkedIn/Instagram and the LinkedIn article;
+  the blog post carries the brand as its `ridgehq` front-matter tag; Reddit stays
   hashtag- and link-free (self-promo rules). Keyword coverage is reported in
   each output, never auto-"fixed". When the site adds a page or Search
   Console shows new queries, update this file — only add phrases the linked
