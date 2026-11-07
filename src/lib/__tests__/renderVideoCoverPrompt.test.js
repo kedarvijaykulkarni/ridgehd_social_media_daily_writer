@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { renderVideoCoverPrompt, coverHook } from '../renderVideoCoverPrompt.js';
+import { renderVideoCoverPrompt } from '../renderVideoCoverPrompt.js';
 import { parseVideoScript } from '../parseVideoScript.js';
 import { renderVideoScript } from '../renderVideoScript.js';
 
@@ -8,8 +8,18 @@ const VIDEO = { title: 'AI permission gating', description: 'Stop worrying about
 const TOPIC = { id: 'ai-gating', status: 'shipped', headline: VIDEO.title };
 const BIBLE = { setting: 'Surf school beach.', look: 'Golden hour.', camera: 'Dolly.', voice: 'Warm male.', wardrobe: 'Navy rash vest.' };
 
-test('hook is the first sentence of the description, no trailing punctuation', () => {
-  assert.equal(coverHook(VIDEO.description), 'Stop worrying about unintended changes');
+test('the headline is compressed from the topic headline, never from the model-written description', () => {
+  const t = renderVideoCoverPrompt({ topic: TOPIC, date: 'd', video: { ...VIDEO, description: 'Replace spreadsheet waivers with a structured system. More.' } });
+  assert.match(t, /Headline \(render exactly\): "AI PERMISSION GATING"/);
+  assert.doesNotMatch(t, /Headline[^\n]*Replace spreadsheet waivers/);
+});
+
+test('a short approved headline is rendered exactly; a long one is compressed to at most 5 words', () => {
+  const short = renderVideoCoverPrompt({ topic: { ...TOPIC, headline: 'Waiver system' }, date: 'd', video: VIDEO });
+  assert.match(short, /Headline \(render exactly\): "WAIVER SYSTEM" — ALL CAPS[^\n]*Add no other words\./);
+  assert.doesNotMatch(short, /3-5 punchy words/);
+  const long = renderVideoCoverPrompt({ topic: { ...TOPIC, headline: 'Digital waivers with typed e-signature and per-participant enforcement' }, date: 'd', video: VIDEO });
+  assert.match(long, /Headline: at most 5 words[^\n]*compressed from this topic/);
 });
 
 test('with a presenter: reference, outfit, exact headline rules, site tag', () => {
@@ -17,7 +27,7 @@ test('with a presenter: reference, outfit, exact headline rules, site tag', () =
   assert.match(t, /\(@Olivia\)/);
   assert.match(t, /Outfit: Navy rash vest\./);
   assert.match(t, /Surf school beach\./);
-  assert.match(t, /3-5 punchy words/);
+  assert.match(t, /Headline \(render exactly\)/);
   assert.match(t, /"ridgehq\.app"/);
   assert.doesNotMatch(t, /ROADMAP/);
 });
@@ -53,4 +63,15 @@ test('parseVideoScript keeps the recorded presenter reference and the exact road
   const shipped = parseVideoScript(renderVideoScript({ topic: TOPIC, date: 'd', video: VIDEO, script }));
   assert.equal(shipped.topic.status, 'shipped');
   assert.equal(shipped.reference, null);
+});
+
+test('the cover cue never suggests a security, booking or pricing symbol', () => {
+  const text = renderVideoCoverPrompt({
+    topic: { id: 'waiver-system', status: 'shipped', headline: 'Waiver system' },
+    date: '2026-11-07',
+    video: { title: 'Waiver system', description: 'Digital waivers are built in.' },
+    bible: {},
+  });
+  assert.doesNotMatch(text, /e\.g\.[^)]*(shield|calendar|price tag)/);
+  assert.match(text, /Never a shield, padlock, calendar, price tag, chart, dashboard or screen/);
 });

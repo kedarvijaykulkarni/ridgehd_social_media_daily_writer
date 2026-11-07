@@ -76,15 +76,32 @@ test('article prompt lists recent headlines to avoid repetition', () => {
   assert.match(prompt, /RECENTLY COVERED/i);
 });
 
-test('article prompt targets the focus vertical, its SEO keywords, and the platform page', () => {
+test('article prompt targets the focus vertical and its SEO keywords, not the unapproved platform page', () => {
   const prompt = buildArticlePrompt({ topic: KB[0], knowledgeBase: KB, history: HISTORY, focus: FOCUS, productName: 'RidgeHQ' });
   assert.match(prompt, new RegExp(`TODAY'S AUDIENCE: ${FOCUS.vertical.name}`));
   assert.ok(prompt.includes(`"${FOCUS.vertical.keywords[0]}"`), 'primary keyword requested verbatim');
-  assert.ok(prompt.includes(FOCUS.platform.name), 'platform capability included');
+  assert.ok(!prompt.includes(FOCUS.platform.name), 'no platform feature page in the prompt');
+  for (const k of FOCUS.platform.keywords) assert.ok(!prompt.includes(`"${k}"`), `platform keyword ${k}`);
   assert.doesNotMatch(prompt, /platform\s+for dive centers\./);
 });
 
 test('asks the model for one of the website blog pillars', () => {
   const prompt = buildArticlePrompt({ topic: KB[0], knowledgeBase: KB, history: { posts: [] }, focus: FOCUS });
   assert.match(prompt, /"pillar": "exactly one of: Business Economics \| Operations \| Technology/);
+});
+
+test('the LinkedIn opener is the product team speaking, never an invented operator', () => {
+  const prompt = buildArticlePrompt({ topic: KB[0], knowledgeBase: KB, history: HISTORY, focus: FOCUS, productName: 'RidgeHQ' });
+  assert.match(prompt, /written as the\s+RidgeHQ team/);
+  assert.match(prompt, /Never write as an operator and never invent experience,\s+conversations, events or anecdotes/);
+  assert.match(prompt, /Name only the topic\s+and its approved facts/);
+  assert.doesNotMatch(prompt, /we've been talking/i, 'the example itself must not model invented conversations');
+  assert.match(prompt, /"linkedin_hook": "[^"]*from the RidgeHQ team \(not an operator, no invented experience\)/);
+});
+
+test('the article is kept short so a three-fact topic is not padded with invented claims', () => {
+  const prompt = buildArticlePrompt({ topic: KB[0], knowledgeBase: KB, history: HISTORY, focus: FOCUS, productName: 'RidgeHQ' });
+  assert.match(prompt, /\(500–800 words\)/);
+  assert.match(prompt, /do not pad length with claims the facts do not make/);
+  assert.match(prompt, /Aim for 3–4 sections/);
 });

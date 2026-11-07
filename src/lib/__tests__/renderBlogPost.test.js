@@ -98,3 +98,12 @@ test('no video block without a video', () => {
   const md = renderBlogPost({ topic: SHIPPED_TOPIC, date: '2026-09-04', article: ARTICLE });
   assert.doesNotMatch(md, /^video:/m);
 });
+
+test('a body outside 500–800 words or 3–4 sections gets a LENGTH warning, never padding', async () => {
+  const { reviewerNote } = await import('../articleMarkdown.js');
+  const topic = { id: 'waiver-system', status: 'shipped', headline: 'Waiver system' };
+  const base = { kind: 'Blog post', productName: 'RidgeHQ', date: '2026-11-07', topic };
+  assert.match(reviewerNote({ ...base, wordCount: 358, sectionCount: 4 }), /⚠️ LENGTH: 358 words \/ 4 sections/);
+  assert.match(reviewerNote({ ...base, wordCount: 600, sectionCount: 6 }), /⚠️ LENGTH: 600 words \/ 6 sections/);
+  assert.doesNotMatch(reviewerNote({ ...base, wordCount: 600, sectionCount: 3 }), /LENGTH/);
+});

@@ -174,20 +174,47 @@ async function requestParsed(prompt, opts, validate) {
 
   const first = await requestOllama(host, model, prompt);
   try {
-    return validate(parseModelResponse(first));
+    return await withClaimFeedback(validate(parseModelResponse(first)), prompt, opts, validate, (p) =>
+      requestOllama(host, model, p),
+    );
   } catch (firstErr) {
     const stricter =
       `${prompt}\n\nYour previous response was rejected: ${firstErr.message}. ` +
       `Return ONLY one complete, valid JSON object with every required key present. ` +
       `No markdown fences. No preamble. No explanation before or after the JSON.`;
     const second = await requestOllama(host, model, stricter);
+    let parsed;
     try {
-      return validate(parseModelResponse(second));
+      parsed = validate(parseModelResponse(second));
     } catch (secondErr) {
       throw new Error(
         `Failed to parse Ollama response as JSON after retry. First attempt: ${firstErr.message}. Retry attempt: ${secondErr.message}`,
       );
     }
+    // The shape retry's answer gets the same claim check as a first answer.
+    return withClaimFeedback(parsed, prompt, opts, validate, (p) => requestOllama(host, model, p));
+  }
+}
+
+// A shape-valid answer can still break the CLAIM RULES — the 2026-11-07
+// runs kept writing "integrated", "replace", "ensuring" despite the bans.
+// `opts.claimCheck(obj)` returns the offending excerpts; if there are any,
+// ask once more and quote them back. The model's second answer is kept if
+// it is shape-valid (whatever flags remain are shown to the reviewer);
+// otherwise the first answer is kept, so drift never fails the run.
+async function withClaimFeedback(obj, prompt, opts, validate, ask) {
+  const problems = opts.claimCheck?.(obj) ?? [];
+  if (!problems.length) return obj;
+  opts.onClaimRetry?.(problems.length);
+  const retry =
+    `${prompt}\n\nYour previous answer broke the CLAIM RULES with these phrases:\n` +
+    problems.slice(0, 12).map((p) => `- "${p}"`).join('\n') +
+    `\nRewrite it without them and without any other unapproved claim. ` +
+    `Return ONLY one complete, valid JSON object with every required key present.`;
+  try {
+    return validate(parseModelResponse(await ask(retry)));
+  } catch {
+    return obj;
   }
 }
 

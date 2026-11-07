@@ -8,6 +8,7 @@
 
 import { POSITIONING, focusPromptBlock } from './seoFocus.js';
 import { BLOG_PILLARS } from './lib/renderBlogPost.js';
+import { ARTICLE_WORDS, ARTICLE_SECTIONS } from './lib/articleMarkdown.js';
 
 const MAX_SUPPORTING = 6;
 const SUPPORTING_DETAIL_CHARS = 240;
@@ -53,11 +54,18 @@ codenames, or competitors by name in a disparaging way.
 
 ${claimRules}
 
-TASK: write ONE long-form article (900–1500 words) about the primary topic.
+TASK: write ONE long-form article (${ARTICLE_WORDS.min}–${ARTICLE_WORDS.max} words) about the primary topic.
+Keep it short on purpose: say what the approved facts say, frame the operator's
+problem, and stop — do not pad length with claims the facts do not make.
 It will be rendered two ways: a website blog post (company voice) and a
 LinkedIn article (first-person voice). Write the body sections in a
 voice-neutral, operator-facing register that works for both; supply a
-separate first-person opener for the LinkedIn version.
+separate first-person opener for the LinkedIn version, written as the
+${productName} team, stating what the team builds and why the problem matters
+("At ${productName}, we built <the topic> because…"). Name only the topic
+and its approved facts — not broad claims like "systems that manage your
+operations". Never write as an operator and never invent experience,
+conversations, events or anecdotes.
 
 PRIMARY TOPIC (do not deviate from this fact set):
 - Headline: ${topic.headline}
@@ -71,7 +79,7 @@ context; do NOT invent anything beyond them, and keep the article anchored
 to the PRIMARY TOPIC above):
 ${supporting || '(none)'}
 
-${focusPromptBlock({ focus, productName, includePlatform: true })}
+${focusPromptBlock({ focus, productName })}
 - The blog post must rank for the PRIMARY phrase: put it (or a close variant)
   in "title", in "meta_description", and in the first section's body; put
   "${productName}" in "meta_description" too.
@@ -85,7 +93,7 @@ Return ONLY valid JSON, no markdown fences, no preamble, matching exactly:
 {
   "title": "specific, compelling headline, <= 70 characters, not clickbait",
   "dek": "1–2 sentence standfirst for the blog, company voice (third person / brand voice)",
-  "linkedin_hook": "1–3 sentence first-person opener for the LinkedIn version, no hashtags",
+  "linkedin_hook": "1–3 sentence first-person opener from the ${productName} team (not an operator, no invented experience), no hashtags",
   "meta_description": "<= 155 characters, plain-language SEO summary that names the concrete value",
   "slug": "kebab-case-url-slug derived from the title, <= 60 characters",
   "pillar": "exactly one of: ${BLOG_PILLARS.join(' | ')} — the blog section this article belongs in",
@@ -97,6 +105,6 @@ Return ONLY valid JSON, no markdown fences, no preamble, matching exactly:
   "cta": "one short, non-pushy closing call to action"
 }
 
-Aim for 4–6 sections. Do not include the title again as the first section.
+Aim for ${ARTICLE_SECTIONS.min}–${ARTICLE_SECTIONS.max} sections. Do not include the title again as the first section.
 Every key above is REQUIRED — include all of them, especially "cta".`;
 }

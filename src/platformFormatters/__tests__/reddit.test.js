@@ -40,3 +40,28 @@ test('decimals, abbreviations and "No. 1" are not mistaken for links or hashtags
 test('a plain conversational body is not flagged', () => {
   assert.equal(formatReddit(shared()).needs_manual_review, false);
 });
+
+test('a single-mention product pitch with a "See how" CTA is flagged as ad-like', () => {
+  // Verbatim from the run-4 2026-11-07 Reddit body, which was marked "No".
+  const draft = formatReddit(shared({
+    core_message: 'RidgeHQ features a built-in digital waiver system, allowing for typed e-signatures.',
+    call_to_action: 'See how structured dive center software manages operational flow.',
+  }));
+  assert.equal(draft.needs_manual_review, true);
+  assert.match(draft.review_reason, /ad-like/);
+});
+
+test('a product pitch alone or a "learn how" alone is not ad-like; only the pair is', () => {
+  const review = (core, cta) => formatReddit(shared({ core_message: core, call_to_action: cta })).needs_manual_review;
+  assert.equal(review('RidgeHQ offers built-in digital waivers.', 'What works for your team?'), false, 'pitch only');
+  assert.equal(review('Operators compare notes on participant paperwork.', 'Learn how other operators approach it.'), false, 'CTA only');
+  assert.equal(review('RidgeHQ offers built-in digital waivers.', 'See how it works.'), true, 'pitch + CTA');
+});
+
+test('"See how" inside the body is not a call to action', () => {
+  const draft = formatReddit(shared({
+    core_message: 'See how operators compare paperwork. RidgeHQ offers built-in digital waivers.',
+    call_to_action: 'What does your process look like?',
+  }));
+  assert.equal(draft.needs_manual_review, false);
+});

@@ -86,7 +86,7 @@ function claimCheckLines(claimFlags) {
   if (!claimFlags.length) return ['Claim check (heuristic): no flags — still review every claim before posting.'];
   return [
     `⚠️ CLAIM CHECK (heuristic, ${claimFlags.length} flag(s)) — verify against the registry before posting:`,
-    ...claimFlags.map((f) => `  ${f.label}: ${f.rule} — "…${f.excerpt}…"`),
+    ...claimFlags.map((f) => `  ${f.label}: ${f.rule}${f.total ? ` (${f.total} hits, first 3 shown)` : ''} — "…${f.excerpt}…"`),
   ];
 }
 

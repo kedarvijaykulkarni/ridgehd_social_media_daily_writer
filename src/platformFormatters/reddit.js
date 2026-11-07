@@ -19,8 +19,16 @@ const PROMOTIONAL_PATTERNS = [
   /\b(aquaroster|ridgehq)\b.*\b(aquaroster|ridgehq)\b/is,
 ];
 
-function looksPromotional(text) {
-  return PROMOTIONAL_PATTERNS.some((re) => re.test(text));
+// Run 4 (2026-11-07) named the product once and still read as an ad: a
+// third-person feature pitch AND a "See how…" call to action. Either one
+// alone is ordinary Reddit talk, so only the pair counts.
+const PITCH = /\b(aquaroster|ridgehq) (features|provides|offers|delivers)\b/i;
+const CTA = /\b(see|learn|discover|explore) (how|more about)\b/i;
+
+// `cta` is the call_to_action field: a "See how…" inside the body copy is
+// not a call to action.
+function looksPromotional(text, cta = '') {
+  return PROMOTIONAL_PATTERNS.some((re) => re.test(text)) || (PITCH.test(text) && CTA.test(cta));
 }
 
 // Reddit: title aims for REDDIT_TITLE_TARGET (informative, not clickbait;
@@ -55,7 +63,7 @@ export function formatReddit(shared) {
     /\b[a-z0-9-]+\.(app|com|io|net|org|co|dev|ai)\b/i, // bare domain: ridgehq.app
     /(^|[^\w&])#[a-z]\w*/i, // #tag, also inside "(#tag)"
   ].some((re) => re.test(`${title} ${body}`));
-  const isPromotional = looksPromotional(bodyText);
+  const isPromotional = looksPromotional(bodyText, shared.call_to_action);
   const needsReview = hasLinkOrTag || isPromotional;
   const reasons = [
     hasLinkOrTag && 'Body contains a link or hashtag; remove it before posting (Reddit self-promotion rules).',

@@ -11,7 +11,7 @@ import path from 'node:path';
 import { parseVideoScript } from './lib/parseVideoScript.js';
 import { renderVideoCoverPrompt } from './lib/renderVideoCoverPrompt.js';
 import { loadKnowledgeBase } from './loadKnowledgeBase.js';
-import { loadRegistry, assertPublicName, claimFlags, modelText } from './claimRules.js';
+import { loadRegistry, assertPublicName, claimFlags, claimSources } from './claimRules.js';
 import { localDateString } from './lib/localDate.js';
 
 export async function writeCover({ outputDir, vaultPath, date, characterRef, productName, today = localDateString() }) {
@@ -30,7 +30,7 @@ export async function writeCover({ outputDir, vaultPath, date, characterRef, pro
         'no cover written. Generate a new run instead.',
     );
   }
-  const flags = claimFlags({ 'stored title/description/bible': modelText({ video: parsed.video, bible: parsed.bible }) });
+  const flags = claimFlags(claimSources('stored title/description', { video: parsed.video, bible: parsed.bible }));
 
   // The presenter recorded in that day's script wins over today's .env, so
   // the cover shows the same person as the video; --character-ref is the
@@ -44,7 +44,7 @@ export async function writeCover({ outputDir, vaultPath, date, characterRef, pro
   const warning = flags.length
     ? [
         `⚠️ CLAIM CHECK (heuristic, ${flags.length} flag(s)) — this cover reuses ${date}'s stored text; verify against the registry:`,
-        ...flags.map((f) => `  ${f.rule} — "…${f.excerpt}…"`),
+        ...flags.map((f) => `  ${f.rule}${f.total ? ` (${f.total} hits, first 3 shown)` : ''} — "…${f.excerpt}…"`),
         '',
         '',
       ].join('\n')

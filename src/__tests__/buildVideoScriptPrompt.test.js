@@ -45,3 +45,8 @@ test('requests JSON segments', () => {
   assert.match(prompt, /"visual"/);
   assert.match(prompt, /"audio"/);
 });
+
+test('the Ending/CTA adds no fact, so 0% commission cannot become the payoff', () => {
+  const p = buildVideoScriptPrompt({ topic: { ...PLANNED, status: 'shipped' }, shared: SHARED, video: VIDEO });
+  assert.match(p, /It adds no\s+other fact: no 0% commission, no result, no new feature/);
+});

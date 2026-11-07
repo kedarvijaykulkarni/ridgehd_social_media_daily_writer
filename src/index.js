@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 import { selectTopic, recordUsage, withoutRunsOn } from './selectTopic.js';
 import { loadKnowledgeBase } from './loadKnowledgeBase.js';
-import { loadRegistry, claimRulesBlock, assertPublicName, claimFlags, modelText } from './claimRules.js';
+import { loadRegistry, claimRulesBlock, assertPublicName, claimFlags, claimSources, claimProblems } from './claimRules.js';
 import { selectFocus } from './seoFocus.js';
 import {
   selectProductHuntFormat,
@@ -72,6 +72,12 @@ async function loadHistory() {
   }
 }
 
+// Claim-feedback retry for every product generation pass (callOllama.js).
+const claimRetry = {
+  claimCheck: claimProblems,
+  onClaimRetry: (n) => console.log(`${LOG} Claim check: ${n} flagged phrase(s) in the answer — asking the model once more.`),
+};
+
 async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
   const date = localDateString();
   const registry = await loadRegistry(BUSINESS_VAULT_PATH);
@@ -111,7 +117,7 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
   );
 
   const prompt = buildOllamaPrompt({ topic, knowledgeBase, history, focus, productName: PRODUCT_NAME, claimRules });
-  const shared = await callOllama(prompt);
+  const shared = await callOllama(prompt, { ...claimRetry });
 
   const drafts = {
     x: formatX(shared, focus),
@@ -124,7 +130,7 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
   // check — the whole response objects, so image prompts, hashtags,
   // subreddits and the video bible are covered too.
   const generated = {
-    'social-posts.txt + image-prompt.txt': modelText(shared),
+    ...claimSources('social-posts.txt', shared), // image_prompt lands under "(visual)"
   };
 
   // 1-minute video script: one more Ollama pass, built from the same shared
@@ -136,9 +142,9 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
   console.log(`${LOG} Video: visual mode "${visualMode}"${character ? ' (presenter from VIDEO_CHARACTER)' : ''}`);
   const script = await callOllamaVideoScript(
     buildVideoScriptPrompt({ topic, shared, video, productName: PRODUCT_NAME, character, mode: visualMode, claimRules }),
-    { withWardrobe: Boolean(character), mode: visualMode, productName: PRODUCT_NAME },
+    { withWardrobe: Boolean(character), mode: visualMode, productName: PRODUCT_NAME, ...claimRetry },
   );
-  generated['video-script.txt + video-cover-image.txt'] = modelText(script);
+  Object.assign(generated, claimSources('video-script.txt + video-cover-image.txt', script));
   const videoScriptText = renderVideoScript({
     topic, date, video, script, productName: PRODUCT_NAME, character, mode: visualMode,
   });
@@ -159,8 +165,9 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
     console.log(`${LOG} Long-form: generating blog post + LinkedIn article for "${topic.id}"...`);
     const article = await callOllamaArticle(
       buildArticlePrompt({ topic, knowledgeBase, history, focus, productName: PRODUCT_NAME, claimRules }),
+      { ...claimRetry },
     );
-    generated['blog-post.md + linkedin-article.md'] = modelText(article);
+    Object.assign(generated, claimSources('blog-post.md + linkedin-article.md', article));
     blogPostMd = renderBlogPost({
       topic,
       date,
@@ -193,8 +200,9 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
       console.log(`${LOG} Product Hunt: generating "${phFormat.id}" self-promotion post for "${topic.id}"...`);
       const phPost = await callOllamaProductHunt(
         buildProductHuntPrompt({ topic, history, format: phFormat, productName: PRODUCT_NAME, claimRules }),
+        { ...claimRetry },
       );
-      generated['producthunt-post.txt (self-promotion)'] = modelText(phPost);
+      Object.assign(generated, claimSources('producthunt-post.txt (self-promotion)', phPost));
       phBlocks.push(renderProductHuntPost({ topic, date, format: phFormat, post: phPost, productName: PRODUCT_NAME }));
     }
 
@@ -212,7 +220,7 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
       const discussion = await callOllamaProductHunt(buildProductHuntDiscussionPrompt({ topic, history, knowledgeBase }));
       if (discussionIsProductFree(discussion, PRODUCT_NAME)) {
         phDiscussion = true;
-        generated['producthunt-post.txt (General)'] = modelText(discussion);
+        Object.assign(generated, claimSources('producthunt-post.txt (General)', discussion));
         phBlocks.push(renderProductHuntDiscussion({ topic, date, format: DISCUSSION_FORMAT, post: discussion }));
       } else {
         console.log(

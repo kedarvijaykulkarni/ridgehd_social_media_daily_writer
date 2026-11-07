@@ -2,21 +2,17 @@ import { SITE_HOST } from '../buildVideoScriptPrompt.js';
 
 const RULE = '-'.repeat(64);
 
-// First sentence of the video description is the hook ("Stop worrying about
-// unintended operational changes."). The thumbnail headline is a 3-5 word
-// compression of it — written by Gemini, not by this tool, so it can't drift
-// into a claim the description doesn't make (CLAUDE.md rule 4).
-export function coverHook(description) {
-  const first = (description ?? '').trim().split(/(?<=[.!?])\s+/)[0] ?? '';
-  return first.replace(/[.!?]+$/, '').trim();
-}
+// The thumbnail headline is compressed from the topic headline (vault /
+// registry-gated), not from the model-written description: the description's
+// first sentence gave covers like "Replace spreadsheet waivers…" — a claim
+// no fact approves (Codex review of the 2026-11-07 run, CLAUDE.md rule 4).
 
 // YouTube thumbnail prompt for Gemini (video-cover-image.txt). Like
 // image-prompt.txt it is a reviewable draft: this tool never calls an image
 // API. `bible`/`character` are optional so the file can also be built from an
 // older video-script.txt that predates the presenter feature.
 export function renderVideoCoverPrompt({ topic, date, video, bible = {}, character = null, productName = 'RidgeHQ' }) {
-  const hook = coverHook(video.description);
+  const hook = topic.headline || video.title;
   const person = character
     ? [
         character.reference
@@ -46,11 +42,17 @@ export function renderVideoCoverPrompt({ topic, date, video, bible = {}, charact
       ? '- Subject large on the RIGHT third (head and shoulders to waist), face about 35-40% of frame height, rim-lit with a soft glow.'
       : "- The scene's key object large on the RIGHT third, rim-lit with a soft glow. No people, faces, hands or silhouettes anywhere.",
     '- LEFT two-thirds kept clean for text. Strong contrast, rich saturation, subtle vignette.',
-    '- One simple visual cue that matches the topic (e.g. a glowing shield, checkmark, calendar or price tag) — one only, no clutter.',
+    // A shield, calendar or price tag reads as a security, booking or pricing
+    // claim the registry does not approve; keep the cue literal to the topic.
+    '- One simple, literal visual cue from the topic itself (e.g. a paper document with a typed signature line) — one only, no clutter. Never a shield, padlock, calendar, price tag, chart, dashboard or screen.',
     '- Palette: deep navy-teal base, ONE sparing coral accent, white text.',
     '',
     'TEXT ON IMAGE (render exactly, spelled correctly, nothing else)',
-    `- Headline: write 3-5 punchy words, ALL CAPS, bold heavy sans-serif, max 2 lines, compressed from this hook: "${hook}". Use only what the hook says — no numbers, percentages or promises that are not in the description.`,
+    // A short approved headline is used as-is: asking for "3-5 words" from
+    // "Waiver system" made Gemini invent the missing words.
+    hook.split(/\s+/).filter(Boolean).length <= 5
+      ? `- Headline (render exactly): "${hook.toUpperCase()}" — ALL CAPS, bold heavy sans-serif, max 2 lines. Add no other words.`
+      : `- Headline: at most 5 words, ALL CAPS, bold heavy sans-serif, max 2 lines, compressed from this topic: "${hook}". Use only words the topic supports — no numbers, percentages, promises or claims from the description.`,
     '- Make ONE key word of the headline coral; the rest white with a thin dark outline/shadow so it reads at 168x94 px.',
     `- Small tag bottom-left: "${SITE_HOST}" (white, small).`,
     '',

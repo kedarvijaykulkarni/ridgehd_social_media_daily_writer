@@ -205,8 +205,27 @@ export function claimRulesBlock(registry, today, productName = 'RidgeHQ') {
     '  customer result as available — even if it appears elsewhere in this prompt as audience',
     '  context. Describe the operator\'s problem instead.',
     ...rules.map((f) => `- ${f.statement}`),
+    ...COPY_RULES.map((r) => `- ${r}`),
   ].join('\n');
 }
+
+// This tool's own copy rules, written after a review of real output
+// (2026-11-07) in which the model wrapped the approved waiver fact in claims
+// nobody approved. They restate DECISIONS #165/#166 and fact-registry.md in
+// operational terms; the registry's internal `scope` text is not exported.
+export const COPY_RULES = [
+  'Make no legal or compliance outcome claim: never say anything "guarantees", makes a waiver ' +
+    '"compliant" or "legally defensible", reduces liability, or removes legal risk. Operators stay ' +
+    'responsible for their own waiver content and process.',
+  'Never say a waiver is mandatory or required before booking, check-in or an activity, and never ' +
+    'say the product blocks or confirms anything.',
+  'Do not claim integrations, automation, check-in, booking-workflow, audit-trail, archive, tracking ' +
+    'or reporting features, and do not say the product replaces other tools or spreadsheets.',
+  'Invent nothing: no numbers, example volumes ("twenty trips a month"), scenarios, customer results ' +
+    '("saves hours", "maximize profitability") or first-person operator experience ("as an operator, I know").',
+  '0% commission may appear only as a short supporting detail — never as the headline, the closing ' +
+    'payoff or a profit claim.',
+];
 
 // PRODUCT_NAME must be the registry's approved public name: with
 // PRODUCT_NAME=AquaRoster the prompts said both "copywriter for AquaRoster"
@@ -231,15 +250,32 @@ export function assertPublicName(registry, today, productName) {
 // both miss paraphrases and flag harmless uses.
 const CLAIM_PATTERNS = [
   { re: /\b(revers\w*|undo\w*|roll(?:ed)?[- ]back)\b/i, rule: 'ai.undo-limited: AI actions are not fully reversible' },
-  { re: /\bAI\b|\bcopilot\b|\bartificial intelligence\b/i, rule: 'AI capability: not approved for social (#165(4))' },
-  { re: /[€$£]\s?\d/, rule: 'price: plan prices are sales/website only' },
-  { re: /\b(?!0%)\d+(?:[.,]\d+)?\s?%/, rule: 'percentage: only "0% commission" is approved' },
-  { re: /\bQR\b/i, rule: 'QR: QR-linked waiver signing is not built' },
-  { re: /\bSMS\b|\btext messag/i, rule: 'sms.not-included' },
-  { re: /\baqua\s?roster\b/i, rule: 'brand.not-aquaroster' },
-  { re: /\bno (?:other )?competitor|\bonly (?:platform|product|tool|one)\b|\bunique(?:ly)?\b/i, rule: 'claims.no-ai-exclusivity / no exclusivity claims' },
-  { re: /\bRLS\b|row[- ]level|multi[- ]tenan/i, rule: 'security architecture: not approved for social' },
+  { re: /\bAI\b|\bcopilot\b|\bartificial intelligence\b/i, rule: 'AI capability: not approved for social (#165(4))', visual: true },
+  { re: /[€$£]\s?\d/, rule: 'price: plan prices are sales/website only', visual: true },
+  { re: /\b(?!0%)\d+(?:[.,]\d+)?\s?%/, rule: 'percentage: only "0% commission" is approved', visual: true },
+  { re: /\bQR\b/i, rule: 'QR: QR-linked waiver signing is not built', visual: true },
+  { re: /\bSMS\b|\btext messag/i, rule: 'sms.not-included', visual: true },
+  { re: /\baqua\s?roster\b/i, rule: 'brand.not-aquaroster', visual: true },
+  // "unique" was dropped: it flagged "unique risk profiles" (2026-11-07), never an exclusivity claim.
+  { re: /\bno (?:other )?competitor|\bonly (?:platform|product|tool|one)\b|\bunlike any\b/i, rule: 'claims.no-ai-exclusivity / no exclusivity claims' },
+  { re: /\bRLS\b|row[- ]level|multi[- ]tenan/i, rule: 'security architecture: not approved for social', visual: true },
+  // The COPY_RULES categories, from the claims the 2026-11-07 run invented.
+  // The COPY_RULES categories, from the claims the 2026-11-07 runs invented.
+  { re: /\bguarantee\w*|\bcomplian(?:t|ce)\b|\bdefensible\b|\bliabilit\w*|\blegal(?:ly)?\b|\bverifiable\b|(?<!\b(?:operators?|business(?:es)?|owners?|you|your team) (?:should|must|need to) )\bensur(?:e|es|ing)\b/i, rule: 'legal/compliance/assurance outcome: not approved (COPY_RULES)' },
+  // Not bare "blocks": a video script is made of 10-second blocks.
+  { re: /\bmandatory\b|\brequired (?:before|consent)\b|\bconsent requirements?\b|\benforc\w* (?:[\w-]+ ){0,2}requirements?\b|\bbefore an? (?:activity|booking|trip) is confirmed\b|\bblocks? (?:a |the )?(?:booking|check-in|signature|participant|activity)/i, rule: 'mandatory/blocking: signatures never block (COPY_RULES)' },
+  // Bare "workflow" is fine here: scene direction ("workflow environment") is
+  // visual text now, which skips this rule.
+  { re: /\bcheck[- ]in\b|\bintegrat\w*|\bautomat\w*|\baudit\w*|\barchive\w*|\bworkflows?\b|\breplac\w*|\bmov(?:e|ing) (?:away from|off|past|beyond)\b|\btransition\w* (?:away|off)\b|\bmanages? (?:the )?operational flow\b|\bconsolidat\w*|\bunif(?:y|ied|ies)\b|\bsingle platform\b|\breconcil\w*|\bmanages? your operations\b/i, rule: 'workflow/integration/replacement claim: not approved (COPY_RULES)' },
+  { re: /\bprofit\w*|\brevenue\b|\bsav(?:e|es|ing) (?:time|hours|money)\b|\bROI\b|\bstreamlin\w*|\befficien\w*|\bcertainty\b|\breliab\w*|\bdependable\b|\brobust\b|\bflawless\b|\bsimpler\b|\beliminat\w*/i, rule: 'customer result/quality claim: invented (COPY_RULES)' },
+  { re: /\bas an? (?:operator|owner|instructor)\b|\bI know\b|\bour (?:dive|school|shop|center|centre|boat)\b|\bwe(?:['’]ve| have) been (?:talking|speaking)\b|\boperators (?:told|tell) us\b/i, rule: 'invented persona or conversations (COPY_RULES)' },
+  { re: /\bmedical\b|\bequipment requirements?\b/i, rule: 'invented example: not part of the approved waiver fact (COPY_RULES)' },
+  { re: /\b(?:dozens|hundreds|thousands|twenty|thirty|forty|fifty)\b|\b[1-9]\d*\b(?!\s?%)/i, rule: 'number or volume: invented unless from an approved fact (COPY_RULES)' },
 ];
+
+// A rule broken five times shows its first three hits; the header stays
+// readable and still shows the rule is broken repeatedly.
+const MAX_HITS_PER_RULE = 3;
 
 // Every string inside a model response object (nested fields, arrays),
 // joined, so no model-written field escapes the claim check.
@@ -250,18 +286,55 @@ export function modelText(value) {
   return '';
 }
 
-// sources: { label: text }. Returns [{ label, rule, excerpt }].
+// Fields that only direct an image/video generator. Readers never see them,
+// so copy rules ("reliable", "efficiency") don't apply — only what a picture
+// could show (AI, QR, prices, SMS, brand, security UI).
+const VISUAL_KEYS = new Set(['image_prompt', 'bible', 'visual', 'ends_on']);
+
+// { reader, visual } text of one model answer.
+export function splitModelText(value) {
+  const out = { reader: [], visual: [] };
+  const walk = (v, visual) => {
+    if (typeof v === 'string') (visual ? out.visual : out.reader).push(v);
+    else if (Array.isArray(v)) v.forEach((x) => walk(x, visual));
+    else if (v && typeof v === 'object') for (const [k, x] of Object.entries(v)) walk(x, visual || VISUAL_KEYS.has(k));
+  };
+  walk(value, false);
+  return { reader: out.reader.join(' '), visual: out.visual.join(' ') };
+}
+
+// Sources for claimFlags from one model answer: reader text under `label`,
+// visual direction under `label (visual)`.
+export function claimSources(label, obj) {
+  const { reader, visual } = splitModelText(obj);
+  return { [label]: reader, [`${label} (visual)`]: visual };
+}
+
+// sources: { label: text }. A label ending in "(visual)" is checked against
+// the depiction rules only. Returns [{ label, rule, excerpt, total? }].
 export function claimFlags(sources) {
   const flags = [];
   for (const [label, text] of Object.entries(sources ?? {})) {
     if (!text) continue;
-    for (const { re, rule } of CLAIM_PATTERNS) {
-      const m = re.exec(text);
-      if (!m) continue;
-      const start = Math.max(0, m.index - 40);
-      const excerpt = text.slice(start, m.index + m[0].length + 40).replace(/\s+/g, ' ').trim();
-      flags.push({ label, rule, excerpt });
+    const visualOnly = label.endsWith('(visual)');
+    for (const { re, rule, visual } of CLAIM_PATTERNS) {
+      if (visualOnly && !visual) continue;
+      const hits = [...text.matchAll(new RegExp(re.source, `${re.flags}g`))];
+      for (const m of hits.slice(0, MAX_HITS_PER_RULE)) {
+        const start = Math.max(0, m.index - 40);
+        const excerpt = text.slice(start, m.index + m[0].length + 40).replace(/\s+/g, ' ').trim();
+        flags.push({ label, rule, excerpt, ...(hits.length > MAX_HITS_PER_RULE ? { total: hits.length } : {}) });
+      }
     }
   }
   return flags;
+}
+
+// The claim flags as retry feedback for one model answer (callOllama.js).
+// The number/volume rule is left out: dates, ages and clip timings in the
+// video bible would trigger pointless retries.
+export function claimProblems(obj) {
+  return claimFlags(claimSources('answer', obj))
+    .filter((f) => !f.rule.startsWith('number or volume'))
+    .map((f) => f.excerpt);
 }
