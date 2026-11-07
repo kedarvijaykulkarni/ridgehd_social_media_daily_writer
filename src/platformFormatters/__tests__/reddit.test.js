@@ -57,3 +57,11 @@ test('a product pitch alone or a "learn how" alone is not ad-like; only the pair
   assert.equal(review('Operators compare notes on participant paperwork.', 'Learn how other operators approach it.'), false, 'CTA only');
   assert.equal(review('RidgeHQ offers built-in digital waivers.', 'See how it works.'), true, 'pitch + CTA');
 });
+
+test('"See how" inside the body is not a call to action', () => {
+  const draft = formatReddit(shared({
+    core_message: 'See how operators compare paperwork. RidgeHQ offers built-in digital waivers.',
+    call_to_action: 'What does your process look like?',
+  }));
+  assert.equal(draft.needs_manual_review, false);
+});
