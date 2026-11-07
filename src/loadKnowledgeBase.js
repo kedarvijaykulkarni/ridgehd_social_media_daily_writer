@@ -24,6 +24,8 @@
 
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
+import { REGISTRY, loadRegistry, gateTopics } from './claimRules.js';
+import { localDateString } from './lib/localDate.js';
 
 const BUSINESS_CONTEXT = path.join('wiki', 'business-context.md');
 const COMPETITORS = path.join('wiki', 'competitors.md');
@@ -293,15 +295,15 @@ async function readIfPresent(filePath) {
 }
 
 /**
- * Read the RidgeHQ business vault and return topic chunks in the same shape
- * the old knowledge-base.json used:
+ * Every topic chunk the vault pages describe, before the marketing gate:
  *   { id, category, status, headline, detail, audience_angle, suggested_visual_theme }
+ * Exported for the extraction tests; generation uses loadKnowledgeBase.
  *
  * @param {string} vaultPath absolute path to the Obsidian vault root
  *   (the directory that contains `wiki/`)
  * @returns {Promise<Array>}
  */
-export async function loadKnowledgeBase(vaultPath) {
+export async function loadVaultTopics(vaultPath) {
   let dirStat;
   try {
     dirStat = await stat(vaultPath);
@@ -356,4 +358,26 @@ export async function loadKnowledgeBase(vaultPath) {
   }
 
   return chunks;
+}
+
+/**
+ * The topics this tool may market: vault chunks that an owner-approved
+ * social fact in the registry covers (src/claimRules.js). Each kept chunk
+ * gains `fact_id`. Throws when the registry is missing or nothing is left.
+ *
+ * @param {string} vaultPath
+ * @param {{ today?: string, registry?: object }} [opts] `registry` avoids a
+ *   second read when the caller already loaded it
+ * @returns {Promise<{ chunks: Array, dropped: Array }>}
+ */
+export async function loadKnowledgeBase(vaultPath, { today = localDateString(), registry } = {}) {
+  const all = await loadVaultTopics(vaultPath);
+  const { kept, dropped } = gateTopics(all, registry ?? (await loadRegistry(vaultPath)), today);
+  if (kept.length === 0) {
+    throw new Error(
+      `None of the ${all.length} vault topics maps to a fact approved for social in ${REGISTRY} ` +
+        '(accepted, public, channel "social", in date). See TOPIC_FACTS in src/claimRules.js.',
+    );
+  }
+  return { chunks: kept, dropped };
 }

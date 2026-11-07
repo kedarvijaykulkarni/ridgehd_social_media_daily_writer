@@ -72,17 +72,19 @@ async function loadHistory() {
 }
 
 async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
-  const knowledgeBase = await loadKnowledgeBase(BUSINESS_VAULT_PATH);
-  const byStatus = knowledgeBase.reduce((acc, c) => {
-    acc[c.status] = (acc[c.status] ?? 0) + 1;
-    return acc;
-  }, {});
-  console.log(
-    `${LOG} Loaded ${knowledgeBase.length} topic chunks from vault ${BUSINESS_VAULT_PATH} ` +
-      `(${Object.entries(byStatus).map(([s, n]) => `${n} ${s}`).join(', ')})`,
-  );
-
   const date = localDateString();
+  const { chunks: knowledgeBase, dropped } = await loadKnowledgeBase(BUSINESS_VAULT_PATH, { today: date });
+  console.log(
+    `${LOG} Loaded ${knowledgeBase.length} marketable topic(s) from vault ${BUSINESS_VAULT_PATH}: ` +
+      `${knowledgeBase.map((c) => `${c.id} (${c.fact_id})`).join(', ')}`,
+  );
+  if (dropped.length) {
+    console.log(
+      `${LOG} Not offered — no fact approved for social in the registry (DECISIONS #165/#166): ` +
+        dropped.map((c) => c.id).join(', '),
+    );
+  }
+
   const { history, replaced } = withoutRunsOn(await loadHistory(), date);
   if (replaced) {
     console.log(

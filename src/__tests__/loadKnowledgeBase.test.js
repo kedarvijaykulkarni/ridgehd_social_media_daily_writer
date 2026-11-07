@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadKnowledgeBase } from '../loadKnowledgeBase.js';
+import { loadVaultTopics, loadKnowledgeBase } from '../loadKnowledgeBase.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE_VAULT = path.join(__dirname, 'fixtures', 'vault');
@@ -18,7 +18,7 @@ const REQUIRED_FIELDS = [
 ];
 
 test('loadKnowledgeBase extracts the ✅ "sell on this" bullets as shipped chunks', async () => {
-  const chunks = await loadKnowledgeBase(FIXTURE_VAULT);
+  const chunks = await loadVaultTopics(FIXTURE_VAULT);
   const shipped = chunks.filter((c) => c.status === 'shipped');
 
   // 5 ✅ bullets in the fixture, plus the derived competitor + pricing chunks.
@@ -30,7 +30,7 @@ test('loadKnowledgeBase extracts the ✅ "sell on this" bullets as shipped chunk
 });
 
 test('loadKnowledgeBase extracts ❌ gap rows as planned chunks, minus "do not market" rows', async () => {
-  const chunks = await loadKnowledgeBase(FIXTURE_VAULT);
+  const chunks = await loadVaultTopics(FIXTURE_VAULT);
   const planned = chunks.filter((c) => c.status === 'planned');
 
   // 2 ❌ rows; the "Money-moving AI ... Do not market" row is skipped.
@@ -43,7 +43,7 @@ test('loadKnowledgeBase extracts ❌ gap rows as planned chunks, minus "do not m
 });
 
 test('every chunk has the full required shape and a non-empty kebab-case id', async () => {
-  const chunks = await loadKnowledgeBase(FIXTURE_VAULT);
+  const chunks = await loadVaultTopics(FIXTURE_VAULT);
   assert.ok(chunks.length > 0);
 
   for (const chunk of chunks) {
@@ -57,8 +57,8 @@ test('every chunk has the full required shape and a non-empty kebab-case id', as
 });
 
 test('chunk ids are unique and stable across two loads', async () => {
-  const a = await loadKnowledgeBase(FIXTURE_VAULT);
-  const b = await loadKnowledgeBase(FIXTURE_VAULT);
+  const a = await loadVaultTopics(FIXTURE_VAULT);
+  const b = await loadVaultTopics(FIXTURE_VAULT);
 
   const idsA = a.map((c) => c.id);
   assert.equal(new Set(idsA).size, idsA.length, 'ids must be unique');
@@ -66,7 +66,7 @@ test('chunk ids are unique and stable across two loads', async () => {
 });
 
 test('loadKnowledgeBase derives the AI-copilot differentiator from competitors.md §5', async () => {
-  const chunks = await loadKnowledgeBase(FIXTURE_VAULT);
+  const chunks = await loadVaultTopics(FIXTURE_VAULT);
   assert.ok(
     chunks.some((c) => c.category === 'differentiator' && /ai copilot/i.test(c.headline)),
     'expected an AI-copilot differentiator chunk',
@@ -74,7 +74,7 @@ test('loadKnowledgeBase derives the AI-copilot differentiator from competitors.m
 });
 
 test('loadKnowledgeBase derives the pricing chunk from pricing.md §3', async () => {
-  const chunks = await loadKnowledgeBase(FIXTURE_VAULT);
+  const chunks = await loadVaultTopics(FIXTURE_VAULT);
   assert.ok(
     chunks.some((c) => c.category === 'pricing-model' && /commission/i.test(c.detail)),
     'expected a pricing-model chunk mentioning commission',
@@ -82,7 +82,7 @@ test('loadKnowledgeBase derives the pricing chunk from pricing.md §3', async ()
 });
 
 test('the pricing chunk reads only the published §3 table, the full wrapped headline, and does not lead with commission', async () => {
-  const pricing = (await loadKnowledgeBase(FIXTURE_VAULT)).find((c) => c.category === 'pricing-model');
+  const pricing = (await loadVaultTopics(FIXTURE_VAULT)).find((c) => c.category === 'pricing-model');
   assert.ok(pricing);
   assert.doesNotMatch(pricing.detail, /€29|\$32/, 'stale/killed tiers outside the published table must not leak');
   assert.match(pricing.detail, /€49\/mo.*€89\/mo.*€149\/mo/);
@@ -91,13 +91,13 @@ test('the pricing chunk reads only the published §3 table, the full wrapped hea
 });
 
 test('markdown stripping keeps underscores inside identifiers but drops _emphasis_ marks', async () => {
-  const rls = (await loadKnowledgeBase(FIXTURE_VAULT)).find((c) => /^RLS/.test(c.headline));
+  const rls = (await loadVaultTopics(FIXTURE_VAULT)).find((c) => /^RLS/.test(c.headline));
   assert.ok(rls);
   assert.match(rls.detail, /checks tenant_id and always fails closed/);
 });
 
 test('loadKnowledgeBase throws a clear error when the vault directory is missing', async () => {
-  await assert.rejects(() => loadKnowledgeBase(path.join(__dirname, 'no-such-vault')), /vault/i);
+  await assert.rejects(() => loadVaultTopics(path.join(__dirname, 'no-such-vault')), /vault/i);
 });
 
 test('loadKnowledgeBase throws when business-context.md yields zero chunks', async (t) => {
@@ -107,7 +107,7 @@ test('loadKnowledgeBase throws when business-context.md yields zero chunks', asy
   await writeFile(path.join(emptyVault, 'wiki', 'business-context.md'), '# nothing to see here\n');
   t.after(() => rm(emptyVault, { recursive: true, force: true }));
 
-  await assert.rejects(() => loadKnowledgeBase(emptyVault), /§2/);
+  await assert.rejects(() => loadVaultTopics(emptyVault), /§2/);
 });
 
 test('loadKnowledgeBase emits no differentiator chunk without a sourced line (no invented claim)', async (t) => {
@@ -121,19 +121,19 @@ test('loadKnowledgeBase emits no differentiator chunk without a sourced line (no
   );
   t.after(() => rm(vault, { recursive: true, force: true }));
 
-  const chunks = await loadKnowledgeBase(vault);
+  const chunks = await loadVaultTopics(vault);
   assert.equal(chunks.filter((c) => c.category === 'differentiator').length, 0);
 });
 
 test('no loaded chunk claims that no competitor offers something', async () => {
-  const chunks = await loadKnowledgeBase(FIXTURE_VAULT);
+  const chunks = await loadVaultTopics(FIXTURE_VAULT);
   for (const c of chunks) {
     assert.doesNotMatch(`${c.headline} ${c.detail}`, /no competitor/i);
   }
 });
 
 test('the differentiator chunk drops competitor-comparison sentences from its sourced line', async () => {
-  const chunks = await loadKnowledgeBase(FIXTURE_VAULT);
+  const chunks = await loadVaultTopics(FIXTURE_VAULT);
   const diff = chunks.find((c) => c.category === 'differentiator');
   assert.ok(diff, 'expected the differentiator chunk');
   assert.match(diff.detail, /same code path/i);
@@ -156,7 +156,7 @@ test('a sourced line that is only a competitor claim yields no chunk', async (t)
   );
   t.after(() => rm(vault, { recursive: true, force: true }));
 
-  const chunks = await loadKnowledgeBase(vault);
+  const chunks = await loadVaultTopics(vault);
   assert.equal(chunks.filter((c) => c.category === 'differentiator').length, 0);
 });
 
@@ -176,7 +176,7 @@ test('"only differentiator" wording in a sourced line is dropped', async (t) => 
   );
   t.after(() => rm(vault, { recursive: true, force: true }));
 
-  const diff = (await loadKnowledgeBase(vault)).find((c) => c.category === 'differentiator');
+  const diff = (await loadVaultTopics(vault)).find((c) => c.category === 'differentiator');
   assert.ok(diff);
   assert.doesNotMatch(diff.detail, /only differentiator/i);
 });
@@ -197,6 +197,6 @@ test('a moved §2 marker throws even when competitors/pricing chunks would keep 
       await copyFile(path.join(FIXTURE_VAULT, 'wiki', f), path.join(vault, 'wiki', f));
     }
     t.after(() => rm(vault, { recursive: true, force: true }));
-    await assert.rejects(() => loadKnowledgeBase(vault), /§2/, `${name} must throw`);
+    await assert.rejects(() => loadVaultTopics(vault), /§2/, `${name} must throw`);
   }
 });

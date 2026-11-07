@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "facts": [
+    {
+      "id": "feature.waivers",
+      "statement": "Digital waivers are built in: typed e-signature and per-participant enforcement.",
+      "scope": "QR-linked waiver signing is not built and must not be claimed.",
+      "audience": "public",
+      "decision": { "state": "accepted" },
+      "marketing": { "state": "allowed", "channels": ["sales", "social", "website"] },
+      "review_by": "2027-01-18",
+      "superseded_by": null
+    },
+    {
+      "id": "commission.direct-bookings",
+      "statement": "0% platform commission on direct bookings, on every plan.",
+      "scope": "A supporting point, not the headline.",
+      "audience": "public",
+      "decision": { "state": "accepted" },
+      "marketing": { "state": "allowed", "channels": ["sales", "social", "website"] },
+      "review_by": "2027-01-18",
+      "superseded_by": null
+    },
+    {
+      "id": "pricing.monthly-plans",
+      "statement": "Starter €49 a month, Grow €89 a month, Scale €149 a month.",
+      "scope": "The launch ladder.",
+      "audience": "public",
+      "decision": { "state": "accepted" },
+      "marketing": { "state": "allowed", "channels": ["sales", "website"] },
+      "review_by": "2027-01-18",
+      "superseded_by": null
+    },
+    {
+      "id": "ai.undo-limited",
+      "statement": "Only some AI actions can be undone; do not claim that AI actions are fully reversible.",
+      "scope": "Holds until undo covers the financial and destructive tools.",
+      "audience": "internal",
+      "decision": { "state": "accepted" },
+      "marketing": { "state": "not-approved", "channels": [] },
+      "review_by": "2027-01-18",
+      "superseded_by": null
+    },
+    {
+      "id": "support.old-promise",
+      "statement": "A superseded social claim that must never be offered.",
+      "scope": "",
+      "audience": "public",
+      "decision": { "state": "superseded" },
+      "marketing": { "state": "not-approved", "channels": [] },
+      "review_by": "2027-01-18",
+      "superseded_by": "feature.waivers"
+    }
+  ]
+}
