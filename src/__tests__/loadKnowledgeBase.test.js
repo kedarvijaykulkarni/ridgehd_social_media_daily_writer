@@ -81,6 +81,15 @@ test('loadKnowledgeBase derives the pricing chunk from pricing.md §3', async ()
   );
 });
 
+test('the pricing chunk reads only the published §3 table, the full wrapped headline, and does not lead with commission', async () => {
+  const pricing = (await loadKnowledgeBase(FIXTURE_VAULT)).find((c) => c.category === 'pricing-model');
+  assert.ok(pricing);
+  assert.doesNotMatch(pricing.detail, /€29|\$32/, 'stale/killed tiers outside the published table must not leak');
+  assert.match(pricing.detail, /€49\/mo.*€89\/mo.*€149\/mo/);
+  assert.match(pricing.detail, /0% commission on direct bookings\. Monthly plans\. No per-staff seat shock\./);
+  assert.doesNotMatch(pricing.headline, /commission/i, 'competitors.md §5: do not lead with 0% commission');
+});
+
 test('loadKnowledgeBase throws a clear error when the vault directory is missing', async () => {
   await assert.rejects(() => loadKnowledgeBase(path.join(__dirname, 'no-such-vault')), /vault/i);
 });

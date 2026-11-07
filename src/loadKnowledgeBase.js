@@ -243,14 +243,26 @@ function extractDifferentiator(markdown) {
   ];
 }
 
+// The "### ✅ Published pricing" subsection of §3, up to the next heading.
+// pricing.md also carries stale tier tables (the killed €29 tier, the
+// original strategy) and a unit-economics table; none of those are published.
+function publishedPricingLines(lines) {
+  const start = lines.findIndex((l) => /^###\s.*published pricing/i.test(l));
+  if (start === -1) return null;
+  const end = lines.findIndex((l, i) => i > start && /^#{2,3}\s/.test(l));
+  return lines.slice(start + 1, end === -1 ? lines.length : end);
+}
+
 function extractPricing(markdown) {
   if (!markdown) return [];
-  const lines = markdown.split(/\r?\n/);
-  const headlineLine =
-    lines.find((l) => /page headline:/i.test(l)) ||
-    lines.find((l) => /simple pricing for real operators/i.test(l));
-  if (!headlineLine) return [];
-  const sentence = stripMarkdown(headlineLine.replace(/.*page headline:\s*/i, '')).replace(/^["'“”]+|["'“”]+$/g, '');
+  const lines = publishedPricingLines(markdown.split(/\r?\n/));
+  if (!lines) return [];
+  const headlineIdx = lines.findIndex((l) => /page headline:/i.test(l));
+  if (headlineIdx === -1) return [];
+  // The headline paragraph wraps across lines; join it up to the blank line.
+  const blank = lines.findIndex((l, i) => i > headlineIdx && l.trim() === '');
+  const paragraph = lines.slice(headlineIdx, blank === -1 ? lines.length : blank).join(' ');
+  const sentence = stripMarkdown(paragraph.replace(/.*page headline:\s*/i, '')).replace(/^["'“”]+|["'“”]+$/g, '');
   const tiers = lines
     .filter((l) => /\|/.test(l) && /€\s?\d+/.test(l) && /(starter|grow|scale)/i.test(l))
     .map((l) => stripMarkdown(l).replace(/\s*\|\s*/g, ' · ').replace(/^·\s*|\s*·$/g, ''));
@@ -259,7 +271,10 @@ function extractPricing(markdown) {
       id: 'flat-monthly-pricing-zero-commission',
       category: 'pricing-model',
       status: 'shipped',
-      headline: 'Flat monthly pricing with 0% commission on direct bookings',
+      // 0% commission is table stakes (competitors.md §5, DECISIONS #165(3)):
+      // a supporting point in the detail, never the headline. The id stays
+      // unchanged so post-history coverage carries over.
+      headline: 'Flat monthly pricing with no per-staff seat shock',
       detail: toDetail([sentence, ...tiers].filter(Boolean).join(' ')),
     }),
   ];
