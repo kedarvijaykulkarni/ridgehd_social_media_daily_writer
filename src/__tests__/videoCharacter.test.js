@@ -93,13 +93,13 @@ test('product mode cuts into the footage once and resumes on the last presenter 
 });
 
 test('product mode rejects footage visuals that skip the prefix or invent UI text/numbers', () => {
-  const opts = { withWardrobe: true, mode: 'product', productName: 'AquaRoster' };
+  const opts = { withWardrobe: true, mode: 'product', productName: 'RidgeHQ' };
   const footage = (v) => ({ ...SCRIPT, segments: SCRIPT.segments.map((s, i) => ([2, 3, 4].includes(i) ? { ...s, visual: v } : s)) });
-  const ok = footage('Screen recording of the real AquaRoster product: the booking calendar.');
+  const ok = footage('Screen recording of the real RidgeHQ product: the booking calendar.');
   assert.doesNotThrow(() => validateVideoScriptShape(ok, 6, opts));
   assert.throws(() => validateVideoScriptShape(SCRIPT, 6, opts), /segment 2 is product footage/);
-  assert.throws(() => validateVideoScriptShape(footage('Screen recording of the real AquaRoster product: a "Book now" button.'), 6, opts), /product footage/);
-  assert.throws(() => validateVideoScriptShape(footage('Screen recording of the real AquaRoster product: revenue up 40%.'), 6, opts), /product footage/);
+  assert.throws(() => validateVideoScriptShape(footage('Screen recording of the real RidgeHQ product: a "Book now" button.'), 6, opts), /product footage/);
+  assert.throws(() => validateVideoScriptShape(footage('Screen recording of the real RidgeHQ product: revenue up 40%.'), 6, opts), /product footage/);
   // Character mode doesn't apply the footage rule.
   assert.doesNotThrow(() => validateVideoScriptShape(SCRIPT, 6, { withWardrobe: true, mode: 'character' }));
 });

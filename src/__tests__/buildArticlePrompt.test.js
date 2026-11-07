@@ -41,19 +41,19 @@ const HISTORY = {
 };
 
 test('article prompt centers the primary topic', () => {
-  const prompt = buildArticlePrompt({ topic: KB[0], knowledgeBase: KB, history: HISTORY, focus: FOCUS, productName: 'AquaRoster' });
+  const prompt = buildArticlePrompt({ topic: KB[0], knowledgeBase: KB, history: HISTORY, focus: FOCUS, productName: 'RidgeHQ' });
   assert.match(prompt, /AI copilot for read and scheduling operations/);
   assert.match(prompt, /PRIMARY TOPIC/i);
 });
 
 test('article prompt passes other shipped chunks as supporting material', () => {
-  const prompt = buildArticlePrompt({ topic: KB[0], knowledgeBase: KB, history: HISTORY, focus: FOCUS, productName: 'AquaRoster' });
+  const prompt = buildArticlePrompt({ topic: KB[0], knowledgeBase: KB, history: HISTORY, focus: FOCUS, productName: 'RidgeHQ' });
   assert.match(prompt, /SUPPORTING MATERIAL/i);
   assert.match(prompt, /Waiver system with per-participant enforcement/);
 });
 
 test('article prompt never offers planned/unverified chunks as supporting material', () => {
-  const prompt = buildArticlePrompt({ topic: KB[0], knowledgeBase: KB, history: HISTORY, focus: FOCUS, productName: 'AquaRoster' });
+  const prompt = buildArticlePrompt({ topic: KB[0], knowledgeBase: KB, history: HISTORY, focus: FOCUS, productName: 'RidgeHQ' });
   // the planned chunk may only appear if it were the primary topic — here it is not
   assert.ok(!prompt.includes('QR-linked waiver signing is not built yet'));
 });
@@ -67,12 +67,12 @@ test('article prompt templates the product name and requests the JSON keys', () 
 });
 
 test('article prompt forces roadmap framing when the primary topic is not shipped', () => {
-  const prompt = buildArticlePrompt({ topic: KB[2], knowledgeBase: KB, history: HISTORY, focus: FOCUS, productName: 'AquaRoster' });
+  const prompt = buildArticlePrompt({ topic: KB[2], knowledgeBase: KB, history: HISTORY, focus: FOCUS, productName: 'RidgeHQ' });
   assert.match(prompt, /planned|roadmap|coming soon/i);
 });
 
 test('article prompt lists recent headlines to avoid repetition', () => {
-  const prompt = buildArticlePrompt({ topic: KB[0], knowledgeBase: KB, history: HISTORY, focus: FOCUS, productName: 'AquaRoster' });
+  const prompt = buildArticlePrompt({ topic: KB[0], knowledgeBase: KB, history: HISTORY, focus: FOCUS, productName: 'RidgeHQ' });
   assert.match(prompt, /RECENTLY COVERED/i);
 });
 
