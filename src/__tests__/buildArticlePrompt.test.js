@@ -93,6 +93,7 @@ test('asks the model for one of the website blog pillars', () => {
 test('the LinkedIn opener is the product team speaking, never an invented operator', () => {
   const prompt = buildArticlePrompt({ topic: KB[0], knowledgeBase: KB, history: HISTORY, focus: FOCUS, productName: 'RidgeHQ' });
   assert.match(prompt, /written as the\s+RidgeHQ team/);
-  assert.match(prompt, /Never write\s+as an operator and never invent personal experience/);
+  assert.match(prompt, /Never write as an\s+operator and never invent experience, conversations, events or anecdotes/);
+  assert.doesNotMatch(prompt, /we've been talking/i, 'the example itself must not model invented conversations');
   assert.match(prompt, /"linkedin_hook": "[^"]*from the RidgeHQ team \(not an operator, no invented experience\)/);
 });

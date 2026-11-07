@@ -58,8 +58,9 @@ It will be rendered two ways: a website blog post (company voice) and a
 LinkedIn article (first-person voice). Write the body sections in a
 voice-neutral, operator-facing register that works for both; supply a
 separate first-person opener for the LinkedIn version, written as the
-${productName} team ("we've been talking to operators about…"). Never write
-as an operator and never invent personal experience, events or anecdotes.
+${productName} team, stating what the team builds and why the problem matters
+("At ${productName}, we built <the topic> because…"). Never write as an
+operator and never invent experience, conversations, events or anecdotes.
 
 PRIMARY TOPIC (do not deviate from this fact set):
 - Headline: ${topic.headline}
