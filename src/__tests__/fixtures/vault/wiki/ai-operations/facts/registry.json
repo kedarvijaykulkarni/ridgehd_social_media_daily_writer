@@ -2,54 +2,237 @@
   "schema_version": 1,
   "facts": [
     {
+      "audience": "public",
+      "decision": {
+        "state": "accepted"
+      },
+      "implementation": {
+        "state": "unknown"
+      },
+      "deployment": {
+        "state": "unknown"
+      },
+      "verification": {
+        "state": "not-checked"
+      },
+      "marketing": {
+        "state": "allowed",
+        "channels": [
+          "sales",
+          "social",
+          "website"
+        ]
+      },
+      "evidence": [
+        "fixture"
+      ],
+      "review_by": "2027-01-18",
+      "superseded_by": null,
+      "id": "brand.public-name",
+      "statement": "RidgeHQ is the product's public name."
+    },
+    {
+      "audience": "public",
+      "decision": {
+        "state": "accepted"
+      },
+      "implementation": {
+        "state": "implemented",
+        "repo": "r",
+        "revision": "abc"
+      },
+      "deployment": {
+        "state": "unknown"
+      },
+      "verification": {
+        "state": "source-inspected",
+        "date": "2026-10-18"
+      },
+      "marketing": {
+        "state": "allowed",
+        "channels": [
+          "sales",
+          "social",
+          "website"
+        ]
+      },
+      "evidence": [
+        "fixture"
+      ],
+      "review_by": "2027-01-18",
+      "superseded_by": null,
       "id": "feature.waivers",
       "statement": "Digital waivers are built in: typed e-signature and per-participant enforcement.",
-      "scope": "QR-linked waiver signing is not built and must not be claimed.",
-      "audience": "public",
-      "decision": { "state": "accepted" },
-      "marketing": { "state": "allowed", "channels": ["sales", "social", "website"] },
-      "review_by": "2027-01-18",
-      "superseded_by": null
+      "scope": "INTERNAL SCOPE TEXT — never shown to the model."
     },
     {
+      "audience": "public",
+      "decision": {
+        "state": "accepted"
+      },
+      "implementation": {
+        "state": "unknown"
+      },
+      "deployment": {
+        "state": "unknown"
+      },
+      "verification": {
+        "state": "not-checked"
+      },
+      "marketing": {
+        "state": "allowed",
+        "channels": [
+          "sales",
+          "social",
+          "website"
+        ]
+      },
+      "evidence": [
+        "fixture"
+      ],
+      "review_by": "2027-01-18",
+      "superseded_by": null,
       "id": "commission.direct-bookings",
-      "statement": "0% platform commission on direct bookings, on every plan.",
-      "scope": "A supporting point, not the headline.",
-      "audience": "public",
-      "decision": { "state": "accepted" },
-      "marketing": { "state": "allowed", "channels": ["sales", "social", "website"] },
-      "review_by": "2027-01-18",
-      "superseded_by": null
+      "statement": "0% platform commission on direct bookings, on every plan."
     },
     {
+      "audience": "public",
+      "decision": {
+        "state": "accepted"
+      },
+      "implementation": {
+        "state": "implemented",
+        "repo": "r",
+        "revision": "abc"
+      },
+      "deployment": {
+        "state": "unknown"
+      },
+      "verification": {
+        "state": "not-checked"
+      },
+      "marketing": {
+        "state": "allowed",
+        "channels": [
+          "social"
+        ]
+      },
+      "evidence": [
+        "fixture"
+      ],
+      "review_by": "2027-01-18",
+      "superseded_by": null,
+      "id": "feature.unverified",
+      "statement": "An implemented feature nobody has verified."
+    },
+    {
+      "audience": "public",
+      "decision": {
+        "state": "accepted"
+      },
+      "implementation": {
+        "state": "unknown"
+      },
+      "deployment": {
+        "state": "unknown"
+      },
+      "verification": {
+        "state": "not-checked"
+      },
+      "marketing": {
+        "state": "allowed",
+        "channels": [
+          "sales",
+          "website"
+        ]
+      },
+      "evidence": [
+        "fixture"
+      ],
+      "review_by": "2027-01-18",
+      "superseded_by": null,
       "id": "pricing.monthly-plans",
-      "statement": "Starter €49 a month, Grow €89 a month, Scale €149 a month.",
-      "scope": "The launch ladder.",
+      "statement": "Starter €49 a month, Grow €89 a month, Scale €149 a month."
+    },
+    {
       "audience": "public",
-      "decision": { "state": "accepted" },
-      "marketing": { "state": "allowed", "channels": ["sales", "website"] },
+      "decision": {
+        "state": "superseded"
+      },
+      "implementation": {
+        "state": "unknown"
+      },
+      "deployment": {
+        "state": "unknown"
+      },
+      "verification": {
+        "state": "not-checked"
+      },
+      "marketing": {
+        "state": "allowed",
+        "channels": [
+          "social"
+        ]
+      },
+      "evidence": [
+        "fixture"
+      ],
       "review_by": "2027-01-18",
-      "superseded_by": null
-    },
-    {
-      "id": "ai.undo-limited",
-      "statement": "Only some AI actions can be undone; do not claim that AI actions are fully reversible.",
-      "scope": "Holds until undo covers the financial and destructive tools.",
-      "audience": "internal",
-      "decision": { "state": "accepted" },
-      "marketing": { "state": "not-approved", "channels": [] },
-      "review_by": "2027-01-18",
-      "superseded_by": null
-    },
-    {
+      "superseded_by": "brand.public-name",
       "id": "support.old-promise",
-      "statement": "A superseded social claim that must never be offered.",
-      "scope": "",
-      "audience": "public",
-      "decision": { "state": "superseded" },
-      "marketing": { "state": "not-approved", "channels": [] },
+      "statement": "A superseded social claim that must never be offered."
+    },
+    {
+      "audience": "internal",
+      "decision": {
+        "state": "accepted"
+      },
+      "implementation": {
+        "state": "unknown"
+      },
+      "deployment": {
+        "state": "unknown"
+      },
+      "verification": {
+        "state": "not-checked"
+      },
+      "marketing": {
+        "state": "not-approved",
+        "channels": []
+      },
+      "evidence": [
+        "fixture"
+      ],
       "review_by": "2027-01-18",
-      "superseded_by": "feature.waivers"
+      "superseded_by": null,
+      "id": "ai.undo-limited",
+      "statement": "Only some AI actions can be undone; do not claim that AI actions are fully reversible."
+    },
+    {
+      "audience": "internal",
+      "decision": {
+        "state": "accepted"
+      },
+      "implementation": {
+        "state": "unknown"
+      },
+      "deployment": {
+        "state": "unknown"
+      },
+      "verification": {
+        "state": "not-checked"
+      },
+      "marketing": {
+        "state": "not-approved",
+        "channels": []
+      },
+      "evidence": [
+        "fixture"
+      ],
+      "review_by": "2027-01-18",
+      "superseded_by": null,
+      "id": "brand.not-aquaroster",
+      "statement": "AquaRoster is not a public product name; do not use it in public copy."
     }
   ]
 }

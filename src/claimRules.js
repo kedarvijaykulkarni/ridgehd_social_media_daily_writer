@@ -47,22 +47,82 @@ export async function loadRegistry(vaultPath) {
   } catch (err) {
     throw new Error(`${REGISTRY} is not valid JSON: ${err.message}`);
   }
-  if (!Array.isArray(registry?.facts)) throw new Error(`${REGISTRY} has no "facts" array.`);
+  const problems = registryProblems(registry);
+  if (problems.length) {
+    throw new Error(`${REGISTRY} is invalid, refusing to trust any of it:\n  - ${problems.join('\n  - ')}`);
+  }
   return registry;
 }
 
-function current(fact, today) {
-  return fact.decision?.state === 'accepted' && !fact.superseded_by && (!fact.review_by || fact.review_by >= today);
+const ID_RE = /^[a-z0-9]+(?:[.-][a-z0-9]+)*$/;
+const STATES = {
+  audience: ['public', 'internal'],
+  decision: ['proposed', 'accepted', 'deferred', 'superseded'],
+  implementation: ['unknown', 'absent', 'partial', 'implemented'],
+  verification: ['not-checked', 'source-inspected', 'automated-test', 'live-verified'],
+  marketing: ['allowed', 'restricted', 'not-approved'],
+};
+
+function isRealDate(value) {
+  return (
+    typeof value === 'string' &&
+    /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+    !Number.isNaN(Date.parse(`${value}T00:00:00Z`)) &&
+    new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value
+  );
 }
 
-// Accepted, public facts allowed on social and still in date.
+// The structural rules of wiki/ai-operations/fact-registry.md that decide
+// approval. One bad record rejects the whole registry: a half-valid list
+// could silently drop a writing rule or approve a malformed claim.
+export function registryProblems(registry) {
+  if (registry?.schema_version !== 1) return [`schema_version must be 1, got ${JSON.stringify(registry?.schema_version)}`];
+  if (!Array.isArray(registry.facts)) return ['"facts" must be an array'];
+  const problems = [];
+  const ids = new Set();
+  for (const [i, f] of registry.facts.entries()) {
+    const at = `facts[${i}]${typeof f?.id === 'string' ? ` (${f.id})` : ''}`;
+    if (typeof f?.id !== 'string' || !ID_RE.test(f.id)) problems.push(`${at}: invalid id`);
+    else if (ids.has(f.id)) problems.push(`${at}: duplicate id`);
+    else ids.add(f.id);
+    if (typeof f?.statement !== 'string' || !f.statement.trim()) problems.push(`${at}: missing statement`);
+    if (!STATES.audience.includes(f?.audience)) problems.push(`${at}: invalid audience`);
+    for (const key of ['decision', 'implementation', 'verification', 'marketing']) {
+      if (!STATES[key].includes(f?.[key]?.state)) problems.push(`${at}: invalid ${key}.state`);
+    }
+    const channels = f?.marketing?.channels;
+    if (channels !== undefined && !(Array.isArray(channels) && channels.every((c) => typeof c === 'string'))) {
+      problems.push(`${at}: marketing.channels must be an array of strings`);
+    }
+    if (f?.marketing?.state === 'allowed' && !(Array.isArray(channels) && channels.length)) {
+      problems.push(`${at}: marketing allowed without channels`);
+    }
+    if (!isRealDate(f?.review_by)) problems.push(`${at}: review_by must be a real YYYY-MM-DD date`);
+    if ((f?.decision?.state === 'superseded') !== Boolean(f?.superseded_by)) {
+      problems.push(`${at}: superseded_by must be set exactly when decision.state is superseded`);
+    }
+  }
+  for (const f of registry.facts) {
+    if (f?.superseded_by && !ids.has(f.superseded_by)) problems.push(`${f.id}: superseded_by names an unknown id`);
+  }
+  return problems;
+}
+
+function current(fact, today) {
+  return fact.decision.state === 'accepted' && !fact.superseded_by && fact.review_by >= today;
+}
+
+// Accepted, public facts allowed on social and still in date. As in the
+// export, an allowed feature.* fact must also be implemented and verified.
 export function approvedFacts(registry, today) {
   return registry.facts.filter(
     (f) =>
       current(f, today) &&
       f.audience === 'public' &&
-      f.marketing?.state === 'allowed' &&
-      (f.marketing.channels ?? []).includes(CHANNEL),
+      f.marketing.state === 'allowed' &&
+      f.marketing.channels.includes(CHANNEL) &&
+      (!f.id.startsWith('feature.') ||
+        (f.implementation.state === 'implemented' && f.verification.state !== 'not-checked')),
   );
 }
 
@@ -89,15 +149,16 @@ export function gateTopics(chunks, registry, today) {
 }
 
 // The block every generation prompt carries. Verbatim registry wording: the
-// approved facts (with their scope limits) are the only product claims the
-// model may make; the writing rules are hard bans.
+// approved statements are the only product claims the model may make; the
+// internal writing rules are hard bans. `scope` is internal and never
+// exported (fact-registry.md), so it is not shown to the model.
 export function claimRulesBlock(registry, today, productName = 'RidgeHQ') {
   const approved = approvedFacts(registry, today);
   const rules = writingRules(registry, today);
   return [
     'CLAIM RULES (owner decisions — these override everything else in this prompt):',
     `- The ONLY product facts approved for public ${CHANNEL} copy about ${productName}:`,
-    ...approved.map((f) => `  - ${f.statement}${f.scope ? ` (Limits: ${f.scope})` : ''}`),
+    ...approved.map((f) => `  - ${f.statement}`),
     '- Do not present any other feature, integration, AI capability, plan price, number or',
     '  customer result as available — even if it appears elsewhere in this prompt as audience',
     '  context. Describe the operator\'s problem instead.',

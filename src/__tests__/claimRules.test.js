@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { mkdir, copyFile, rm } from 'node:fs/promises';
 import { loadKnowledgeBase } from '../loadKnowledgeBase.js';
-import { loadRegistry, approvedFacts, writingRules, claimRulesBlock } from '../claimRules.js';
+import { loadRegistry, approvedFacts, writingRules, claimRulesBlock, registryProblems } from '../claimRules.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE_VAULT = path.join(__dirname, 'fixtures', 'vault');
@@ -45,16 +45,49 @@ test('a vault without the registry refuses to run', async (t) => {
   await assert.rejects(() => loadKnowledgeBase(vault, { today: TODAY }), /registry\.json/);
 });
 
-test('approved facts exclude other channels, superseded and internal records', async () => {
+test('approved facts exclude other channels, superseded, unverified features and internal records', async () => {
   const registry = await loadRegistry(FIXTURE_VAULT);
-  assert.deepEqual(approvedFacts(registry, TODAY).map((f) => f.id).sort(), ['commission.direct-bookings', 'feature.waivers']);
-  assert.deepEqual(writingRules(registry, TODAY).map((f) => f.id), ['ai.undo-limited']);
+  // Each excluded fixture fact fails exactly one rule: pricing.monthly-plans
+  // (not on social), support.old-promise (superseded), feature.unverified
+  // (feature.* without verification).
+  assert.deepEqual(
+    approvedFacts(registry, TODAY).map((f) => f.id).sort(),
+    ['brand.public-name', 'commission.direct-bookings', 'feature.waivers'],
+  );
+  assert.deepEqual(writingRules(registry, TODAY).map((f) => f.id), ['ai.undo-limited', 'brand.not-aquaroster']);
 });
 
-test('the claim-rules block quotes approved wording, limits and bans verbatim', async () => {
+test('review_by is inclusive: a fact is approved on its date and dropped the day after', async () => {
+  const registry = await loadRegistry(FIXTURE_VAULT);
+  assert.ok(approvedFacts(registry, '2027-01-18').some((f) => f.id === 'feature.waivers'));
+  assert.ok(!approvedFacts(registry, '2027-01-19').some((f) => f.id === 'feature.waivers'));
+});
+
+test('one malformed record rejects the whole registry', async () => {
+  const good = JSON.parse(JSON.stringify(await loadRegistry(FIXTURE_VAULT)));
+  const waivers = (r) => r.facts.find((f) => f.id === 'feature.waivers');
+  const cases = {
+    'impossible review_by': (r) => { waivers(r).review_by = '2026-99-99'; },
+    'missing review_by': (r) => { delete waivers(r).review_by; },
+    'string channels': (r) => { waivers(r).marketing.channels = 'social-news'; },
+    'missing statement': (r) => { waivers(r).statement = ''; },
+    'duplicate id': (r) => { r.facts.push({ ...waivers(r) }); },
+    'superseded without successor': (r) => { waivers(r).decision.state = 'superseded'; },
+    'unknown successor': (r) => { r.facts.find((f) => f.id === 'support.old-promise').superseded_by = 'no.such-fact'; },
+    'wrong schema version': (r) => { r.schema_version = 2; },
+  };
+  assert.deepEqual(registryProblems(good), []);
+  for (const [name, breakIt] of Object.entries(cases)) {
+    const r = JSON.parse(JSON.stringify(good));
+    breakIt(r);
+    assert.ok(registryProblems(r).length > 0, name);
+  }
+});
+
+test('the claim-rules block quotes approved statements and bans verbatim, never internal scope', async () => {
   const block = claimRulesBlock(await loadRegistry(FIXTURE_VAULT), TODAY, 'RidgeHQ');
   assert.match(block, /Digital waivers are built in/);
-  assert.match(block, /QR-linked waiver signing is not built and must not be claimed/);
+  assert.doesNotMatch(block, /INTERNAL SCOPE TEXT/, 'scope is internal and never exported');
   assert.match(block, /do not claim that AI actions are fully reversible/);
   assert.doesNotMatch(block, /€49/, 'sales/website-only prices are not offered on social');
   assert.doesNotMatch(block, /superseded social claim/);
