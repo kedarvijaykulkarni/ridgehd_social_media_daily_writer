@@ -260,13 +260,21 @@ const CLAIM_PATTERNS = [
   { re: /\bno (?:other )?competitor|\bonly (?:platform|product|tool|one)\b|\bunlike any\b/i, rule: 'claims.no-ai-exclusivity / no exclusivity claims' },
   { re: /\bRLS\b|row[- ]level|multi[- ]tenan/i, rule: 'security architecture: not approved for social' },
   // The COPY_RULES categories, from the claims the 2026-11-07 run invented.
-  { re: /\bguarantee\w*|\bcomplian(?:t|ce)\b|\bdefensible\b|\bliabilit\w*|\blegal(?:ly)?\b/i, rule: 'legal/compliance outcome: not approved (COPY_RULES)' },
-  { re: /\bmandatory\b|\brequired before\b|\bbefore an? (?:activity|booking|trip) is confirmed\b|\bblocks?\b/i, rule: 'mandatory/blocking: signatures never block (COPY_RULES)' },
-  { re: /\bcheck[- ]in\b|\bintegrat\w*|\bautomat\w*|\baudit\w*|\barchive\w*|\bworkflow\b|\breplac\w*/i, rule: 'workflow/integration/replacement claim: not approved (COPY_RULES)' },
-  { re: /\bprofit\w*|\brevenue\b|\bsav(?:e|es|ing) (?:time|hours|money)\b|\bROI\b/i, rule: 'customer result: invented (COPY_RULES)' },
-  { re: /\bas an? (?:operator|owner|instructor)\b|\bI know\b|\bour (?:dive|school|shop|center|centre|boat)\b/i, rule: 'first-person operator experience: invented (COPY_RULES)' },
+  // The COPY_RULES categories, from the claims the 2026-11-07 runs invented.
+  { re: /\bguarantee\w*|\bcomplian(?:t|ce)\b|\bdefensible\b|\bliabilit\w*|\blegal(?:ly)?\b|\bverifiable\b|\bensur(?:e|es|ing)\b/i, rule: 'legal/compliance/assurance outcome: not approved (COPY_RULES)' },
+  // Not bare "blocks": a video script is made of 10-second blocks.
+  { re: /\bmandatory\b|\brequired (?:before|consent)\b|\bconsent requirements?\b|\bbefore an? (?:activity|booking|trip) is confirmed\b|\bblocks? (?:a |the )?(?:booking|check-in|signature|participant|activity)/i, rule: 'mandatory/blocking: signatures never block (COPY_RULES)' },
+  // Not bare "workflow": video/image direction says "workflow environment".
+  { re: /\bcheck[- ]in\b|\bintegrat\w*|\bautomat\w*|\baudit\w*|\barchive\w*|\bbooking (?:flow|workflow|records?)\b|\breplac\w*|\bmoving (?:away from|off|past)\b|\bconsolidat\w*|\bunif(?:y|ied|ies)\b|\bsingle platform\b|\breconcil\w*|\bmanages? your operations\b/i, rule: 'workflow/integration/replacement claim: not approved (COPY_RULES)' },
+  { re: /\bprofit\w*|\brevenue\b|\bsav(?:e|es|ing) (?:time|hours|money)\b|\bROI\b|\bstreamlin\w*|\befficien\w*|\bcertainty\b|\breliab\w*|\bdependable\b|\brobust\b|\bflawless\b|\bsimpler\b|\beliminat\w*/i, rule: 'customer result/quality claim: invented (COPY_RULES)' },
+  { re: /\bas an? (?:operator|owner|instructor)\b|\bI know\b|\bour (?:dive|school|shop|center|centre|boat)\b|\bwe(?:'ve| have) been (?:talking|speaking)\b|\boperators (?:told|tell) us\b/i, rule: 'invented persona or conversations (COPY_RULES)' },
+  { re: /\bmedical\b|\bequipment requirements?\b/i, rule: 'invented example: not part of the approved waiver fact (COPY_RULES)' },
   { re: /\b(?:dozens|hundreds|thousands|twenty|thirty|forty|fifty)\b|\b[1-9]\d*\b(?!\s?%)/i, rule: 'number or volume: invented unless from an approved fact (COPY_RULES)' },
 ];
+
+// A rule broken five times shows its first three hits; the header stays
+// readable and still shows the rule is broken repeatedly.
+const MAX_HITS_PER_RULE = 3;
 
 // Every string inside a model response object (nested fields, arrays),
 // joined, so no model-written field escapes the claim check.
@@ -283,11 +291,12 @@ export function claimFlags(sources) {
   for (const [label, text] of Object.entries(sources ?? {})) {
     if (!text) continue;
     for (const { re, rule } of CLAIM_PATTERNS) {
-      const m = re.exec(text);
-      if (!m) continue;
-      const start = Math.max(0, m.index - 40);
-      const excerpt = text.slice(start, m.index + m[0].length + 40).replace(/\s+/g, ' ').trim();
-      flags.push({ label, rule, excerpt });
+      const hits = [...text.matchAll(new RegExp(re.source, `${re.flags}g`))];
+      for (const m of hits.slice(0, MAX_HITS_PER_RULE)) {
+        const start = Math.max(0, m.index - 40);
+        const excerpt = text.slice(start, m.index + m[0].length + 40).replace(/\s+/g, ' ').trim();
+        flags.push({ label, rule, excerpt, ...(hits.length > MAX_HITS_PER_RULE ? { total: hits.length } : {}) });
+      }
     }
   }
   return flags;

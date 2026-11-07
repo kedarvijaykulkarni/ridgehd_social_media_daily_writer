@@ -44,7 +44,7 @@ export async function writeCover({ outputDir, vaultPath, date, characterRef, pro
   const warning = flags.length
     ? [
         `⚠️ CLAIM CHECK (heuristic, ${flags.length} flag(s)) — this cover reuses ${date}'s stored text; verify against the registry:`,
-        ...flags.map((f) => `  ${f.rule} — "…${f.excerpt}…"`),
+        ...flags.map((f) => `  ${f.rule}${f.total ? ` (${f.total} hits, first 3 shown)` : ''} — "…${f.excerpt}…"`),
         '',
         '',
       ].join('\n')

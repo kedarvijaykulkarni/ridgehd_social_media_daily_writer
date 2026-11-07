@@ -71,7 +71,7 @@ test('the claims the 2026-11-07 run invented are now flagged', () => {
     'providing a clearer, more defensible record than a generalized paper agreement ever could': /legal\/compliance/,
     'Built-in digital waivers streamline compliance': /legal\/compliance/,
     'Simplify compliance and maximize profitability': /customer result/,
-    'As an operator, I know that transitioning off old paper forms': /first-person operator/,
+    'As an operator, I know that transitioning off old paper forms': /invented persona/,
     'Managing twenty trips a month with paper waivers': /number or volume/,
     'a single manifest containing dozens of individuals': /number or volume/,
   };
@@ -83,4 +83,33 @@ test('the claims the 2026-11-07 run invented are now flagged', () => {
 test('"unique risk profiles" is no longer mistaken for an exclusivity claim', () => {
   const flags = claimFlags({ draft: 'each with unique risk profiles' });
   assert.ok(!flags.some((f) => /exclusivity/.test(f.rule)));
+});
+
+test('second-run review: production wording is not flagged, the missed claims are', () => {
+  for (const harmless of ['smooth pan, gentle push-in throughout all blocks', 'highly structured, emphasizing a workflow environment']) {
+    assert.deepEqual(claimFlags({ draft: harmless }), [], harmless);
+  }
+  // Verbatim from the regenerated output/2026-11-07 drafts.
+  const missed = {
+    'Moving away from managing documentation with legacy tools or spreadsheets is simpler with RidgeHQ.': /workflow\/integration/,
+    'Explore how RidgeHQ manages your operations.': /workflow\/integration/,
+    'Operational precision requires flawless preparation': /customer result/,
+    'By streamlining documentation with RidgeHQ, operators can dedicate focus entirely': /customer result/,
+    'the risk of a participant checking in without the required consent is heightened': /mandatory\/blocking/,
+    'typed e-signatures, ensuring explicit acknowledgment from every participant': /legal\/compliance/,
+    'such as pre-existing medical conditions or specific equipment requirements': /invented example/,
+    'RidgeHQ allows operators to unify essential operational components within a single platform': /workflow\/integration/,
+    'Integrated documentation improves operational certainty and consistency': /customer result/,
+    "We've been talking with dive center operators about the friction": /invented persona/,
+  };
+  for (const [text, rule] of Object.entries(missed)) {
+    assert.ok(claimFlags({ draft: text }).some((f) => rule.test(f.rule)), text);
+  }
+});
+
+test('every match is reported, up to three per rule, with the total when there are more', () => {
+  const text = 'integrated. integrates. integration. integrating. integrated.';
+  const flags = claimFlags({ draft: text }).filter((f) => /workflow\/integration/.test(f.rule));
+  assert.equal(flags.length, 3);
+  assert.equal(flags[0].total, 5);
 });
