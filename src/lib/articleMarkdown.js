@@ -23,15 +23,29 @@ export function articleWordCount(article) {
   return parts.reduce((n, p) => n + countWords(p), 0);
 }
 
+// The long-form brief (buildArticlePrompt.js). A local model often misses it;
+// the reviewer banner says so instead of failing the run.
+export const ARTICLE_WORDS = { min: 500, max: 800 };
+export const ARTICLE_SECTIONS = { min: 3, max: 4 };
+
 // Reviewer banner shared by both renderers — carries the same claim safety
 // rail as CLAUDE.md rule 4, and shouts when the topic is not shipped.
-export function reviewerNote({ kind, productName, date, topic, wordCount, focus, text }) {
+export function reviewerNote({ kind, productName, date, topic, wordCount, sectionCount, focus, text }) {
   const lines = [
     `<!--`,
     `  ${kind} draft — ${productName} — ${date}`,
     `  Source topic: ${topic.id} (${topic.status})${topic.headline ? ` — ${topic.headline}` : ''}`,
     `  ~${wordCount} words in the body.`,
   ];
+  const offWords = wordCount < ARTICLE_WORDS.min || wordCount > ARTICLE_WORDS.max;
+  const offSections = sectionCount !== undefined && (sectionCount < ARTICLE_SECTIONS.min || sectionCount > ARTICLE_SECTIONS.max);
+  if (offWords || offSections) {
+    lines.push(
+      `  ⚠️ LENGTH: ${wordCount} words / ${sectionCount ?? '?'} sections — the brief asks for ` +
+        `${ARTICLE_WORDS.min}–${ARTICLE_WORDS.max} words in ${ARTICLE_SECTIONS.min}–${ARTICLE_SECTIONS.max} sections. ` +
+        'Do not pad it with claims to hit the length.',
+    );
+  }
   if (focus) {
     const { found, missing } = keywordCoverage(text, focus.vertical.keywords);
     lines.push(

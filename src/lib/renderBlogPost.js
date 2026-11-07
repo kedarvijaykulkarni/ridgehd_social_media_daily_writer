@@ -94,6 +94,7 @@ export function renderBlogPost({ topic, date, article, productName = 'RidgeHQ', 
     date,
     topic,
     wordCount: articleWordCount(article),
+    sectionCount: (article.sections ?? []).length,
     focus,
     text: [article.title, article.meta_description, article.dek, ...(article.sections ?? []).map((s) => s.body)].join(' '),
   });

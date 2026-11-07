@@ -23,6 +23,7 @@ export function renderLinkedInArticle({ topic, date, article, productName = 'Rid
     date,
     topic,
     wordCount: articleWordCount(article),
+    sectionCount: (article.sections ?? []).length,
     focus,
     text: [article.title, article.linkedin_hook, ...(article.sections ?? []).map((s) => s.body)].join(' '),
   });
