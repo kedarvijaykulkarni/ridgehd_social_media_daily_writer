@@ -68,6 +68,15 @@ export function composeCompressed({ hook, sentences, cta, hashtags, max, sep = '
       tags = [];
       text = composeParts([hook, truncatedBody, link], sep);
     }
+    // The model ignored the under-100-char hook spec: cut the hook itself
+    // rather than abort the whole run after every Ollama pass has finished.
+    // The pinned brand tag(s) are kept here too.
+    if (charCount(text) > max) {
+      tags = hashtags.slice(0, minTags);
+      const tail = composeParts([link, tagPart()], sep);
+      const hookBudget = max - charCount(tail) - (tail ? sep.length : 0);
+      text = composeParts([truncateToChars(hook, Math.max(hookBudget, 0)), link, tagPart()], sep);
+    }
     break;
   }
 
