@@ -215,8 +215,11 @@ export function claimRulesBlock(registry, today, productName = 'RidgeHQ') {
 export function assertPublicName(registry, today, productName) {
   const brand = approvedFacts(registry, today).find((f) => f.id === 'brand.public-name');
   if (!brand) throw new Error(`${REGISTRY} has no current brand.public-name fact approved for ${CHANNEL}.`);
-  // Whole-word match: "Ridge" must not pass on "RidgeHQ is ...".
-  if (!brand.statement.split(/[^\p{L}\p{N}]+/u).includes(productName)) {
+  // The record's statement form is "<Name> is the product's public name.":
+  // compare against that name only, so "public" or "is" cannot pass.
+  const approvedName = brand.statement.match(/^(.+?)\s+is the product's public name\.?$/)?.[1];
+  if (!approvedName) throw new Error(`${REGISTRY}: brand.public-name statement is not "<Name> is the product's public name."`);
+  if (productName !== approvedName) {
     throw new Error(`PRODUCT_NAME "${productName}" is not the approved public name (${REGISTRY}: "${brand.statement}").`);
   }
 }

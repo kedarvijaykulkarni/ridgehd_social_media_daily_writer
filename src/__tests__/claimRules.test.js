@@ -149,7 +149,10 @@ test('PRODUCT_NAME must be the approved public name', async () => {
   const registry = await loadRegistry(FIXTURE_VAULT);
   assert.doesNotThrow(() => assertPublicName(registry, TODAY, 'RidgeHQ'));
   assert.throws(() => assertPublicName(registry, TODAY, 'AquaRoster'), /not the approved public name/);
-  assert.throws(() => assertPublicName(registry, TODAY, 'Ridge'), /not the approved public name/);
+  // Every non-name word of "RidgeHQ is the product's public name." is refused.
+  for (const name of ['Ridge', 'ridgehq', 'is', 'the', "product's", 'product', 'public', 'name']) {
+    assert.throws(() => assertPublicName(registry, TODAY, name), /not the approved public name/, name);
+  }
 });
 
 test('a dropped topic in history never reappears in RECENTLY COVERED', async () => {
