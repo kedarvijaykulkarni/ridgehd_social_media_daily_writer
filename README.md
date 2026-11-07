@@ -145,6 +145,42 @@ so upload with exactly those. Like the image prompt, it's a draft for a
 human to produce and upload by hand; non-shipped topics carry a roadmap
 warning.
 
+### Optional presenter + product footage
+
+Set `VIDEO_CHARACTER` to put one fixed AI human presenter in the video. The
+identity text is copied verbatim from `.env` into every clip prompt; the
+model only picks a setting-appropriate `wardrobe` and the human `voice`,
+which the renderer then repeats in all six clips. `image-prompt.txt` gains a
+character keyframe. Two visual modes (`VIDEO_VISUAL_MODE`, or per run
+`generate --video-mode <mode>`):
+
+- `character` (default when a presenter is set): presenter on screen in all
+  six clips.
+- `product`: clips 3-5 are **your real product screen recording** with the
+  same voice as voice-over. The film cuts into the recording once and back to
+  the presenter's last frame (end of clip 2) for clip 6. The model's brief
+  for those clips must start with `Screen recording of the real <PRODUCT_NAME>
+  product:` and contain no quoted UI text or numbers, or it is retried. That
+  check is a heuristic against invented UI, not proof the brief is accurate.
+
+Either mode without `VIDEO_CHARACTER` is an error. Leave both unset for the
+original no-people video.
+
+### YouTube cover prompt
+
+Every `generate` also writes `video-cover-image.txt`, a Gemini thumbnail
+prompt built from the video's title, description and bible (no extra Ollama
+pass). To (re)build it for an existing day without re-running Ollama:
+
+```bash
+npm run cover -- --date 2026-11-07                         # output/2026-11-07/video-cover-image.txt
+npm run cover -- --date 2026-11-07 --character-ref @Olivia # override the recorded reference
+```
+
+`--date` must be `YYYY-MM-DD`. The presenter and reference come from that
+day's `video-script.txt` (not today's `.env`), so the cover shows the same
+person as the video. With no presenter the cover is person-free.
+
 ## Image prompt: sizes + which AI tool to use
 
 This tool never calls an image-generation API — same "no auto-publish"
@@ -174,7 +210,7 @@ boundary as posting (see below). `image-prompt.txt` is a reviewable prompt
 3. `npm install`
 4. `cp .env.example .env` and set at least `BUSINESS_VAULT_PATH` to your
    vault path. `OLLAMA_MODEL` defaults to `gemma4:latest`; `PRODUCT_NAME`
-   defaults to `AquaRoster` (see note below).
+   defaults to `RidgeHQ` (see note below).
 5. First run ever: `data/post-history.json` won't exist yet — the tool
    creates it in memory (`{ posts: [], cycle_number: 1 }`) and writes it
    out after the first non-dry-run generate.
@@ -182,11 +218,10 @@ boundary as posting (see below). `image-prompt.txt` is a reviewable prompt
 ### Product name
 
 `PRODUCT_NAME` is templated into every Ollama prompt and every generated
-draft. The business vault documents the product as **RidgeHQ / RidgeHQAPP**,
-but also flags `ridgehq.com` as an unrelated active business — so the
-default stays `AquaRoster`. Don't change it for public copy until the
-RidgeHQ name is cleared. See `CLAUDE.md` and
-`docs/business-context-reference.md`.
+draft. It defaults to **RidgeHQ**, the public brand (RidgeHQAPP
+`DECISIONS.md` #165). `AquaRoster` is not a public name — don't use it in
+copy. Trademark clearance is undecided, so never claim a registered
+trademark. See `CLAUDE.md` and `docs/business-context-reference.md`.
 
 ## Usage
 
@@ -199,6 +234,7 @@ npm run generate:ph             # + producthunt-post.txt (if not in cooldown)
 npm run generate:ph:dry-run     # producthunt, prints everything, writes nothing
 npm run generate:long:ph        # long-form + producthunt together
 npm run generate:long:ph:dry-run # long-form + producthunt, prints everything, writes nothing
+npm run cover -- --date YYYY-MM-DD # rebuild video-cover-image.txt for an existing day
 npm test                        # unit tests
 ```
 
@@ -251,7 +287,10 @@ cost of a mistake is zero.
 | `OLLAMA_HOST` | `http://localhost:11434` | |
 | `OLLAMA_MODEL` | `gemma4:latest` | `qwen3.5:35b` is higher quality but much slower; the `*-coder` models aren't a good fit for marketing copy. |
 | `BUSINESS_VAULT_PATH` | `D:\work\RidgeHQAPP\Brain\RidgeHQAPP` | Absolute path to your local RidgeHQ business vault (the dir containing `wiki/`). Read-only. |
-| `PRODUCT_NAME` | `AquaRoster` | Templated into prompts and drafts. Keep as-is for public copy until the RidgeHQ name is cleared. |
+| `PRODUCT_NAME` | `RidgeHQ` | The public brand, templated into prompts and drafts. `AquaRoster` is not a public name. |
 | `BLOG_BASE_URL` | `https://www.ridgehq.app/blog` | Long-form only — builds `canonical_url` (`<base>/<slug>`) in `blog-post.md` frontmatter. |
 | `POST_HISTORY_PATH` | `./data/post-history.json` | Read + write. `data/` is gitignored. |
 | `OUTPUT_DIR` | `./output` | Gitignored — daily drafts are transient/reviewable, not source. |
+| `VIDEO_CHARACTER` | *(unset)* | Optional fixed presenter identity (face, age, build, hair, skin tone; not clothing). Unset = no people on screen. |
+| `VIDEO_CHARACTER_REF` | *(unset)* | Optional reference-image note/filename printed in the video script and cover prompt (never read). |
+| `VIDEO_VISUAL_MODE` | *(unset)* | `character` or `product`; requires `VIDEO_CHARACTER`. Overridden by `generate --video-mode`. |

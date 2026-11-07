@@ -21,7 +21,7 @@ const SHIPPED_TOPIC = { id: 'ai-copilot', status: 'shipped', headline: 'AI copil
 const PLANNED_TOPIC = { id: 'qr-signing', status: 'planned', headline: 'QR-linked waiver signing' };
 
 test('renders an H1 title and one H2 per section', () => {
-  const md = renderBlogPost({ topic: SHIPPED_TOPIC, date: '2026-09-04', article: ARTICLE, productName: 'AquaRoster' });
+  const md = renderBlogPost({ topic: SHIPPED_TOPIC, date: '2026-09-04', article: ARTICLE, productName: 'RidgeHQ' });
   assert.match(md, /^# Running a dive center on an AI copilot$/m);
   assert.match(md, /^## The problem$/m);
   assert.match(md, /^## The shift$/m);
@@ -33,7 +33,7 @@ test('emits frontmatter: description, slug, canonical url, tags, date, draft fla
     topic: SHIPPED_TOPIC,
     date: '2026-09-04',
     article: ARTICLE,
-    productName: 'AquaRoster',
+    productName: 'RidgeHQ',
     blogBaseUrl: 'https://www.ridgehq.app/blog',
   });
   assert.match(md, /^---$/m);
@@ -46,20 +46,20 @@ test('emits frontmatter: description, slug, canonical url, tags, date, draft fla
 });
 
 test('includes key takeaways and the CTA', () => {
-  const md = renderBlogPost({ topic: SHIPPED_TOPIC, date: '2026-09-04', article: ARTICLE, productName: 'AquaRoster' });
+  const md = renderBlogPost({ topic: SHIPPED_TOPIC, date: '2026-09-04', article: ARTICLE, productName: 'RidgeHQ' });
   assert.match(md, /key takeaways/i);
   assert.match(md, /- AI acts through the same permissions/);
   assert.match(md, /See how the copilot handles a weather day\./);
 });
 
 test('adds a roadmap-verify warning when the topic is not shipped', () => {
-  const md = renderBlogPost({ topic: PLANNED_TOPIC, date: '2026-09-04', article: ARTICLE, productName: 'AquaRoster' });
+  const md = renderBlogPost({ topic: PLANNED_TOPIC, date: '2026-09-04', article: ARTICLE, productName: 'RidgeHQ' });
   assert.match(md, /ROADMAP/);
   assert.match(md, /planned/i);
 });
 
 test('no roadmap warning for a shipped topic', () => {
-  const md = renderBlogPost({ topic: SHIPPED_TOPIC, date: '2026-09-04', article: ARTICLE, productName: 'AquaRoster' });
+  const md = renderBlogPost({ topic: SHIPPED_TOPIC, date: '2026-09-04', article: ARTICLE, productName: 'RidgeHQ' });
   assert.doesNotMatch(md, /ROADMAP/);
 });
 

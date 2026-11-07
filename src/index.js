@@ -31,6 +31,9 @@ import { renderBlogPost } from './lib/renderBlogPost.js';
 import { renderLinkedInArticle } from './lib/renderLinkedInArticle.js';
 import { renderProductHuntPost, renderProductHuntDiscussion } from './lib/renderProductHuntPost.js';
 import { videoMeta } from './lib/videoMeta.js';
+import { loadCharacter, resolveVisualMode } from './videoCharacter.js';
+import { renderVideoCoverPrompt } from './lib/renderVideoCoverPrompt.js';
+import { parseVideoScript } from './lib/parseVideoScript.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(__dirname, '..');
@@ -70,7 +73,7 @@ function todayString() {
   return new Date().toISOString().slice(0, 10);
 }
 
-async function runGenerate({ dryRun, longForm, productHunt }) {
+async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
   const knowledgeBase = await loadKnowledgeBase(BUSINESS_VAULT_PATH);
   const byStatus = knowledgeBase.reduce((acc, c) => {
     acc[c.status] = (acc[c.status] ?? 0) + 1;
@@ -107,14 +110,29 @@ async function runGenerate({ dryRun, longForm, productHunt }) {
 
   const date = todayString();
   const socialText = renderSocialText({ topic, date, drafts, productName: PRODUCT_NAME, focus });
-  const imagePromptText = renderImagePrompt({ topic, date, imagePrompt: shared.image_prompt, productName: PRODUCT_NAME });
 
   // 1-minute video script: one more Ollama pass, built from the same shared
   // object (headline + image prompt + hook/core message/CTA).
   const video = videoMeta({ topic, shared });
   console.log(`${LOG} Video: generating 1-minute script for "${topic.id}"...`);
-  const script = await callOllamaVideoScript(buildVideoScriptPrompt({ topic, shared, video, productName: PRODUCT_NAME }));
-  const videoScriptText = renderVideoScript({ topic, date, video, script, productName: PRODUCT_NAME });
+  const character = loadCharacter();
+  const visualMode = resolveVisualMode(videoMode ?? process.env.VIDEO_VISUAL_MODE, character);
+  console.log(`${LOG} Video: visual mode "${visualMode}"${character ? ' (presenter from VIDEO_CHARACTER)' : ''}`);
+  const script = await callOllamaVideoScript(
+    buildVideoScriptPrompt({ topic, shared, video, productName: PRODUCT_NAME, character, mode: visualMode }),
+    { withWardrobe: Boolean(character), mode: visualMode, productName: PRODUCT_NAME },
+  );
+  const videoScriptText = renderVideoScript({
+    topic, date, video, script, productName: PRODUCT_NAME, character, mode: visualMode,
+  });
+  const imagePromptText = renderImagePrompt({
+    topic, date, imagePrompt: shared.image_prompt, productName: PRODUCT_NAME, character, bible: script.bible,
+  });
+  // YouTube thumbnail prompt for Gemini — no extra Ollama pass; built from the
+  // video's title/description + bible, so it must come after the video script.
+  const coverPromptText = renderVideoCoverPrompt({
+    topic, date, video, bible: script.bible, character, productName: PRODUCT_NAME,
+  });
 
   // Long-form: one extra Ollama pass on the SAME topic -> a website blog
   // post + a LinkedIn article (separate from the short LinkedIn post above).
@@ -191,6 +209,7 @@ async function runGenerate({ dryRun, longForm, productHunt }) {
     console.log(socialText);
     console.log(imagePromptText);
     console.log(videoScriptText);
+    console.log(coverPromptText);
     if (longForm) {
       console.log('\n=== blog-post.md ===\n');
       console.log(blogPostMd);
@@ -210,6 +229,7 @@ async function runGenerate({ dryRun, longForm, productHunt }) {
     writeFile(path.join(runDir, 'social-posts.txt'), socialText),
     writeFile(path.join(runDir, 'image-prompt.txt'), imagePromptText),
     writeFile(path.join(runDir, 'video-script.txt'), videoScriptText),
+    writeFile(path.join(runDir, 'video-cover-image.txt'), coverPromptText),
   ];
   if (longForm) {
     writes.push(
@@ -243,9 +263,42 @@ program
   .option('--dry-run', 'Print formatted drafts to console without writing files or updating history', false)
   .option('--long-form', 'Also generate a website blog post + a LinkedIn article for the same topic', false)
   .option('--producthunt', 'Also generate a Product Hunt forum post, if not in the posting cooldown', false)
+  .option('--video-mode <mode>', 'Video visuals: "character" (presenter on screen throughout) or "product" (your product screen recording for the demo clips); overrides VIDEO_VISUAL_MODE')
   .action(async (opts) => {
     try {
-      await runGenerate({ dryRun: opts.dryRun, longForm: opts.longForm, productHunt: opts.producthunt });
+      await runGenerate({ dryRun: opts.dryRun, longForm: opts.longForm, productHunt: opts.producthunt, videoMode: opts.videoMode });
+    } catch (err) {
+      console.error(`${LOG} ${err.message}`);
+      process.exitCode = 1;
+    }
+  });
+
+// Write ONLY video-cover-image.txt for an existing run folder, from its
+// video-script.txt. No Ollama, no history change, other files untouched.
+program
+  .command('cover')
+  .description('Write video-cover-image.txt (YouTube thumbnail prompt for Gemini) for an existing output/<date>/ folder')
+  .requiredOption('--date <YYYY-MM-DD>', 'Run folder under OUTPUT_DIR')
+  .option('--character-ref <ref>', 'Presenter reference to attach in Gemini, e.g. "@Olivia" (overrides the reference recorded in video-script.txt)')
+  .action(async (opts) => {
+    try {
+      // Strict format: the value is joined into a path, so nothing like
+      // "..\..\x" may reach the filesystem.
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(opts.date)) throw new Error(`--date must be YYYY-MM-DD, got "${opts.date}"`);
+      const runDir = path.join(OUTPUT_DIR, opts.date);
+      const parsed = parseVideoScript(await readFile(path.join(runDir, 'video-script.txt'), 'utf-8'));
+      // The presenter recorded in that day's script wins over today's .env, so
+      // the cover shows the same person as the video; --character-ref is the
+      // only override.
+      const reference = opts.characterRef?.trim() || parsed.reference;
+      const identity = parsed.identity;
+      const character = identity || reference ? { identity, reference } : null;
+      const text = renderVideoCoverPrompt({
+        topic: parsed.topic, date: opts.date, video: parsed.video, bible: parsed.bible, character, productName: PRODUCT_NAME,
+      });
+      const out = path.join(runDir, 'video-cover-image.txt');
+      await writeFile(out, text);
+      console.log(`${LOG} Wrote ${out}`);
     } catch (err) {
       console.error(`${LOG} ${err.message}`);
       process.exitCode = 1;

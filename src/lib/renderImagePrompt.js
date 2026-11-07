@@ -50,7 +50,30 @@ function renderToolGuidance() {
   ].join('\n');
 }
 
-export function renderImagePrompt({ topic, date, imagePrompt, productName = 'RidgeHQ' }) {
+// Video start frame for the recurring presenter: the still you feed to
+// image-to-video as clip 1's first frame and attach as the reference for the
+// rest. Built from .env identity + the video bible, so it matches video-script.txt.
+function renderCharacterKeyframe({ character, bible }) {
+  const prompt =
+    `Photo-realistic, cinematic portrait-to-medium shot of ${character.identity}. ` +
+    `Wearing: ${bible.wardrobe.trim()}. ` +
+    `Setting: ${bible.setting.trim()} Look: ${bible.look.trim()} ` +
+    'Facing the camera with a relaxed, confident, friendly expression, about to speak. ' +
+    'Natural skin texture, correct hands, no text, no logos, no other people.';
+  return [
+    RULE,
+    'CHARACTER KEYFRAME (opening frame of video clip 1 — also your reference image)',
+    RULE,
+    prompt,
+    '',
+    character.reference
+      ? `Reference to attach: ${character.reference}`
+      : 'Generate 3-4 variations, pick one, and save it as the reference image: attach it to every video clip.',
+    'Do not regenerate the face or outfit later — reuse this exact still.',
+  ].join('\n');
+}
+
+export function renderImagePrompt({ topic, date, imagePrompt, productName = 'RidgeHQ', character = null, bible = null }) {
   const header = [
     `${productName} image prompt — ${date}`,
     `Topic: ${topic.id}${topic.headline ? ` — ${topic.headline}` : ''}`,
@@ -59,5 +82,6 @@ export function renderImagePrompt({ topic, date, imagePrompt, productName = 'Rid
 
   const basePrompt = [RULE, 'BASE PROMPT (from Ollama — edit before use if needed)', RULE, imagePrompt ?? ''].join('\n');
 
-  return [header, basePrompt, renderSizesTable(), renderToolGuidance()].join('\n\n') + '\n';
+  const keyframe = character && bible ? renderCharacterKeyframe({ character, bible }) : null;
+  return [header, basePrompt, keyframe, renderSizesTable(), renderToolGuidance()].filter(Boolean).join('\n\n') + '\n';
 }
