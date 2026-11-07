@@ -1,8 +1,10 @@
 import { charCount, toGraphemes } from './charCount.js';
 
+// A sentence ends at . ! ? followed by whitespace and a capital/digit/quote,
+// so "2.5", "e.g. on" and "ridgehq.app" stay intact (the pieces are rejoined
+// with a space, which used to turn them into "2. 5" and "ridgehq. app").
 export function splitSentences(text) {
-  const matches = text.match(/[^.!?]+[.!?]*/g);
-  const sentences = (matches ?? [text]).map((s) => s.trim()).filter(Boolean);
+  const sentences = text.split(/(?<=[.!?])\s+(?=[A-Z0-9"“'(])/).map((s) => s.trim()).filter(Boolean);
   return sentences.length ? sentences : [text.trim()];
 }
 
