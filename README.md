@@ -184,7 +184,10 @@ npm run cover -- --date 2026-11-07 --character-ref @Olivia # override the record
 
 `--date` must be `YYYY-MM-DD`. The presenter and reference come from that
 day's `video-script.txt` (not today's `.env`), so the cover shows the same
-person as the video. With no presenter the cover is person-free.
+person as the video. With no presenter the cover is person-free. The old
+script is judged by **today's** fact registry: a day whose topic is no
+longer approved for social gets no cover (exit 1), and the stored title,
+description and bible are claim-checked — any flags open the cover file.
 
 ## Image prompt: sizes + which AI tool to use
 

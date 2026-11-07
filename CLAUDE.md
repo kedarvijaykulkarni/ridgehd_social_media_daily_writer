@@ -213,7 +213,9 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
   prompts; schema-complete fixture
   `fixtures/vault/wiki/ai-operations/facts/registry.json`.
 - `src/__tests__/claimFlags.test.js` — post-generation claim-check
-  heuristic and its `social-posts.txt` header.
+  heuristic (every model-written field) and its `social-posts.txt` header.
+- `src/__tests__/coverCommand.test.js` — `cover` (`src/coverCommand.js`):
+  dropped topic refused, stale stored claims flagged, wrong name refused.
 - `src/__tests__/validateShape.test.js` — short-form shape normalisation
   (malformed hashtag/subreddit arrays) through all four formatters.
 - `src/__tests__/selectTopic.test.js` — same-day re-run replacement
