@@ -72,6 +72,12 @@ async function loadHistory() {
   }
 }
 
+// Claim-feedback retry for every product generation pass (callOllama.js).
+const claimRetry = {
+  claimCheck: claimProblems,
+  onClaimRetry: (n) => console.log(`${LOG} Claim check: ${n} flagged phrase(s) in the answer — asking the model once more.`),
+};
+
 async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
   const date = localDateString();
   const registry = await loadRegistry(BUSINESS_VAULT_PATH);
@@ -111,7 +117,7 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
   );
 
   const prompt = buildOllamaPrompt({ topic, knowledgeBase, history, focus, productName: PRODUCT_NAME, claimRules });
-  const shared = await callOllama(prompt, { claimCheck: claimProblems });
+  const shared = await callOllama(prompt, { ...claimRetry });
 
   const drafts = {
     x: formatX(shared, focus),
@@ -136,7 +142,7 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
   console.log(`${LOG} Video: visual mode "${visualMode}"${character ? ' (presenter from VIDEO_CHARACTER)' : ''}`);
   const script = await callOllamaVideoScript(
     buildVideoScriptPrompt({ topic, shared, video, productName: PRODUCT_NAME, character, mode: visualMode, claimRules }),
-    { withWardrobe: Boolean(character), mode: visualMode, productName: PRODUCT_NAME, claimCheck: claimProblems },
+    { withWardrobe: Boolean(character), mode: visualMode, productName: PRODUCT_NAME, ...claimRetry },
   );
   Object.assign(generated, claimSources('video-script.txt + video-cover-image.txt', script));
   const videoScriptText = renderVideoScript({
@@ -159,7 +165,7 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
     console.log(`${LOG} Long-form: generating blog post + LinkedIn article for "${topic.id}"...`);
     const article = await callOllamaArticle(
       buildArticlePrompt({ topic, knowledgeBase, history, focus, productName: PRODUCT_NAME, claimRules }),
-      { claimCheck: claimProblems },
+      { ...claimRetry },
     );
     Object.assign(generated, claimSources('blog-post.md + linkedin-article.md', article));
     blogPostMd = renderBlogPost({
@@ -194,7 +200,7 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
       console.log(`${LOG} Product Hunt: generating "${phFormat.id}" self-promotion post for "${topic.id}"...`);
       const phPost = await callOllamaProductHunt(
         buildProductHuntPrompt({ topic, history, format: phFormat, productName: PRODUCT_NAME, claimRules }),
-        { claimCheck: claimProblems },
+        { ...claimRetry },
       );
       Object.assign(generated, claimSources('producthunt-post.txt (self-promotion)', phPost));
       phBlocks.push(renderProductHuntPost({ topic, date, format: phFormat, post: phPost, productName: PRODUCT_NAME }));

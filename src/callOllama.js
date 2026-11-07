@@ -202,6 +202,7 @@ async function requestParsed(prompt, opts, validate) {
 async function withClaimFeedback(obj, prompt, opts, validate, ask) {
   const problems = opts.claimCheck?.(obj) ?? [];
   if (!problems.length) return obj;
+  opts.onClaimRetry?.(problems.length);
   const retry =
     `${prompt}\n\nYour previous answer broke the CLAIM RULES with these phrases:\n` +
     problems.slice(0, 12).map((p) => `- "${p}"`).join('\n') +
