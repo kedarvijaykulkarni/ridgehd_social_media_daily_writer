@@ -50,3 +50,10 @@ test('a single-mention product pitch with a "See how" CTA is flagged as ad-like'
   assert.equal(draft.needs_manual_review, true);
   assert.match(draft.review_reason, /ad-like/);
 });
+
+test('a product pitch alone or a "learn how" alone is not ad-like; only the pair is', () => {
+  const review = (core, cta) => formatReddit(shared({ core_message: core, call_to_action: cta })).needs_manual_review;
+  assert.equal(review('RidgeHQ offers built-in digital waivers.', 'What works for your team?'), false, 'pitch only');
+  assert.equal(review('Operators compare notes on participant paperwork.', 'Learn how other operators approach it.'), false, 'CTA only');
+  assert.equal(review('RidgeHQ offers built-in digital waivers.', 'See how it works.'), true, 'pitch + CTA');
+});
