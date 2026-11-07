@@ -88,7 +88,8 @@ test('blog post carries SEO keywords, brand tag, coverage note and internal link
   assert.match(md, /^tags: \[.*"ridgehq"/m);
   assert.match(md, /SEO keywords present: kayak rental booking software; kayak rental software/);
   assert.ok(md.includes(`](${focus.vertical.url})`));
-  assert.ok(md.includes(`](${focus.platform.url})`));
+  assert.ok(!md.includes(`](${focus.platform.url})`), 'no link to an unapproved platform feature page');
+  for (const k of focus.platform.keywords) assert.ok(!md.includes(`"${k}"`), `platform keyword ${k}`);
 });
 
 test('LinkedIn article ends with links and #RidgeHQ', () => {

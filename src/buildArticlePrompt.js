@@ -71,7 +71,7 @@ context; do NOT invent anything beyond them, and keep the article anchored
 to the PRIMARY TOPIC above):
 ${supporting || '(none)'}
 
-${focusPromptBlock({ focus, productName, includePlatform: true })}
+${focusPromptBlock({ focus, productName })}
 - The blog post must rank for the PRIMARY phrase: put it (or a close variant)
   in "title", in "meta_description", and in the first section's body; put
   "${productName}" in "meta_description" too.

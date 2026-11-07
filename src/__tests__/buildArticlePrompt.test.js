@@ -76,11 +76,12 @@ test('article prompt lists recent headlines to avoid repetition', () => {
   assert.match(prompt, /RECENTLY COVERED/i);
 });
 
-test('article prompt targets the focus vertical, its SEO keywords, and the platform page', () => {
+test('article prompt targets the focus vertical and its SEO keywords, not the unapproved platform page', () => {
   const prompt = buildArticlePrompt({ topic: KB[0], knowledgeBase: KB, history: HISTORY, focus: FOCUS, productName: 'RidgeHQ' });
   assert.match(prompt, new RegExp(`TODAY'S AUDIENCE: ${FOCUS.vertical.name}`));
   assert.ok(prompt.includes(`"${FOCUS.vertical.keywords[0]}"`), 'primary keyword requested verbatim');
-  assert.ok(prompt.includes(FOCUS.platform.name), 'platform capability included');
+  assert.ok(!prompt.includes(FOCUS.platform.name), 'no platform feature page in the prompt');
+  for (const k of FOCUS.platform.keywords) assert.ok(!prompt.includes(`"${k}"`), `platform keyword ${k}`);
   assert.doesNotMatch(prompt, /platform\s+for dive centers\./);
 });
 

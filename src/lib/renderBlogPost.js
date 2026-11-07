@@ -57,7 +57,8 @@ function uniq(list) {
 // company-voice body. Same section bodies as the LinkedIn article; the
 // opener here is the blog `dek`, and only this renderer emits the SEO block.
 // With a `focus` (seoFocus.js) it also emits `keywords`, adds the brand +
-// primary keyword to `tags`, and links the solution/platform pages.
+// primary keyword to `tags`, and links the solution page (platform pages are
+// left out until a feature fact is approved — see articleMarkdown.js).
 // With a `video` ({ title, description }, see videoMeta.js) it emits the
 // `video:` block the website embeds above the post.
 export function renderBlogPost({ topic, date, article, productName = 'RidgeHQ', blogBaseUrl, focus, video } = {}) {
@@ -67,7 +68,7 @@ export function renderBlogPost({ topic, date, article, productName = 'RidgeHQ', 
     yamlStr(t),
   );
   const keywords = focus
-    ? uniq([...focus.vertical.keywords, ...focus.platform.keywords, ...BRAND_KEYWORDS]).map((k) => yamlStr(k))
+    ? uniq([...focus.vertical.keywords, ...BRAND_KEYWORDS]).map((k) => yamlStr(k))
     : [];
 
   const frontmatter = [

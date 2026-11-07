@@ -35,7 +35,7 @@ export function reviewerNote({ kind, productName, date, topic, wordCount, focus,
   if (focus) {
     const { found, missing } = keywordCoverage(text, focus.vertical.keywords);
     lines.push(
-      `  Website focus: ${focus.vertical.name} (${focus.vertical.url}) + ${focus.platform.name}.`,
+      `  Website focus: ${focus.vertical.name} (${focus.vertical.url}).`,
       `  SEO keywords present: ${found.length ? found.join('; ') : '(none)'}`,
       `  SEO keywords MISSING: ${missing.length ? missing.join('; ') : '(none)'}${
         missing.includes(focus.vertical.keywords[0]) ? '  ⚠️ primary phrase missing — add it by hand' : ''
@@ -57,16 +57,17 @@ export function reviewerNote({ kind, productName, date, topic, wordCount, focus,
   return lines.join('\n');
 }
 
-// Internal links back into ridgehq.app — the vertical's solution page, the
-// featured platform page, and the homepage. Same block for blog + LinkedIn.
+// Internal links back into ridgehq.app — the vertical's solution page and the
+// homepage. Same block for blog + LinkedIn. The rotated /platform/* page is
+// left out: each one promotes a feature (gear, payments, scheduling...) that
+// no registry fact approves for social yet (DECISIONS #165(4)).
 export function relatedLinksMarkdown(focus, productName) {
   if (!focus) return '';
-  const { vertical, platform } = focus;
+  const { vertical } = focus;
   return [
     `## Learn more about ${productName}`,
     '',
     `- [${productName} for ${vertical.name}](${vertical.url})`,
-    `- [${platform.name}](${platform.url})`,
     `- [${productName} — the Activity Business OS](${SITE_URL}/)`,
   ].join('\n');
 }
