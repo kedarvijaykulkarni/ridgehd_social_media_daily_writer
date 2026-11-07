@@ -40,14 +40,19 @@ function parseModelResponse(raw) {
   }
 }
 
-function validateShape(obj) {
+const OPTIONAL_STRING_ARRAYS = ['hashtags_broad_niche', 'hashtags_saas_niche', 'reddit_relevant_subreddits'];
+
+// Short-form shape. Exported for unit tests. The optional arrays are
+// normalised to arrays of non-empty strings: a model that returns "#a #b" or
+// [null] used to pass here and then crash a formatter outside the retry.
+export function validateShape(obj) {
   const missing = REQUIRED_FIELDS.filter((f) => typeof obj[f] !== 'string' || !obj[f].trim());
   if (missing.length) {
     throw new Error(`Ollama response missing required field(s): ${missing.join(', ')}`);
   }
-  obj.hashtags_broad_niche ??= [];
-  obj.hashtags_saas_niche ??= [];
-  obj.reddit_relevant_subreddits ??= [];
+  for (const f of OPTIONAL_STRING_ARRAYS) {
+    obj[f] = Array.isArray(obj[f]) ? obj[f].filter((v) => typeof v === 'string' && v.trim()) : [];
+  }
   return obj;
 }
 

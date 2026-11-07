@@ -12,6 +12,7 @@
 // `producthunt_format_id` field.
 
 import { pickLeastUsed } from './seoFocus.js';
+import { localDateString } from './lib/localDate.js';
 
 export const FORUM_URL = 'https://www.producthunt.com/p/ridgehq-app';
 
@@ -90,14 +91,14 @@ function daysBetween(dateA, dateB) {
 // Returns { inCooldown, lastPostDate, daysSinceLastPost, cooldownDays }.
 // `cooldownDays` is the minimum gap between forum posts — default 2 caps
 // frequency at roughly 3x/week per PH's own guidance for a dedicated forum.
-export function productHuntCooldown(history, { cooldownDays = 2, today = new Date().toISOString().slice(0, 10) } = {}) {
+export function productHuntCooldown(history, { cooldownDays = 2, today = localDateString() } = {}) {
   return cooldownFor(history, 'producthunt_format_id', cooldownDays, today);
 }
 
 // Same shape, for the General-topic discussion block. Default 4 days: the
 // guidelines allow "restricting contributing privileges" for repeated
 // violations, and General is moderated harder than a product's own forum.
-export function productHuntDiscussionCooldown(history, { cooldownDays = 4, today = new Date().toISOString().slice(0, 10) } = {}) {
+export function productHuntDiscussionCooldown(history, { cooldownDays = 4, today = localDateString() } = {}) {
   return cooldownFor(history, 'producthunt_discussion', cooldownDays, today);
 }
 
@@ -113,7 +114,10 @@ function cooldownFor(history, field, cooldownDays, today) {
 // The prompt bans the product name, but a local model can ignore that.
 // Returns true when the draft is safe to hand over; a leak means the post
 // would read as promotion in General, so the caller drops the block.
+// Letters and digits only, so "Ridge HQ", "Ridge-HQ" and "RIDGE HQ's" match
+// too (a false match only drops the block, the safe direction).
 export function discussionIsProductFree(post, productName) {
-  const text = `${post.title} ${post.body} ${post.cta ?? ''}`.toLowerCase();
-  return !['ridgehq', productName.toLowerCase()].some((name) => text.includes(name));
+  const squash = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const text = squash(`${post.title} ${post.body} ${post.cta ?? ''}`);
+  return !['ridgehq', productName].map(squash).some((name) => name && text.includes(name));
 }

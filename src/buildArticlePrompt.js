@@ -17,7 +17,7 @@ function clip(text, n) {
   return clean.length > n ? `${clean.slice(0, n - 1).trimEnd()}…` : clean;
 }
 
-export function buildArticlePrompt({ topic, knowledgeBase, history, focus, productName = 'RidgeHQ' }) {
+export function buildArticlePrompt({ topic, knowledgeBase, history, focus, productName = 'RidgeHQ', claimRules = '' }) {
   const kbById = new Map(knowledgeBase.map((e) => [e.id, e]));
 
   const supporting = knowledgeBase
@@ -26,7 +26,10 @@ export function buildArticlePrompt({ topic, knowledgeBase, history, focus, produ
     .map((e) => `- ${e.headline} — ${clip(e.detail, SUPPORTING_DETAIL_CHARS)}`)
     .join('\n');
 
+  // Only topics still offered: a dropped topic (e.g. an unapproved AI claim)
+  // must not come back into the prompt as a "recently covered" headline or id.
   const recentPosts = [...(history.posts ?? [])]
+    .filter((p) => kbById.has(p.topic_id))
     .sort((a, b) => new Date(a.date) - new Date(b.date))
     .slice(-5)
     .reverse();
@@ -47,6 +50,8 @@ end consumers. Tone: confident, specific, no hype,
 no exclamation-point-per-sentence energy. Never invent statistics, customer
 quotes, or features beyond what is given to you below. Never mention internal
 codenames, or competitors by name in a disparaging way.
+
+${claimRules}
 
 TASK: write ONE long-form article (900–1500 words) about the primary topic.
 It will be rendered two ways: a website blog post (company voice) and a

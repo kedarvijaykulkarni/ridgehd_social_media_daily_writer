@@ -23,14 +23,17 @@ function looksPromotional(text) {
   return PROMOTIONAL_PATTERNS.some((re) => re.test(text));
 }
 
-// Reddit: title <= REDDIT_TITLE_TARGET (informative, not clickbait), body
+// Reddit: title aims for REDDIT_TITLE_TARGET (informative, not clickbait;
+// `meets_title_target` says whether it did) and is only cut at the hard max, body
 // in the conversational register range. No hashtags (not a Reddit
 // convention) — subreddits are passed through for human review instead of
 // auto-posting, since self-promotion rules vary widely and auto-posting
 // risks bans.
 export function formatReddit(shared) {
   const hook = shared.hook_line.trim();
-  const title = truncateToChars(hook, REDDIT_TITLE_TARGET);
+  // Truncate only at the hard limit: cutting at the 100-char target chopped
+  // a 101-char hook mid-word ("0% commissio…"). The target is reported below.
+  const title = truncateToChars(hook, REDDIT_TITLE_MAX);
   const body = composeParts([shared.core_message.trim(), shared.call_to_action.trim()]);
 
   const titleCount = charCount(title);
@@ -43,7 +46,21 @@ export function formatReddit(shared) {
     throw new Error(`Reddit body exceeds hard limit (${bodyCount}/${REDDIT_BODY_MAX} chars).`);
   }
 
-  const needsReview = looksPromotional(`${shared.core_message} ${shared.call_to_action}`);
+  // Reddit stays link- and hashtag-free (self-promo rules), but core_message
+  // and call_to_action are shared with the other platforms and pass through
+  // verbatim — flag rather than silently rewrite the model's copy.
+  const bodyText = `${shared.core_message} ${shared.call_to_action}`;
+  const hasLinkOrTag = [
+    /https?:\/\/|\bwww\./i,
+    /\b[a-z0-9-]+\.(app|com|io|net|org|co|dev|ai)\b/i, // bare domain: ridgehq.app
+    /(^|[^\w&])#[a-z]\w*/i, // #tag, also inside "(#tag)"
+  ].some((re) => re.test(`${title} ${body}`));
+  const isPromotional = looksPromotional(bodyText);
+  const needsReview = hasLinkOrTag || isPromotional;
+  const reasons = [
+    hasLinkOrTag && 'Body contains a link or hashtag; remove it before posting (Reddit self-promotion rules).',
+    isPromotional && 'Heuristic detected ad-like phrasing/tone; rewrite in first-person conversational voice before posting.',
+  ].filter(Boolean);
 
   return {
     platform: 'reddit',
@@ -52,12 +69,11 @@ export function formatReddit(shared) {
     char_count: { title: titleCount, body: bodyCount },
     limit: { title: REDDIT_TITLE_MAX, body: REDDIT_BODY_MAX },
     within_limit: titleCount <= REDDIT_TITLE_MAX && bodyCount <= REDDIT_BODY_MAX,
+    meets_title_target: titleCount <= REDDIT_TITLE_TARGET,
     hashtags_used: [],
     image_prompt: shared.image_prompt,
     reddit_relevant_subreddits: shared.reddit_relevant_subreddits ?? [],
     needs_manual_review: needsReview,
-    review_reason: needsReview
-      ? 'Heuristic detected ad-like phrasing/tone; rewrite in first-person conversational voice before posting.'
-      : null,
+    review_reason: needsReview ? reasons.join(' ') : null,
   };
 }

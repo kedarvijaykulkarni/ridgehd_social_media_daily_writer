@@ -26,7 +26,7 @@ export const SITE_HOST = SITE_URL.replace(/^https?:\/\/(www\.)?/, '');
 
 // `character` ({ identity }) + `mode` ('character' | 'product' | 'none') come
 // from videoCharacter.js. With no character the video has no people on screen.
-export function buildVideoScriptPrompt({ topic, shared, video, productName = 'RidgeHQ', character = null, mode = 'none' }) {
+export function buildVideoScriptPrompt({ topic, shared, video, productName = 'RidgeHQ', character = null, mode = 'none', claimRules = '' }) {
   const statusRule =
     topic.status === 'shipped'
       ? 'This topic is SHIPPED — the narration may describe it in the present tense.'
@@ -77,6 +77,8 @@ ${shared.hook_line}
 ${shared.core_message}
 
 ${shared.call_to_action}
+
+${claimRules}
 
 RULES
 - ${statusRule}

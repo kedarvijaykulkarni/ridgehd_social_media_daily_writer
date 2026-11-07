@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 import 'dotenv/config';
 import { Command } from 'commander';
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { selectTopic, recordUsage } from './selectTopic.js';
+import { selectTopic, recordUsage, withoutRunsOn } from './selectTopic.js';
 import { loadKnowledgeBase } from './loadKnowledgeBase.js';
+import { loadRegistry, claimRulesBlock, assertPublicName, claimFlags, modelText } from './claimRules.js';
 import { selectFocus } from './seoFocus.js';
 import {
   selectProductHuntFormat,
@@ -33,7 +34,9 @@ import { renderProductHuntPost, renderProductHuntDiscussion } from './lib/render
 import { videoMeta } from './lib/videoMeta.js';
 import { loadCharacter, resolveVisualMode } from './videoCharacter.js';
 import { renderVideoCoverPrompt } from './lib/renderVideoCoverPrompt.js';
-import { parseVideoScript } from './lib/parseVideoScript.js';
+import { writeCover } from './coverCommand.js';
+import { localDateString } from './lib/localDate.js';
+import { envNumber } from './lib/envNumber.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(__dirname, '..');
@@ -54,8 +57,8 @@ const POST_HISTORY_PATH = resolveConfigPath('POST_HISTORY_PATH', './data/post-hi
 const OUTPUT_DIR = resolveConfigPath('OUTPUT_DIR', './output');
 const PRODUCT_NAME = process.env.PRODUCT_NAME?.trim() || 'RidgeHQ';
 const BLOG_BASE_URL = process.env.BLOG_BASE_URL?.trim() || 'https://www.ridgehq.app/blog';
-const PRODUCTHUNT_COOLDOWN_DAYS = Number(process.env.PRODUCTHUNT_COOLDOWN_DAYS) || 2;
-const PRODUCTHUNT_DISCUSSION_COOLDOWN_DAYS = Number(process.env.PRODUCTHUNT_DISCUSSION_COOLDOWN_DAYS) || 4;
+const PRODUCTHUNT_COOLDOWN_DAYS = envNumber('PRODUCTHUNT_COOLDOWN_DAYS', 2);
+const PRODUCTHUNT_DISCUSSION_COOLDOWN_DAYS = envNumber('PRODUCTHUNT_DISCUSSION_COOLDOWN_DAYS', 4);
 
 async function loadHistory() {
   try {
@@ -69,22 +72,31 @@ async function loadHistory() {
   }
 }
 
-function todayString() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
-  const knowledgeBase = await loadKnowledgeBase(BUSINESS_VAULT_PATH);
-  const byStatus = knowledgeBase.reduce((acc, c) => {
-    acc[c.status] = (acc[c.status] ?? 0) + 1;
-    return acc;
-  }, {});
+  const date = localDateString();
+  const registry = await loadRegistry(BUSINESS_VAULT_PATH);
+  assertPublicName(registry, date, PRODUCT_NAME);
+  const { chunks: knowledgeBase, dropped } = await loadKnowledgeBase(BUSINESS_VAULT_PATH, { today: date, registry });
+  // Owner-approved facts + never-claim rules, verbatim, in every product prompt.
+  const claimRules = claimRulesBlock(registry, date, PRODUCT_NAME);
   console.log(
-    `${LOG} Loaded ${knowledgeBase.length} topic chunks from vault ${BUSINESS_VAULT_PATH} ` +
-      `(${Object.entries(byStatus).map(([s, n]) => `${n} ${s}`).join(', ')})`,
+    `${LOG} Loaded ${knowledgeBase.length} marketable topic(s) from vault ${BUSINESS_VAULT_PATH}: ` +
+      `${knowledgeBase.map((c) => `${c.id} (${c.fact_id})`).join(', ')}`,
   );
+  if (dropped.length) {
+    console.log(
+      `${LOG} Not offered — no fact approved for social in the registry (DECISIONS #165/#166): ` +
+        dropped.map((c) => c.id).join(', '),
+    );
+  }
 
-  const history = await loadHistory();
+  const { history, replaced } = withoutRunsOn(await loadHistory(), date);
+  if (replaced) {
+    console.log(
+      `${LOG} ${date} already has ${replaced} run(s) in history — this run replaces them ` +
+        `(one output folder per day${dryRun ? '; dry run, so nothing is replaced yet' : ''}).`,
+    );
+  }
 
   const topic = selectTopic(knowledgeBase, history);
   const priorUsedCount = (history.posts ?? []).filter((p) => p.topic_id === topic.id).length;
@@ -98,7 +110,7 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
     `${LOG} Website focus: ${focus.vertical.id} (${focus.vertical.url}) + platform ${focus.platform.id}`,
   );
 
-  const prompt = buildOllamaPrompt({ topic, knowledgeBase, history, focus, productName: PRODUCT_NAME });
+  const prompt = buildOllamaPrompt({ topic, knowledgeBase, history, focus, productName: PRODUCT_NAME, claimRules });
   const shared = await callOllama(prompt);
 
   const drafts = {
@@ -108,8 +120,12 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
     reddit: formatReddit(shared),
   };
 
-  const date = todayString();
-  const socialText = renderSocialText({ topic, date, drafts, productName: PRODUCT_NAME, focus });
+  // Every model-written field per output, for the post-generation claim
+  // check — the whole response objects, so image prompts, hashtags,
+  // subreddits and the video bible are covered too.
+  const generated = {
+    'social-posts.txt + image-prompt.txt': modelText(shared),
+  };
 
   // 1-minute video script: one more Ollama pass, built from the same shared
   // object (headline + image prompt + hook/core message/CTA).
@@ -119,9 +135,10 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
   const visualMode = resolveVisualMode(videoMode ?? process.env.VIDEO_VISUAL_MODE, character);
   console.log(`${LOG} Video: visual mode "${visualMode}"${character ? ' (presenter from VIDEO_CHARACTER)' : ''}`);
   const script = await callOllamaVideoScript(
-    buildVideoScriptPrompt({ topic, shared, video, productName: PRODUCT_NAME, character, mode: visualMode }),
+    buildVideoScriptPrompt({ topic, shared, video, productName: PRODUCT_NAME, character, mode: visualMode, claimRules }),
     { withWardrobe: Boolean(character), mode: visualMode, productName: PRODUCT_NAME },
   );
+  generated['video-script.txt + video-cover-image.txt'] = modelText(script);
   const videoScriptText = renderVideoScript({
     topic, date, video, script, productName: PRODUCT_NAME, character, mode: visualMode,
   });
@@ -141,8 +158,9 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
   if (longForm) {
     console.log(`${LOG} Long-form: generating blog post + LinkedIn article for "${topic.id}"...`);
     const article = await callOllamaArticle(
-      buildArticlePrompt({ topic, knowledgeBase, history, focus, productName: PRODUCT_NAME }),
+      buildArticlePrompt({ topic, knowledgeBase, history, focus, productName: PRODUCT_NAME, claimRules }),
     );
+    generated['blog-post.md + linkedin-article.md'] = modelText(article);
     blogPostMd = renderBlogPost({
       topic,
       date,
@@ -174,8 +192,9 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
       phFormat = selectProductHuntFormat(history);
       console.log(`${LOG} Product Hunt: generating "${phFormat.id}" self-promotion post for "${topic.id}"...`);
       const phPost = await callOllamaProductHunt(
-        buildProductHuntPrompt({ topic, history, format: phFormat, productName: PRODUCT_NAME }),
+        buildProductHuntPrompt({ topic, history, format: phFormat, productName: PRODUCT_NAME, claimRules }),
       );
+      generated['producthunt-post.txt (self-promotion)'] = modelText(phPost);
       phBlocks.push(renderProductHuntPost({ topic, date, format: phFormat, post: phPost, productName: PRODUCT_NAME }));
     }
 
@@ -190,9 +209,10 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
       );
     } else {
       console.log(`${LOG} Product Hunt: generating General discussion question from theme "${topic.id}"...`);
-      const discussion = await callOllamaProductHunt(buildProductHuntDiscussionPrompt({ topic, history }));
+      const discussion = await callOllamaProductHunt(buildProductHuntDiscussionPrompt({ topic, history, knowledgeBase }));
       if (discussionIsProductFree(discussion, PRODUCT_NAME)) {
         phDiscussion = true;
+        generated['producthunt-post.txt (General)'] = modelText(discussion);
         phBlocks.push(renderProductHuntDiscussion({ topic, date, format: DISCUSSION_FORMAT, post: discussion }));
       } else {
         console.log(
@@ -203,6 +223,10 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
     }
   }
   const productHuntText = phBlocks.length ? phBlocks.join('\n\n') : null;
+
+  const flags = claimFlags(generated);
+  console.log(`${LOG} Claim check (heuristic): ${flags.length ? `${flags.length} flag(s), listed at the top of social-posts.txt` : 'no flags'}`);
+  const socialText = renderSocialText({ topic, date, drafts, productName: PRODUCT_NAME, focus, claimFlags: flags });
 
   if (dryRun) {
     console.log('\n=== DRY RUN — nothing written, history unchanged ===\n');
@@ -225,22 +249,22 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
 
   const runDir = path.join(OUTPUT_DIR, date);
   await mkdir(runDir, { recursive: true });
-  const writes = [
-    writeFile(path.join(runDir, 'social-posts.txt'), socialText),
-    writeFile(path.join(runDir, 'image-prompt.txt'), imagePromptText),
-    writeFile(path.join(runDir, 'video-script.txt'), videoScriptText),
-    writeFile(path.join(runDir, 'video-cover-image.txt'), coverPromptText),
-  ];
-  if (longForm) {
-    writes.push(
-      writeFile(path.join(runDir, 'blog-post.md'), blogPostMd),
-      writeFile(path.join(runDir, 'linkedin-article.md'), linkedinArticleMd),
-    );
-  }
-  if (productHuntText) {
-    writes.push(writeFile(path.join(runDir, 'producthunt-post.txt'), productHuntText));
-  }
-  await Promise.all(writes);
+  const files = {
+    'social-posts.txt': socialText,
+    'image-prompt.txt': imagePromptText,
+    'video-script.txt': videoScriptText,
+    'video-cover-image.txt': coverPromptText,
+    'blog-post.md': blogPostMd,
+    'linkedin-article.md': linkedinArticleMd,
+    'producthunt-post.txt': productHuntText,
+  };
+  // Files this run doesn't produce are removed, so a same-day re-run can't
+  // leave an earlier run's blog/Product Hunt draft beside a different topic.
+  await Promise.all(
+    Object.entries(files).map(([name, text]) =>
+      text === null ? rm(path.join(runDir, name), { force: true }) : writeFile(path.join(runDir, name), text),
+    ),
+  );
 
   const updatedHistory = recordUsage({ knowledgeBase, history, topic, date, focus, producthuntFormat: phFormat, producthuntDiscussion: phDiscussion });
   await mkdir(path.dirname(POST_HISTORY_PATH), { recursive: true });
@@ -282,23 +306,14 @@ program
   .option('--character-ref <ref>', 'Presenter reference to attach in Gemini, e.g. "@Olivia" (overrides the reference recorded in video-script.txt)')
   .action(async (opts) => {
     try {
-      // Strict format: the value is joined into a path, so nothing like
-      // "..\..\x" may reach the filesystem.
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(opts.date)) throw new Error(`--date must be YYYY-MM-DD, got "${opts.date}"`);
-      const runDir = path.join(OUTPUT_DIR, opts.date);
-      const parsed = parseVideoScript(await readFile(path.join(runDir, 'video-script.txt'), 'utf-8'));
-      // The presenter recorded in that day's script wins over today's .env, so
-      // the cover shows the same person as the video; --character-ref is the
-      // only override.
-      const reference = opts.characterRef?.trim() || parsed.reference;
-      const identity = parsed.identity;
-      const character = identity || reference ? { identity, reference } : null;
-      const text = renderVideoCoverPrompt({
-        topic: parsed.topic, date: opts.date, video: parsed.video, bible: parsed.bible, character, productName: PRODUCT_NAME,
+      const { out, flags } = await writeCover({
+        outputDir: OUTPUT_DIR,
+        vaultPath: BUSINESS_VAULT_PATH,
+        date: opts.date,
+        characterRef: opts.characterRef,
+        productName: PRODUCT_NAME,
       });
-      const out = path.join(runDir, 'video-cover-image.txt');
-      await writeFile(out, text);
-      console.log(`${LOG} Wrote ${out}`);
+      console.log(`${LOG} Wrote ${out}${flags.length ? ` (${flags.length} claim-check flag(s) at the top)` : ''}`);
     } catch (err) {
       console.error(`${LOG} ${err.message}`);
       process.exitCode = 1;

@@ -8,7 +8,7 @@
 
 import { POSITIONING } from './seoFocus.js';
 
-export function buildProductHuntPrompt({ topic, history, format, productName = 'RidgeHQ' }) {
+export function buildProductHuntPrompt({ topic, history, format, productName = 'RidgeHQ', claimRules = '' }) {
   const recentPosts = [...(history.posts ?? [])]
     .filter((p) => p.producthunt_format_id)
     .sort((a, b) => new Date(a.date) - new Date(b.date))
@@ -35,6 +35,8 @@ statistics, customer quotes, or features beyond what is given to you below.
 Never ask for upvotes, reviews, or badges. Never include a bare link — if
 you reference the product or site, describe it in words; links are added
 separately by the human posting this.
+
+${claimRules}
 
 TASK: write ONE Product Hunt forum post (120-300 words) in this format:
 ${format.name}
@@ -65,9 +67,12 @@ Return ONLY valid JSON, no markdown fences, no preamble, matching exactly:
 // startups" and reject posts that mainly promote, so this prompt takes the
 // topic only as a *theme* — the post must not mention the product, and
 // the caller drops it if it does (see discussionIsProductFree).
-export function buildProductHuntDiscussionPrompt({ topic, history }) {
+export function buildProductHuntDiscussionPrompt({ topic, history, knowledgeBase = [topic] }) {
+  // Only themes still offered: a dropped topic id (e.g. an AI claim) must not
+  // come back into the prompt through history.
+  const offered = new Set(knowledgeBase.map((e) => e.id));
   const recent = [...(history.posts ?? [])]
-    .filter((p) => p.producthunt_discussion)
+    .filter((p) => p.producthunt_discussion && offered.has(p.topic_id))
     .sort((a, b) => new Date(a.date) - new Date(b.date))
     .slice(-5)
     .reverse()

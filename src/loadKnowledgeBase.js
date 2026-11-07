@@ -24,6 +24,8 @@
 
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
+import { REGISTRY, loadRegistry, gateTopics } from './claimRules.js';
+import { localDateString } from './lib/localDate.js';
 
 const BUSINESS_CONTEXT = path.join('wiki', 'business-context.md');
 const COMPETITORS = path.join('wiki', 'competitors.md');
@@ -34,7 +36,8 @@ const PRICING = path.join('wiki', 'pricing.md');
 function stripMarkdown(text) {
   return text
     .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // [label](url) -> label
-    .replace(/[*_`~]+/g, '') // bold/italic/code/strike marks
+    .replace(/[*`~]+/g, '') // bold/italic/code/strike marks
+    .replace(/(?<!\w)_+|_+(?!\w)/g, '') // _emphasis_, but not min_role / tenant_id
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -163,12 +166,29 @@ function tableRowsAfterMarker(lines, markerRe) {
   return rows;
 }
 
+const SHIPPED_MARKER = /✅.*sell on this/i;
+const PLANNED_MARKER = /❌.*not yet sellable/i;
+
+function markerError(reason) {
+  return new Error(
+    `Could not parse ${BUSINESS_CONTEXT} §2: ${reason}. ` +
+      'Have the "## 2." heading or the "✅ ... sell on this" / "❌ Not yet sellable" markers changed? ' +
+      'See docs/business-context-reference.md.',
+  );
+}
+
+// Throws when §2 or either marker is missing: competitor/pricing chunks would
+// otherwise keep the list non-empty and hide a silently wrong topic set.
 function extractFromBusinessContext(markdown) {
   const lines = sectionTwo(markdown);
-  if (!lines) return [];
+  if (!lines) throw markerError('no "## 2." section');
+  if (!lines.some((l) => SHIPPED_MARKER.test(l))) throw markerError('no "✅ ... sell on this" marker');
+  if (!lines.some((l) => PLANNED_MARKER.test(l))) throw markerError('no "❌ Not yet sellable" marker');
+  const shippedBullets = bulletsAfterMarker(lines, SHIPPED_MARKER);
+  if (shippedBullets.length === 0) throw markerError('no bullets after the "✅ ... sell on this" marker');
   const chunks = [];
 
-  for (const bullet of bulletsAfterMarker(lines, /✅.*sell on this/i)) {
+  for (const bullet of shippedBullets) {
     const headline = toHeadline(bullet);
     if (!headline) continue;
     chunks.push(
@@ -182,7 +202,7 @@ function extractFromBusinessContext(markdown) {
     );
   }
 
-  for (const [gap, consequence = ''] of tableRowsAfterMarker(lines, /❌.*not yet sellable/i)) {
+  for (const [gap, consequence = ''] of tableRowsAfterMarker(lines, PLANNED_MARKER)) {
     if (/do not (market|claim)/i.test(consequence)) continue; // vault says: not even as roadmap
     const headline = toHeadline(gap);
     if (!headline) continue;
@@ -226,24 +246,39 @@ function extractDifferentiator(markdown) {
   ];
 }
 
+// The "### ✅ Published pricing" subsection of §3, up to the next heading.
+// pricing.md also carries stale tier tables (the killed €29 tier, the
+// original strategy) and a unit-economics table; none of those are published.
+function publishedPricingLines(lines) {
+  const start = lines.findIndex((l) => /^###\s.*published pricing/i.test(l));
+  if (start === -1) return null;
+  const end = lines.findIndex((l, i) => i > start && /^#{2,3}\s/.test(l));
+  return lines.slice(start + 1, end === -1 ? lines.length : end);
+}
+
 function extractPricing(markdown) {
   if (!markdown) return [];
-  const lines = markdown.split(/\r?\n/);
-  const headlineLine =
-    lines.find((l) => /page headline:/i.test(l)) ||
-    lines.find((l) => /simple pricing for real operators/i.test(l));
-  if (!headlineLine) return [];
-  const sentence = stripMarkdown(headlineLine.replace(/.*page headline:\s*/i, '')).replace(/^["'“”]+|["'“”]+$/g, '');
-  const tiers = lines
-    .filter((l) => /\|/.test(l) && /€\s?\d+/.test(l) && /(starter|grow|scale)/i.test(l))
-    .map((l) => stripMarkdown(l).replace(/\s*\|\s*/g, ' · ').replace(/^·\s*|\s*·$/g, ''));
+  const lines = publishedPricingLines(markdown.split(/\r?\n/));
+  if (!lines) return [];
+  const headlineIdx = lines.findIndex((l) => /page headline:/i.test(l));
+  if (headlineIdx === -1) return [];
+  // The headline paragraph wraps across lines; join it up to the blank line.
+  const blank = lines.findIndex((l, i) => i > headlineIdx && l.trim() === '');
+  const paragraph = lines.slice(headlineIdx, blank === -1 ? lines.length : blank).join(' ');
+  const sentence = stripMarkdown(paragraph.replace(/.*page headline:\s*/i, '')).replace(/^["'“”]+|["'“”]+$/g, '');
+  // The tier table is deliberately not read: plan prices
+  // (registry pricing.monthly-plans) are approved for sales and the website,
+  // not social, so the chunk carries only the published positioning line.
   return [
     makeChunk({
       id: 'flat-monthly-pricing-zero-commission',
       category: 'pricing-model',
       status: 'shipped',
-      headline: 'Flat monthly pricing with 0% commission on direct bookings',
-      detail: toDetail([sentence, ...tiers].filter(Boolean).join(' ')),
+      // 0% commission is table stakes (competitors.md §5, DECISIONS #165(3)):
+      // a supporting point in the detail, never the headline. The id stays
+      // unchanged so post-history coverage carries over.
+      headline: 'Flat monthly pricing with no per-staff seat shock',
+      detail: toDetail(sentence),
     }),
   ];
 }
@@ -260,15 +295,15 @@ async function readIfPresent(filePath) {
 }
 
 /**
- * Read the RidgeHQ business vault and return topic chunks in the same shape
- * the old knowledge-base.json used:
+ * Every topic chunk the vault pages describe, before the marketing gate:
  *   { id, category, status, headline, detail, audience_angle, suggested_visual_theme }
+ * Exported for the extraction tests; generation uses loadKnowledgeBase.
  *
  * @param {string} vaultPath absolute path to the Obsidian vault root
  *   (the directory that contains `wiki/`)
  * @returns {Promise<Array>}
  */
-export async function loadKnowledgeBase(vaultPath) {
+export async function loadVaultTopics(vaultPath) {
   let dirStat;
   try {
     dirStat = await stat(vaultPath);
@@ -323,4 +358,26 @@ export async function loadKnowledgeBase(vaultPath) {
   }
 
   return chunks;
+}
+
+/**
+ * The topics this tool may market: vault chunks that an owner-approved
+ * social fact in the registry covers (src/claimRules.js). Each kept chunk
+ * gains `fact_id`. Throws when the registry is missing or nothing is left.
+ *
+ * @param {string} vaultPath
+ * @param {{ today?: string, registry?: object }} [opts] `registry` avoids a
+ *   second read when the caller already loaded it
+ * @returns {Promise<{ chunks: Array, dropped: Array }>}
+ */
+export async function loadKnowledgeBase(vaultPath, { today = localDateString(), registry } = {}) {
+  const all = await loadVaultTopics(vaultPath);
+  const { kept, dropped } = gateTopics(all, registry ?? (await loadRegistry(vaultPath)), today);
+  if (kept.length === 0) {
+    throw new Error(
+      `None of the ${all.length} vault topics maps to a fact approved for social in ${REGISTRY} ` +
+        '(accepted, public, channel "social", in date). See TOPIC_FACTS in src/claimRules.js.',
+    );
+  }
+  return { chunks: kept, dropped };
 }

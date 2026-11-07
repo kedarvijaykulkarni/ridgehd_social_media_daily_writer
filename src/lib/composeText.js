@@ -1,8 +1,10 @@
 import { charCount, toGraphemes } from './charCount.js';
 
+// A sentence ends at . ! ? followed by whitespace and a capital/digit/quote,
+// so "2.5", "e.g. on" and "ridgehq.app" stay intact (the pieces are rejoined
+// with a space, which used to turn them into "2. 5" and "ridgehq. app").
 export function splitSentences(text) {
-  const matches = text.match(/[^.!?]+[.!?]*/g);
-  const sentences = (matches ?? [text]).map((s) => s.trim()).filter(Boolean);
+  const sentences = text.split(/(?<=[.!?])\s+(?=[A-Z0-9"“'(])/).map((s) => s.trim()).filter(Boolean);
   return sentences.length ? sentences : [text.trim()];
 }
 
@@ -65,6 +67,15 @@ export function composeCompressed({ hook, sentences, cta, hashtags, max, sep = '
     if (charCount(text) > max) {
       tags = [];
       text = composeParts([hook, truncatedBody, link], sep);
+    }
+    // The model ignored the under-100-char hook spec: cut the hook itself
+    // rather than abort the whole run after every Ollama pass has finished.
+    // The pinned brand tag(s) are kept here too.
+    if (charCount(text) > max) {
+      tags = hashtags.slice(0, minTags);
+      const tail = composeParts([link, tagPart()], sep);
+      const hookBudget = max - charCount(tail) - (tail ? sep.length : 0);
+      text = composeParts([truncateToChars(hook, Math.max(hookBudget, 0)), link, tagPart()], sep);
     }
     break;
   }

@@ -47,7 +47,12 @@ step.
    recommended pixel dimensions for each platform, and which AI image tool
    to paste it into — see below) + `video-script.txt` (a 1-minute script —
    see below), then appends to
-   `data/post-history.json` so tomorrow's run picks a new topic.
+   `data/post-history.json` so tomorrow's run picks a new topic. The date
+   is the machine's local day. There is one folder per day: a second run on
+   the same day **replaces** that day's run — its history entries are
+   dropped before topic selection and output files this run doesn't
+   produce (e.g. a `blog-post.md` from an earlier `--long-form` run) are
+   removed.
 7. **With `--long-form`**, a second Ollama pass on the *same* topic also
    writes `blog-post.md` and `linkedin-article.md` — see below.
 8. **With `--producthunt`**, a third Ollama pass writes `producthunt-post.txt`
@@ -179,7 +184,10 @@ npm run cover -- --date 2026-11-07 --character-ref @Olivia # override the record
 
 `--date` must be `YYYY-MM-DD`. The presenter and reference come from that
 day's `video-script.txt` (not today's `.env`), so the cover shows the same
-person as the video. With no presenter the cover is person-free.
+person as the video. With no presenter the cover is person-free. The old
+script is judged by **today's** fact registry: a day whose topic is no
+longer approved for social gets no cover (exit 1), and the stored title,
+description and bible are claim-checked — any flags open the cover file.
 
 ## Image prompt: sizes + which AI tool to use
 

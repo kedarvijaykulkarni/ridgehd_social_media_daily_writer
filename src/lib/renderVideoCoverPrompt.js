@@ -64,7 +64,7 @@ export function renderVideoCoverPrompt({ topic, date, video, bible = {}, charact
   if (topic.status && topic.status !== 'shipped') {
     header.push(`⚠️ ROADMAP: topic status is "${topic.status}" — keep the headline in "coming soon" framing, never "now available".`);
   }
-  header.push('REVIEW: verify every claim against wiki/business-context.md §2 (CLAUDE.md rule 4).');
+  header.push('REVIEW: every claim must be approved for social in wiki/ai-operations/facts/registry.json (CLAUDE.md rule 4).');
 
   const howTo = [
     RULE,

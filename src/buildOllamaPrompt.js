@@ -3,9 +3,12 @@ import { POSITIONING, focusPromptBlock } from './seoFocus.js';
 // Fills the Prompt 2 template (docs/prompt-2-ollama-daily-post.md) with the
 // selected topic, today's website focus (vertical + SEO keywords, see
 // seoFocus.js), and the last 5 history entries' headlines.
-export function buildOllamaPrompt({ topic, knowledgeBase, history, focus, productName = 'RidgeHQ' }) {
+export function buildOllamaPrompt({ topic, knowledgeBase, history, focus, productName = 'RidgeHQ', claimRules = '' }) {
   const kbById = new Map(knowledgeBase.map((e) => [e.id, e]));
+  // Only topics still offered: a dropped topic (e.g. an unapproved AI claim)
+  // must not come back into the prompt as a "recently covered" headline or id.
   const recentPosts = [...(history.posts ?? [])]
+    .filter((p) => kbById.has(p.topic_id))
     .sort((a, b) => new Date(a.date) - new Date(b.date))
     .slice(-5)
     .reverse();
@@ -20,6 +23,8 @@ end consumers. Tone: confident, specific, no hype,
 no exclamation-point-per-sentence energy. Never invent statistics, customer
 quotes, or features beyond what is given to you below. Never mention internal
 codenames, competitors by name in a disparaging way, or unverified claims.
+
+${claimRules}
 
 TODAY'S TOPIC (do not deviate from this fact set):
 - Headline: ${topic.headline}

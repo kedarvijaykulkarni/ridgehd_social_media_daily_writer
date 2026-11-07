@@ -79,10 +79,26 @@ function focusLines(focus, drafts) {
 // One reviewable plain-text file covering all 4 platform drafts, with each
 // platform's formatting/hashtags baked in exactly as it will be posted, plus
 // the char-count/limit metadata a human reviewer needs before copy-pasting.
-export function renderSocialText({ topic, date, drafts, productName = 'RidgeHQ', focus }) {
+// `claimFlags` (claimRules.js) covers every generated file of the run, so the
+// one file a reviewer opens first lists what to check across all of them.
+function claimCheckLines(claimFlags) {
+  if (!claimFlags) return [];
+  if (!claimFlags.length) return ['Claim check (heuristic): no flags — still review every claim before posting.'];
+  return [
+    `⚠️ CLAIM CHECK (heuristic, ${claimFlags.length} flag(s)) — verify against the registry before posting:`,
+    ...claimFlags.map((f) => `  ${f.label}: ${f.rule} — "…${f.excerpt}…"`),
+  ];
+}
+
+export function renderSocialText({ topic, date, drafts, productName = 'RidgeHQ', focus, claimFlags = null }) {
   const header = [
     `${productName} social drafts — ${date}`,
     `Topic: ${topic.id}${topic.headline ? ` — ${topic.headline}` : ''}`,
+    // Same warning the long-form, video and Product Hunt drafts carry.
+    ...(topic.status && topic.status !== 'shipped'
+      ? [`⚠️ ROADMAP: topic status is "${topic.status}" — every draft below must stay in "coming soon" framing; never post it as available today.`]
+      : []),
+    ...claimCheckLines(claimFlags),
     ...(focus ? focusLines(focus, drafts) : []),
     '',
   ].join('\n');
