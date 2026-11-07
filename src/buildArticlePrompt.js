@@ -53,7 +53,9 @@ codenames, or competitors by name in a disparaging way.
 
 ${claimRules}
 
-TASK: write ONE long-form article (900–1500 words) about the primary topic.
+TASK: write ONE long-form article (500–800 words) about the primary topic.
+Keep it short on purpose: say what the approved facts say, frame the operator's
+problem, and stop — do not pad length with claims the facts do not make.
 It will be rendered two ways: a website blog post (company voice) and a
 LinkedIn article (first-person voice). Write the body sections in a
 voice-neutral, operator-facing register that works for both; supply a
@@ -100,6 +102,6 @@ Return ONLY valid JSON, no markdown fences, no preamble, matching exactly:
   "cta": "one short, non-pushy closing call to action"
 }
 
-Aim for 4–6 sections. Do not include the title again as the first section.
+Aim for 3–4 sections. Do not include the title again as the first section.
 Every key above is REQUIRED — include all of them, especially "cta".`;
 }
