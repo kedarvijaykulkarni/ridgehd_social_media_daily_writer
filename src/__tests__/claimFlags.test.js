@@ -60,3 +60,27 @@ test('fields outside the post copy are checked too: image prompt, hashtags, vide
   assert.ok(rules.some((r) => r.startsWith('script:sms')), 'video bible');
   assert.deepEqual(claimFlags(null), []);
 });
+
+test('the claims the 2026-11-07 run invented are now flagged', () => {
+  // Verbatim from output/2026-11-07 (social posts, blog, LinkedIn article, video script).
+  const cases = {
+    'Enforce mandatory, per-participant e-signatures': /mandatory\/blocking/,
+    'ensure every required signature is present before an activity is confirmed': /mandatory\/blocking/,
+    'securing operations from check-in to dive site': /workflow\/integration/,
+    'allowing you to replace legacy tools': /workflow\/integration/,
+    'providing a clearer, more defensible record than a generalized paper agreement ever could': /legal\/compliance/,
+    'Built-in digital waivers streamline compliance': /legal\/compliance/,
+    'Simplify compliance and maximize profitability': /customer result/,
+    'As an operator, I know that transitioning off old paper forms': /first-person operator/,
+    'Managing twenty trips a month with paper waivers': /number or volume/,
+    'a single manifest containing dozens of individuals': /number or volume/,
+  };
+  for (const [text, rule] of Object.entries(cases)) {
+    assert.ok(claimFlags({ draft: text }).some((f) => rule.test(f.rule)), text);
+  }
+});
+
+test('"unique risk profiles" is no longer mistaken for an exclusivity claim', () => {
+  const flags = claimFlags({ draft: 'each with unique risk profiles' });
+  assert.ok(!flags.some((f) => /exclusivity/.test(f.rule)));
+});

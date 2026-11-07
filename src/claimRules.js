@@ -256,8 +256,16 @@ const CLAIM_PATTERNS = [
   { re: /\bQR\b/i, rule: 'QR: QR-linked waiver signing is not built' },
   { re: /\bSMS\b|\btext messag/i, rule: 'sms.not-included' },
   { re: /\baqua\s?roster\b/i, rule: 'brand.not-aquaroster' },
-  { re: /\bno (?:other )?competitor|\bonly (?:platform|product|tool|one)\b|\bunique(?:ly)?\b/i, rule: 'claims.no-ai-exclusivity / no exclusivity claims' },
+  // "unique" was dropped: it flagged "unique risk profiles" (2026-11-07), never an exclusivity claim.
+  { re: /\bno (?:other )?competitor|\bonly (?:platform|product|tool|one)\b|\bunlike any\b/i, rule: 'claims.no-ai-exclusivity / no exclusivity claims' },
   { re: /\bRLS\b|row[- ]level|multi[- ]tenan/i, rule: 'security architecture: not approved for social' },
+  // The COPY_RULES categories, from the claims the 2026-11-07 run invented.
+  { re: /\bguarantee\w*|\bcomplian(?:t|ce)\b|\bdefensible\b|\bliabilit\w*|\blegal(?:ly)?\b/i, rule: 'legal/compliance outcome: not approved (COPY_RULES)' },
+  { re: /\bmandatory\b|\brequired before\b|\bbefore an? (?:activity|booking|trip) is confirmed\b|\bblocks?\b/i, rule: 'mandatory/blocking: signatures never block (COPY_RULES)' },
+  { re: /\bcheck[- ]in\b|\bintegrat\w*|\bautomat\w*|\baudit\w*|\barchive\w*|\bworkflow\b|\breplac\w*/i, rule: 'workflow/integration/replacement claim: not approved (COPY_RULES)' },
+  { re: /\bprofit\w*|\brevenue\b|\bsav(?:e|es|ing) (?:time|hours|money)\b|\bROI\b/i, rule: 'customer result: invented (COPY_RULES)' },
+  { re: /\bas an? (?:operator|owner|instructor)\b|\bI know\b|\bour (?:dive|school|shop|center|centre|boat)\b/i, rule: 'first-person operator experience: invented (COPY_RULES)' },
+  { re: /\b(?:dozens|hundreds|thousands|twenty|thirty|forty|fifty)\b|\b[1-9]\d*\b(?!\s?%)/i, rule: 'number or volume: invented unless from an approved fact (COPY_RULES)' },
 ];
 
 // Every string inside a model response object (nested fields, arrays),
