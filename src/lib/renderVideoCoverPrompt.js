@@ -46,7 +46,9 @@ export function renderVideoCoverPrompt({ topic, date, video, bible = {}, charact
       ? '- Subject large on the RIGHT third (head and shoulders to waist), face about 35-40% of frame height, rim-lit with a soft glow.'
       : "- The scene's key object large on the RIGHT third, rim-lit with a soft glow. No people, faces, hands or silhouettes anywhere.",
     '- LEFT two-thirds kept clean for text. Strong contrast, rich saturation, subtle vignette.',
-    '- One simple visual cue that matches the topic (e.g. a glowing shield, checkmark, calendar or price tag) — one only, no clutter.',
+    // A shield, calendar or price tag reads as a security, booking or pricing
+    // claim the registry does not approve; keep the cue literal to the topic.
+    '- One simple, literal visual cue from the topic itself (e.g. a paper document with a typed signature line) — one only, no clutter. Never a shield, padlock, calendar, price tag, chart, dashboard or screen.',
     '- Palette: deep navy-teal base, ONE sparing coral accent, white text.',
     '',
     'TEXT ON IMAGE (render exactly, spelled correctly, nothing else)',

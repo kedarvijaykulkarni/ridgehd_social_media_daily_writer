@@ -54,3 +54,14 @@ test('parseVideoScript keeps the recorded presenter reference and the exact road
   assert.equal(shipped.topic.status, 'shipped');
   assert.equal(shipped.reference, null);
 });
+
+test('the cover cue never suggests a security, booking or pricing symbol', () => {
+  const text = renderVideoCoverPrompt({
+    topic: { id: 'waiver-system', status: 'shipped', headline: 'Waiver system' },
+    date: '2026-11-07',
+    video: { title: 'Waiver system', description: 'Digital waivers are built in.' },
+    bible: {},
+  });
+  assert.doesNotMatch(text, /e\.g\.[^)]*(shield|calendar|price tag)/);
+  assert.match(text, /Never a shield, padlock, calendar, price tag, chart, dashboard or screen/);
+});
