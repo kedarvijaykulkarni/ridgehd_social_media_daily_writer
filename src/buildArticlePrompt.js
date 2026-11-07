@@ -57,7 +57,9 @@ TASK: write ONE long-form article (900–1500 words) about the primary topic.
 It will be rendered two ways: a website blog post (company voice) and a
 LinkedIn article (first-person voice). Write the body sections in a
 voice-neutral, operator-facing register that works for both; supply a
-separate first-person opener for the LinkedIn version.
+separate first-person opener for the LinkedIn version, written as the
+${productName} team ("we've been talking to operators about…"). Never write
+as an operator and never invent personal experience, events or anecdotes.
 
 PRIMARY TOPIC (do not deviate from this fact set):
 - Headline: ${topic.headline}
@@ -85,7 +87,7 @@ Return ONLY valid JSON, no markdown fences, no preamble, matching exactly:
 {
   "title": "specific, compelling headline, <= 70 characters, not clickbait",
   "dek": "1–2 sentence standfirst for the blog, company voice (third person / brand voice)",
-  "linkedin_hook": "1–3 sentence first-person opener for the LinkedIn version, no hashtags",
+  "linkedin_hook": "1–3 sentence first-person opener from the ${productName} team (not an operator, no invented experience), no hashtags",
   "meta_description": "<= 155 characters, plain-language SEO summary that names the concrete value",
   "slug": "kebab-case-url-slug derived from the title, <= 60 characters",
   "pillar": "exactly one of: ${BLOG_PILLARS.join(' | ')} — the blog section this article belongs in",
