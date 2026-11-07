@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 import { selectTopic, recordUsage, withoutRunsOn } from './selectTopic.js';
 import { loadKnowledgeBase } from './loadKnowledgeBase.js';
-import { loadRegistry, claimRulesBlock, assertPublicName, claimFlags, modelText, claimProblems } from './claimRules.js';
+import { loadRegistry, claimRulesBlock, assertPublicName, claimFlags, claimSources, claimProblems } from './claimRules.js';
 import { selectFocus } from './seoFocus.js';
 import {
   selectProductHuntFormat,
@@ -124,7 +124,7 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
   // check — the whole response objects, so image prompts, hashtags,
   // subreddits and the video bible are covered too.
   const generated = {
-    'social-posts.txt + image-prompt.txt': modelText(shared),
+    ...claimSources('social-posts.txt', shared), // image_prompt lands under "(visual)"
   };
 
   // 1-minute video script: one more Ollama pass, built from the same shared
@@ -138,7 +138,7 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
     buildVideoScriptPrompt({ topic, shared, video, productName: PRODUCT_NAME, character, mode: visualMode, claimRules }),
     { withWardrobe: Boolean(character), mode: visualMode, productName: PRODUCT_NAME, claimCheck: claimProblems },
   );
-  generated['video-script.txt + video-cover-image.txt'] = modelText(script);
+  Object.assign(generated, claimSources('video-script.txt + video-cover-image.txt', script));
   const videoScriptText = renderVideoScript({
     topic, date, video, script, productName: PRODUCT_NAME, character, mode: visualMode,
   });
@@ -161,7 +161,7 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
       buildArticlePrompt({ topic, knowledgeBase, history, focus, productName: PRODUCT_NAME, claimRules }),
       { claimCheck: claimProblems },
     );
-    generated['blog-post.md + linkedin-article.md'] = modelText(article);
+    Object.assign(generated, claimSources('blog-post.md + linkedin-article.md', article));
     blogPostMd = renderBlogPost({
       topic,
       date,
@@ -196,7 +196,7 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
         buildProductHuntPrompt({ topic, history, format: phFormat, productName: PRODUCT_NAME, claimRules }),
         { claimCheck: claimProblems },
       );
-      generated['producthunt-post.txt (self-promotion)'] = modelText(phPost);
+      Object.assign(generated, claimSources('producthunt-post.txt (self-promotion)', phPost));
       phBlocks.push(renderProductHuntPost({ topic, date, format: phFormat, post: phPost, productName: PRODUCT_NAME }));
     }
 
@@ -214,7 +214,7 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
       const discussion = await callOllamaProductHunt(buildProductHuntDiscussionPrompt({ topic, history, knowledgeBase }));
       if (discussionIsProductFree(discussion, PRODUCT_NAME)) {
         phDiscussion = true;
-        generated['producthunt-post.txt (General)'] = modelText(discussion);
+        Object.assign(generated, claimSources('producthunt-post.txt (General)', discussion));
         phBlocks.push(renderProductHuntDiscussion({ topic, date, format: DISCUSSION_FORMAT, post: discussion }));
       } else {
         console.log(

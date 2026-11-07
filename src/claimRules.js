@@ -250,15 +250,15 @@ export function assertPublicName(registry, today, productName) {
 // both miss paraphrases and flag harmless uses.
 const CLAIM_PATTERNS = [
   { re: /\b(revers\w*|undo\w*|roll(?:ed)?[- ]back)\b/i, rule: 'ai.undo-limited: AI actions are not fully reversible' },
-  { re: /\bAI\b|\bcopilot\b|\bartificial intelligence\b/i, rule: 'AI capability: not approved for social (#165(4))' },
-  { re: /[€$£]\s?\d/, rule: 'price: plan prices are sales/website only' },
-  { re: /\b(?!0%)\d+(?:[.,]\d+)?\s?%/, rule: 'percentage: only "0% commission" is approved' },
-  { re: /\bQR\b/i, rule: 'QR: QR-linked waiver signing is not built' },
-  { re: /\bSMS\b|\btext messag/i, rule: 'sms.not-included' },
-  { re: /\baqua\s?roster\b/i, rule: 'brand.not-aquaroster' },
+  { re: /\bAI\b|\bcopilot\b|\bartificial intelligence\b/i, rule: 'AI capability: not approved for social (#165(4))', visual: true },
+  { re: /[€$£]\s?\d/, rule: 'price: plan prices are sales/website only', visual: true },
+  { re: /\b(?!0%)\d+(?:[.,]\d+)?\s?%/, rule: 'percentage: only "0% commission" is approved', visual: true },
+  { re: /\bQR\b/i, rule: 'QR: QR-linked waiver signing is not built', visual: true },
+  { re: /\bSMS\b|\btext messag/i, rule: 'sms.not-included', visual: true },
+  { re: /\baqua\s?roster\b/i, rule: 'brand.not-aquaroster', visual: true },
   // "unique" was dropped: it flagged "unique risk profiles" (2026-11-07), never an exclusivity claim.
   { re: /\bno (?:other )?competitor|\bonly (?:platform|product|tool|one)\b|\bunlike any\b/i, rule: 'claims.no-ai-exclusivity / no exclusivity claims' },
-  { re: /\bRLS\b|row[- ]level|multi[- ]tenan/i, rule: 'security architecture: not approved for social' },
+  { re: /\bRLS\b|row[- ]level|multi[- ]tenan/i, rule: 'security architecture: not approved for social', visual: true },
   // The COPY_RULES categories, from the claims the 2026-11-07 run invented.
   // The COPY_RULES categories, from the claims the 2026-11-07 runs invented.
   { re: /\bguarantee\w*|\bcomplian(?:t|ce)\b|\bdefensible\b|\bliabilit\w*|\blegal(?:ly)?\b|\bverifiable\b|\bensur(?:e|es|ing)\b/i, rule: 'legal/compliance/assurance outcome: not approved (COPY_RULES)' },
@@ -285,12 +285,39 @@ export function modelText(value) {
   return '';
 }
 
-// sources: { label: text }. Returns [{ label, rule, excerpt }].
+// Fields that only direct an image/video generator. Readers never see them,
+// so copy rules ("reliable", "efficiency") don't apply — only what a picture
+// could show (AI, QR, prices, SMS, brand, security UI).
+const VISUAL_KEYS = new Set(['image_prompt', 'bible', 'visual', 'ends_on']);
+
+// { reader, visual } text of one model answer.
+export function splitModelText(value) {
+  const out = { reader: [], visual: [] };
+  const walk = (v, visual) => {
+    if (typeof v === 'string') (visual ? out.visual : out.reader).push(v);
+    else if (Array.isArray(v)) v.forEach((x) => walk(x, visual));
+    else if (v && typeof v === 'object') for (const [k, x] of Object.entries(v)) walk(x, visual || VISUAL_KEYS.has(k));
+  };
+  walk(value, false);
+  return { reader: out.reader.join(' '), visual: out.visual.join(' ') };
+}
+
+// Sources for claimFlags from one model answer: reader text under `label`,
+// visual direction under `label (visual)`.
+export function claimSources(label, obj) {
+  const { reader, visual } = splitModelText(obj);
+  return { [label]: reader, [`${label} (visual)`]: visual };
+}
+
+// sources: { label: text }. A label ending in "(visual)" is checked against
+// the depiction rules only. Returns [{ label, rule, excerpt, total? }].
 export function claimFlags(sources) {
   const flags = [];
   for (const [label, text] of Object.entries(sources ?? {})) {
     if (!text) continue;
-    for (const { re, rule } of CLAIM_PATTERNS) {
+    const visualOnly = label.endsWith('(visual)');
+    for (const { re, rule, visual } of CLAIM_PATTERNS) {
+      if (visualOnly && !visual) continue;
       const hits = [...text.matchAll(new RegExp(re.source, `${re.flags}g`))];
       for (const m of hits.slice(0, MAX_HITS_PER_RULE)) {
         const start = Math.max(0, m.index - 40);
@@ -306,7 +333,7 @@ export function claimFlags(sources) {
 // The number/volume rule is left out: dates, ages and clip timings in the
 // video bible would trigger pointless retries.
 export function claimProblems(obj) {
-  return claimFlags({ answer: modelText(obj) })
+  return claimFlags(claimSources('answer', obj))
     .filter((f) => !f.rule.startsWith('number or volume'))
     .map((f) => f.excerpt);
 }

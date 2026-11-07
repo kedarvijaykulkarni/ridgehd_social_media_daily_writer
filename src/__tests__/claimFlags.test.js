@@ -113,3 +113,18 @@ test('every match is reported, up to three per rule, with the total when there a
   assert.equal(flags.length, 3);
   assert.equal(flags[0].total, 5);
 });
+
+test('visual direction is checked only for what a picture could show, not for copy words', async () => {
+  const { claimSources, claimProblems } = await import('../claimRules.js');
+  const shared = {
+    hook_line: 'Waivers?', core_message: 'Digital waivers are built in.', call_to_action: 'Learn more.',
+    image_prompt: 'The composition should convey reliable, organized operation. A phone shows a QR code.',
+  };
+  const rules = claimFlags(claimSources('social-posts.txt', shared)).map((f) => `${f.label}|${f.rule}`);
+  assert.ok(rules.some((r) => r.startsWith('social-posts.txt (visual)|QR')), 'a QR code in the image is still flagged');
+  assert.ok(!rules.some((r) => /customer result/.test(r)), '"reliable" scene direction is not a copy claim');
+  const script = { bible: { look: 'dependable efficiency' }, segments: [{ visual: 'reliable workflow', audio: 'Our integrated system.', ends_on: 'x' }] };
+  const problems = claimProblems(script);
+  assert.ok(problems.some((p) => /integrated/.test(p)), 'spoken audio still triggers the retry');
+  assert.ok(!problems.some((p) => /dependable|reliable workflow/.test(p)), 'visual-only copy words do not');
+});
