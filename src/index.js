@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 import { selectTopic, recordUsage, withoutRunsOn } from './selectTopic.js';
 import { loadKnowledgeBase } from './loadKnowledgeBase.js';
+import { loadRegistry, claimRulesBlock } from './claimRules.js';
 import { selectFocus } from './seoFocus.js';
 import {
   selectProductHuntFormat,
@@ -73,7 +74,10 @@ async function loadHistory() {
 
 async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
   const date = localDateString();
-  const { chunks: knowledgeBase, dropped } = await loadKnowledgeBase(BUSINESS_VAULT_PATH, { today: date });
+  const registry = await loadRegistry(BUSINESS_VAULT_PATH);
+  const { chunks: knowledgeBase, dropped } = await loadKnowledgeBase(BUSINESS_VAULT_PATH, { today: date, registry });
+  // Owner-approved facts + never-claim rules, verbatim, in every product prompt.
+  const claimRules = claimRulesBlock(registry, date, PRODUCT_NAME);
   console.log(
     `${LOG} Loaded ${knowledgeBase.length} marketable topic(s) from vault ${BUSINESS_VAULT_PATH}: ` +
       `${knowledgeBase.map((c) => `${c.id} (${c.fact_id})`).join(', ')}`,
@@ -105,7 +109,7 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
     `${LOG} Website focus: ${focus.vertical.id} (${focus.vertical.url}) + platform ${focus.platform.id}`,
   );
 
-  const prompt = buildOllamaPrompt({ topic, knowledgeBase, history, focus, productName: PRODUCT_NAME });
+  const prompt = buildOllamaPrompt({ topic, knowledgeBase, history, focus, productName: PRODUCT_NAME, claimRules });
   const shared = await callOllama(prompt);
 
   const drafts = {
@@ -125,7 +129,7 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
   const visualMode = resolveVisualMode(videoMode ?? process.env.VIDEO_VISUAL_MODE, character);
   console.log(`${LOG} Video: visual mode "${visualMode}"${character ? ' (presenter from VIDEO_CHARACTER)' : ''}`);
   const script = await callOllamaVideoScript(
-    buildVideoScriptPrompt({ topic, shared, video, productName: PRODUCT_NAME, character, mode: visualMode }),
+    buildVideoScriptPrompt({ topic, shared, video, productName: PRODUCT_NAME, character, mode: visualMode, claimRules }),
     { withWardrobe: Boolean(character), mode: visualMode, productName: PRODUCT_NAME },
   );
   const videoScriptText = renderVideoScript({
@@ -147,7 +151,7 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
   if (longForm) {
     console.log(`${LOG} Long-form: generating blog post + LinkedIn article for "${topic.id}"...`);
     const article = await callOllamaArticle(
-      buildArticlePrompt({ topic, knowledgeBase, history, focus, productName: PRODUCT_NAME }),
+      buildArticlePrompt({ topic, knowledgeBase, history, focus, productName: PRODUCT_NAME, claimRules }),
     );
     blogPostMd = renderBlogPost({
       topic,
@@ -180,7 +184,7 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
       phFormat = selectProductHuntFormat(history);
       console.log(`${LOG} Product Hunt: generating "${phFormat.id}" self-promotion post for "${topic.id}"...`);
       const phPost = await callOllamaProductHunt(
-        buildProductHuntPrompt({ topic, history, format: phFormat, productName: PRODUCT_NAME }),
+        buildProductHuntPrompt({ topic, history, format: phFormat, productName: PRODUCT_NAME, claimRules }),
       );
       phBlocks.push(renderProductHuntPost({ topic, date, format: phFormat, post: phPost, productName: PRODUCT_NAME }));
     }

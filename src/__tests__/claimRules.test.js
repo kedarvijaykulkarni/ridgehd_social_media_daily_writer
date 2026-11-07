@@ -52,3 +52,29 @@ test('the claim-rules block quotes approved wording, limits and bans verbatim', 
   assert.doesNotMatch(block, /€49/, 'sales/website-only prices are not offered on social');
   assert.doesNotMatch(block, /superseded social claim/);
 });
+
+test('every product prompt carries the claim-rules block verbatim', async () => {
+  const { buildOllamaPrompt } = await import('../buildOllamaPrompt.js');
+  const { buildArticlePrompt } = await import('../buildArticlePrompt.js');
+  const { buildVideoScriptPrompt } = await import('../buildVideoScriptPrompt.js');
+  const { buildProductHuntPrompt } = await import('../buildProductHuntPrompt.js');
+  const { selectFocus } = await import('../seoFocus.js');
+  const { PRODUCTHUNT_FORMATS } = await import('../productHunt.js');
+
+  const claimRules = claimRulesBlock(await loadRegistry(FIXTURE_VAULT), TODAY);
+  const { chunks } = await loadKnowledgeBase(FIXTURE_VAULT, { today: TODAY });
+  const topic = chunks[0];
+  const history = { posts: [] };
+  const focus = selectFocus(history);
+  const shared = { hook_line: 'h', core_message: 'c', call_to_action: 'a', image_prompt: 'i' };
+  const prompts = {
+    short: buildOllamaPrompt({ topic, knowledgeBase: chunks, history, focus, claimRules }),
+    article: buildArticlePrompt({ topic, knowledgeBase: chunks, history, focus, claimRules }),
+    video: buildVideoScriptPrompt({ topic, shared, video: { title: 't' }, claimRules }),
+    producthunt: buildProductHuntPrompt({ topic, history, format: PRODUCTHUNT_FORMATS[0], claimRules }),
+  };
+  for (const [name, prompt] of Object.entries(prompts)) {
+    assert.ok(prompt.includes(claimRules), `${name} prompt must carry the claim rules`);
+    assert.match(prompt, /fully reversible/, name);
+  }
+});

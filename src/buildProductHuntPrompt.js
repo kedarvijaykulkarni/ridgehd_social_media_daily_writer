@@ -8,7 +8,7 @@
 
 import { POSITIONING } from './seoFocus.js';
 
-export function buildProductHuntPrompt({ topic, history, format, productName = 'RidgeHQ' }) {
+export function buildProductHuntPrompt({ topic, history, format, productName = 'RidgeHQ', claimRules = '' }) {
   const recentPosts = [...(history.posts ?? [])]
     .filter((p) => p.producthunt_format_id)
     .sort((a, b) => new Date(a.date) - new Date(b.date))
@@ -35,6 +35,8 @@ statistics, customer quotes, or features beyond what is given to you below.
 Never ask for upvotes, reviews, or badges. Never include a bare link — if
 you reference the product or site, describe it in words; links are added
 separately by the human posting this.
+
+${claimRules}
 
 TASK: write ONE Product Hunt forum post (120-300 words) in this format:
 ${format.name}
