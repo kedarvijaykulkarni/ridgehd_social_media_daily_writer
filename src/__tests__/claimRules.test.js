@@ -91,6 +91,10 @@ test('one malformed record rejects the whole registry', async () => {
     },
   };
   assert.deepEqual(registryProblems(good), []);
+  // Any real calendar date is valid (fact-registry.md), however old.
+  const old = JSON.parse(JSON.stringify(good));
+  waivers(old).verification.date = '1999-12-31';
+  assert.deepEqual(registryProblems(old), []);
   for (const [name, breakIt] of Object.entries(cases)) {
     const r = JSON.parse(JSON.stringify(good));
     breakIt(r);
