@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 import { selectTopic, recordUsage, withoutRunsOn } from './selectTopic.js';
 import { loadKnowledgeBase } from './loadKnowledgeBase.js';
-import { loadRegistry, claimRulesBlock, assertPublicName, claimFlags, modelText } from './claimRules.js';
+import { loadRegistry, claimRulesBlock, assertPublicName, claimFlags, modelText, claimProblems } from './claimRules.js';
 import { selectFocus } from './seoFocus.js';
 import {
   selectProductHuntFormat,
@@ -111,7 +111,7 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
   );
 
   const prompt = buildOllamaPrompt({ topic, knowledgeBase, history, focus, productName: PRODUCT_NAME, claimRules });
-  const shared = await callOllama(prompt);
+  const shared = await callOllama(prompt, { claimCheck: claimProblems });
 
   const drafts = {
     x: formatX(shared, focus),
@@ -136,7 +136,7 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
   console.log(`${LOG} Video: visual mode "${visualMode}"${character ? ' (presenter from VIDEO_CHARACTER)' : ''}`);
   const script = await callOllamaVideoScript(
     buildVideoScriptPrompt({ topic, shared, video, productName: PRODUCT_NAME, character, mode: visualMode, claimRules }),
-    { withWardrobe: Boolean(character), mode: visualMode, productName: PRODUCT_NAME },
+    { withWardrobe: Boolean(character), mode: visualMode, productName: PRODUCT_NAME, claimCheck: claimProblems },
   );
   generated['video-script.txt + video-cover-image.txt'] = modelText(script);
   const videoScriptText = renderVideoScript({
@@ -159,6 +159,7 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
     console.log(`${LOG} Long-form: generating blog post + LinkedIn article for "${topic.id}"...`);
     const article = await callOllamaArticle(
       buildArticlePrompt({ topic, knowledgeBase, history, focus, productName: PRODUCT_NAME, claimRules }),
+      { claimCheck: claimProblems },
     );
     generated['blog-post.md + linkedin-article.md'] = modelText(article);
     blogPostMd = renderBlogPost({
@@ -193,6 +194,7 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
       console.log(`${LOG} Product Hunt: generating "${phFormat.id}" self-promotion post for "${topic.id}"...`);
       const phPost = await callOllamaProductHunt(
         buildProductHuntPrompt({ topic, history, format: phFormat, productName: PRODUCT_NAME, claimRules }),
+        { claimCheck: claimProblems },
       );
       generated['producthunt-post.txt (self-promotion)'] = modelText(phPost);
       phBlocks.push(renderProductHuntPost({ topic, date, format: phFormat, post: phPost, productName: PRODUCT_NAME }));

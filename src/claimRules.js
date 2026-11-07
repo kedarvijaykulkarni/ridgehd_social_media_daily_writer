@@ -301,3 +301,12 @@ export function claimFlags(sources) {
   }
   return flags;
 }
+
+// The claim flags as retry feedback for one model answer (callOllama.js).
+// The number/volume rule is left out: dates, ages and clip timings in the
+// video bible would trigger pointless retries.
+export function claimProblems(obj) {
+  return claimFlags({ answer: modelText(obj) })
+    .filter((f) => !f.rule.startsWith('number or volume'))
+    .map((f) => f.excerpt);
+}
