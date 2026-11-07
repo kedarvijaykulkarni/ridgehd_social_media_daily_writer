@@ -83,6 +83,10 @@ export function renderSocialText({ topic, date, drafts, productName = 'RidgeHQ',
   const header = [
     `${productName} social drafts — ${date}`,
     `Topic: ${topic.id}${topic.headline ? ` — ${topic.headline}` : ''}`,
+    // Same warning the long-form, video and Product Hunt drafts carry.
+    ...(topic.status && topic.status !== 'shipped'
+      ? [`⚠️ ROADMAP: topic status is "${topic.status}" — every draft below must stay in "coming soon" framing; never post it as available today.`]
+      : []),
     ...(focus ? focusLines(focus, drafts) : []),
     '',
   ].join('\n');
