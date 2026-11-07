@@ -105,10 +105,15 @@ test('keywordCoverage reports found and missing phrases case-insensitively', () 
   });
 });
 
-test('website blurbs reach the prompt as audience context, never as approved claims', async () => {
+test('no website blurb (unapproved feature copy) reaches any focus prompt', async () => {
   const { focusPromptBlock, selectFocus } = await import('../seoFocus.js');
-  const block = focusPromptBlock({ focus: selectFocus({ posts: [] }), productName: 'RidgeHQ', includePlatform: true });
-  assert.doesNotMatch(block, /safe to restate/i);
-  assert.match(block, /NOT claims/);
-  assert.match(block, /do not claim these capabilities/);
+  let history = { posts: [] };
+  for (let i = 0; i < VERTICALS.length; i++) {
+    const focus = selectFocus(history);
+    const block = focusPromptBlock({ focus, productName: 'RidgeHQ', includePlatform: true });
+    assert.ok(!block.includes(focus.vertical.blurb), focus.vertical.id);
+    assert.ok(!block.includes(focus.platform.blurb), focus.platform.id);
+    assert.match(block, /do not claim any capability/);
+    history = recordUsage({ knowledgeBase: [], history, topic: { id: 't', category: 'c' }, date: `2026-01-${String(i + 1).padStart(2, '0')}`, focus });
+  }
 });

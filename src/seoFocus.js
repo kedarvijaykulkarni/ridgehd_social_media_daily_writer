@@ -270,20 +270,18 @@ export function focusPromptBlock({ focus, productName, includePlatform = false }
   const lines = [
     `TODAY'S AUDIENCE: ${vertical.name}. Speak to their day, their equipment, their`,
     `problems — not to dive centers unless that is today's audience.`,
-    // Website copy names features the owner has not approved for social
-    // (DECISIONS #165(4)), so it is context for the reader's world only.
-    `- Audience context from the website (their activities and pains — NOT claims;`,
-    `  do not present any capability below as available unless CLAIM RULES approve it):`,
-    `  ${vertical.blurb}`,
+    // The vertical/platform `blurb`s are website copy that names features the
+    // owner has not approved for social (DECISIONS #165(4)); a label did not
+    // stop the model restating them, so they are kept out of the prompt.
     `- If today's topic fact is specific to a different activity, keep the fact`,
     `  accurate and generalise the benefit; never invent a ${vertical.name}-specific feature.`,
     `- The landing page ${vertical.url} is appended automatically — do NOT write URLs.`,
   ];
   if (includePlatform) {
     lines.push(
-      `- One section on the operator problem behind this website page: ${platform.name} — ${platform.blurb}`,
-      `  Describe the problem and how operators handle it; do not claim these capabilities`,
-      `  as available unless CLAIM RULES approve them (its page ${platform.url} is linked automatically).`,
+      `- One section on the operator problem behind the "${platform.name}" website page:`,
+      `  describe the problem and how operators handle it; do not claim any capability`,
+      `  as available unless CLAIM RULES approve it (its page ${platform.url} is linked automatically).`,
     );
   }
   const secondary = [...vertical.keywords.slice(1), ...(includePlatform ? platform.keywords : [])];
