@@ -34,7 +34,7 @@ import { renderProductHuntPost, renderProductHuntDiscussion } from './lib/render
 import { videoMeta } from './lib/videoMeta.js';
 import { loadCharacter, resolveVisualMode } from './videoCharacter.js';
 import { renderVideoCoverPrompt } from './lib/renderVideoCoverPrompt.js';
-import { parseVideoScript } from './lib/parseVideoScript.js';
+import { writeCover } from './coverCommand.js';
 import { localDateString } from './lib/localDate.js';
 import { envNumber } from './lib/envNumber.js';
 
@@ -306,35 +306,14 @@ program
   .option('--character-ref <ref>', 'Presenter reference to attach in Gemini, e.g. "@Olivia" (overrides the reference recorded in video-script.txt)')
   .action(async (opts) => {
     try {
-      // Strict format: the value is joined into a path, so nothing like
-      // "..\..\x" may reach the filesystem.
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(opts.date)) throw new Error(`--date must be YYYY-MM-DD, got "${opts.date}"`);
-      const runDir = path.join(OUTPUT_DIR, opts.date);
-      const parsed = parseVideoScript(await readFile(path.join(runDir, 'video-script.txt'), 'utf-8'));
-      // An old script may be about a topic the registry no longer approves
-      // (AI, RLS, scheduling…): judge it by today's approval, not that day's.
-      const today = localDateString();
-      const registry = await loadRegistry(BUSINESS_VAULT_PATH);
-      assertPublicName(registry, today, PRODUCT_NAME);
-      const { chunks } = await loadKnowledgeBase(BUSINESS_VAULT_PATH, { today, registry });
-      if (!chunks.some((c) => c.id === parsed.topic.id)) {
-        throw new Error(
-          `${opts.date}'s video is about "${parsed.topic.id}", which is not approved for social in the registry today — ` +
-            'no cover written. Generate a new run instead.',
-        );
-      }
-      // The presenter recorded in that day's script wins over today's .env, so
-      // the cover shows the same person as the video; --character-ref is the
-      // only override.
-      const reference = opts.characterRef?.trim() || parsed.reference;
-      const identity = parsed.identity;
-      const character = identity || reference ? { identity, reference } : null;
-      const text = renderVideoCoverPrompt({
-        topic: parsed.topic, date: opts.date, video: parsed.video, bible: parsed.bible, character, productName: PRODUCT_NAME,
+      const { out, flags } = await writeCover({
+        outputDir: OUTPUT_DIR,
+        vaultPath: BUSINESS_VAULT_PATH,
+        date: opts.date,
+        characterRef: opts.characterRef,
+        productName: PRODUCT_NAME,
       });
-      const out = path.join(runDir, 'video-cover-image.txt');
-      await writeFile(out, text);
-      console.log(`${LOG} Wrote ${out}`);
+      console.log(`${LOG} Wrote ${out}${flags.length ? ` (${flags.length} claim-check flag(s) at the top)` : ''}`);
     } catch (err) {
       console.error(`${LOG} ${err.message}`);
       process.exitCode = 1;
