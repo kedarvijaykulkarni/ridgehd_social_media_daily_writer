@@ -7,6 +7,8 @@ Reviewed execution order for this repository. GitHub issues are authoritative fo
 - [ ] [#5](https://github.com/kedarvijaykulkarni/ridgehd_social_media_daily_writer/issues/5) — SOCIAL-01 first slice: root `AGENTS.md` with the generated shared operating rules, `@AGENTS.md` import in `CLAUDE.md`, generated `ridgehq-next-issue` skill, this queue. Implemented; awaiting owner review in [PR #6](https://github.com/kedarvijaykulkarni/ridgehd_social_media_daily_writer/pull/6) (branch `codex/5-shared-operating-rules`).
 - [ ] [#7](https://github.com/kedarvijaykulkarni/ridgehd_social_media_daily_writer/issues/7) — SOCIAL-02 first slice: default brand `RidgeHQ` (RidgeHQAPP DECISIONS #165) and no invented "no competitor offers this" fallback. Implemented; awaiting owner review in [PR #8](https://github.com/kedarvijaykulkarni/ridgehd_social_media_daily_writer/pull/8). Not in this slice: drafts-versus-publications, the route/focus manifest (not built yet), and whether the AI-copilot chunk should be offered at all (#166 holds AI claims back).
 
+- [ ] [PR #10](https://github.com/kedarvijaykulkarni/ridgehd_social_media_daily_writer/pull/10) — deep-review fixes (loader §2/§3, formatters, same-day re-run, local dates, Product Hunt guard). Not issue-linked; awaiting owner review. Its "needs an owner decision" list (registry.json feature-claim authority, "fully reversible AI" ban, tier prices on social, vertical blurbs) feeds the SOCIAL-01 remainder below.
+
 ## Planned, not yet filed (gated)
 
 - SOCIAL-01 remainder: a versioned facts loader replacing prose-marker parsing, plus stable topic/claim IDs and schema tests. Gated on the approved-fact export (BRAIN-02/03 in RidgeHQAPP).
