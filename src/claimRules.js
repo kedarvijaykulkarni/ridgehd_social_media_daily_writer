@@ -261,7 +261,7 @@ const CLAIM_PATTERNS = [
   { re: /\bRLS\b|row[- ]level|multi[- ]tenan/i, rule: 'security architecture: not approved for social', visual: true },
   // The COPY_RULES categories, from the claims the 2026-11-07 run invented.
   // The COPY_RULES categories, from the claims the 2026-11-07 runs invented.
-  { re: /\bguarantee\w*|\bcomplian(?:t|ce)\b|\bdefensible\b|\bliabilit\w*|\blegal(?:ly)?\b|\bverifiable\b|(?<!\b(?:operators?|businesses|owners?|you|your team) (?:should|must|need to) )\bensur(?:e|es|ing)\b/i, rule: 'legal/compliance/assurance outcome: not approved (COPY_RULES)' },
+  { re: /\bguarantee\w*|\bcomplian(?:t|ce)\b|\bdefensible\b|\bliabilit\w*|\blegal(?:ly)?\b|\bverifiable\b|(?<!\b(?:operators?|business(?:es)?|owners?|you|your team) (?:should|must|need to) )\bensur(?:e|es|ing)\b/i, rule: 'legal/compliance/assurance outcome: not approved (COPY_RULES)' },
   // Not bare "blocks": a video script is made of 10-second blocks.
   { re: /\bmandatory\b|\brequired (?:before|consent)\b|\bconsent requirements?\b|\benforc\w* (?:[\w-]+ ){0,2}requirements?\b|\bbefore an? (?:activity|booking|trip) is confirmed\b|\bblocks? (?:a |the )?(?:booking|check-in|signature|participant|activity)/i, rule: 'mandatory/blocking: signatures never block (COPY_RULES)' },
   // Bare "workflow" is fine here: scene direction ("workflow environment") is

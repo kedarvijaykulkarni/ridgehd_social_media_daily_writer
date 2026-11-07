@@ -147,7 +147,7 @@ test('run-4 review: replacement/requirements variants and curly apostrophes are 
 
 test('only an operator duty escapes the "ensure" rule; product assurances never do', () => {
   const legal = (text) => claimFlags({ draft: text }).some((f) => /legal\/compliance/.test(f.rule));
-  for (const duty of ['Operators should ensure their own waiver process fits.', 'You must ensure the wording suits your activity.']) {
+  for (const duty of ['Operators should ensure their own waiver process fits.', 'You must ensure the wording suits your activity.', 'A business must ensure consent is informed.']) {
     assert.equal(legal(duty), false, duty);
   }
   for (const claim of [
