@@ -166,3 +166,16 @@ export function claimRulesBlock(registry, today, productName = 'RidgeHQ') {
     ...rules.map((f) => `- ${f.statement}`),
   ].join('\n');
 }
+
+// PRODUCT_NAME must be the registry's approved public name: with
+// PRODUCT_NAME=AquaRoster the prompts said both "copywriter for AquaRoster"
+// and "AquaRoster is not a public product name", and every draft header
+// carried the banned name whatever the model did.
+export function assertPublicName(registry, today, productName) {
+  const brand = approvedFacts(registry, today).find((f) => f.id === 'brand.public-name');
+  if (!brand) throw new Error(`${REGISTRY} has no current brand.public-name fact approved for ${CHANNEL}.`);
+  // Whole-word match: "Ridge" must not pass on "RidgeHQ is ...".
+  if (!brand.statement.split(/[^\p{L}\p{N}]+/u).includes(productName)) {
+    throw new Error(`PRODUCT_NAME "${productName}" is not the approved public name (${REGISTRY}: "${brand.statement}").`);
+  }
+}

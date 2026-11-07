@@ -119,3 +119,11 @@ test('every product prompt carries the claim-rules block verbatim', async () => 
     assert.match(prompt, /fully reversible/, name);
   }
 });
+
+test('PRODUCT_NAME must be the approved public name', async () => {
+  const { assertPublicName } = await import('../claimRules.js');
+  const registry = await loadRegistry(FIXTURE_VAULT);
+  assert.doesNotThrow(() => assertPublicName(registry, TODAY, 'RidgeHQ'));
+  assert.throws(() => assertPublicName(registry, TODAY, 'AquaRoster'), /not the approved public name/);
+  assert.throws(() => assertPublicName(registry, TODAY, 'Ridge'), /not the approved public name/);
+});

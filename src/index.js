@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 import { selectTopic, recordUsage, withoutRunsOn } from './selectTopic.js';
 import { loadKnowledgeBase } from './loadKnowledgeBase.js';
-import { loadRegistry, claimRulesBlock } from './claimRules.js';
+import { loadRegistry, claimRulesBlock, assertPublicName } from './claimRules.js';
 import { selectFocus } from './seoFocus.js';
 import {
   selectProductHuntFormat,
@@ -75,6 +75,7 @@ async function loadHistory() {
 async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
   const date = localDateString();
   const registry = await loadRegistry(BUSINESS_VAULT_PATH);
+  assertPublicName(registry, date, PRODUCT_NAME);
   const { chunks: knowledgeBase, dropped } = await loadKnowledgeBase(BUSINESS_VAULT_PATH, { today: date, registry });
   // Owner-approved facts + never-claim rules, verbatim, in every product prompt.
   const claimRules = claimRulesBlock(registry, date, PRODUCT_NAME);
