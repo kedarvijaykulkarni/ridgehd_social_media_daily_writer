@@ -190,3 +190,12 @@ test('Product Hunt General history drops topics that are no longer offered', asy
   assert.doesNotMatch(prompt, /ai-copilot/);
   assert.match(prompt, /2026-11-02: theme "waiver-system"/);
 });
+
+test('every prompt also carries the copy rules found missing in the 2026-11-07 output review', async () => {
+  const { COPY_RULES } = await import('../claimRules.js');
+  const block = claimRulesBlock(await loadRegistry(FIXTURE_VAULT), TODAY);
+  for (const rule of COPY_RULES) assert.ok(block.includes(rule), rule.slice(0, 40));
+  for (const term of [/guarantees/, /mandatory/, /check-in/, /replaces other tools/, /first-person operator experience/, /closing payoff/]) {
+    assert.match(block, term);
+  }
+});

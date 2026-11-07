@@ -205,8 +205,27 @@ export function claimRulesBlock(registry, today, productName = 'RidgeHQ') {
     '  customer result as available — even if it appears elsewhere in this prompt as audience',
     '  context. Describe the operator\'s problem instead.',
     ...rules.map((f) => `- ${f.statement}`),
+    ...COPY_RULES.map((r) => `- ${r}`),
   ].join('\n');
 }
+
+// This tool's own copy rules, written after a review of real output
+// (2026-11-07) in which the model wrapped the approved waiver fact in claims
+// nobody approved. They restate DECISIONS #165/#166 and fact-registry.md in
+// operational terms; the registry's internal `scope` text is not exported.
+export const COPY_RULES = [
+  'Make no legal or compliance outcome claim: never say anything "guarantees", makes a waiver ' +
+    '"compliant" or "legally defensible", reduces liability, or removes legal risk. Operators stay ' +
+    'responsible for their own waiver content and process.',
+  'Never say a waiver is mandatory or required before booking, check-in or an activity, and never ' +
+    'say the product blocks or confirms anything.',
+  'Do not claim integrations, automation, check-in, booking-workflow, audit-trail, archive, tracking ' +
+    'or reporting features, and do not say the product replaces other tools or spreadsheets.',
+  'Invent nothing: no numbers, example volumes ("twenty trips a month"), scenarios, customer results ' +
+    '("saves hours", "maximize profitability") or first-person operator experience ("as an operator, I know").',
+  '0% commission may appear only as a short supporting detail — never as the headline, the closing ' +
+    'payoff or a profit claim.',
+];
 
 // PRODUCT_NAME must be the registry's approved public name: with
 // PRODUCT_NAME=AquaRoster the prompts said both "copywriter for AquaRoster"
