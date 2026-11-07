@@ -104,3 +104,11 @@ test('keywordCoverage reports found and missing phrases case-insensitively', () 
     missing: ['surf'],
   });
 });
+
+test('website blurbs reach the prompt as audience context, never as approved claims', async () => {
+  const { focusPromptBlock, selectFocus } = await import('../seoFocus.js');
+  const block = focusPromptBlock({ focus: selectFocus({ posts: [] }), productName: 'RidgeHQ', includePlatform: true });
+  assert.doesNotMatch(block, /safe to restate/i);
+  assert.match(block, /NOT claims/);
+  assert.match(block, /do not claim these capabilities/);
+});
