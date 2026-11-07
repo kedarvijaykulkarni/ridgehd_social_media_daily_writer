@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { renderVideoCoverPrompt, coverHook } from '../renderVideoCoverPrompt.js';
+import { renderVideoCoverPrompt } from '../renderVideoCoverPrompt.js';
 import { parseVideoScript } from '../parseVideoScript.js';
 import { renderVideoScript } from '../renderVideoScript.js';
 
@@ -8,8 +8,10 @@ const VIDEO = { title: 'AI permission gating', description: 'Stop worrying about
 const TOPIC = { id: 'ai-gating', status: 'shipped', headline: VIDEO.title };
 const BIBLE = { setting: 'Surf school beach.', look: 'Golden hour.', camera: 'Dolly.', voice: 'Warm male.', wardrobe: 'Navy rash vest.' };
 
-test('hook is the first sentence of the description, no trailing punctuation', () => {
-  assert.equal(coverHook(VIDEO.description), 'Stop worrying about unintended changes');
+test('the headline is compressed from the topic headline, never from the model-written description', () => {
+  const t = renderVideoCoverPrompt({ topic: TOPIC, date: 'd', video: { ...VIDEO, description: 'Replace spreadsheet waivers with a structured system. More.' } });
+  assert.match(t, /compressed from this topic: "AI permission gating"/);
+  assert.doesNotMatch(t, /compressed from[^\n]*Replace spreadsheet waivers/);
 });
 
 test('with a presenter: reference, outfit, exact headline rules, site tag', () => {
