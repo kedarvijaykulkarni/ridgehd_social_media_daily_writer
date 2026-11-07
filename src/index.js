@@ -35,6 +35,7 @@ import { loadCharacter, resolveVisualMode } from './videoCharacter.js';
 import { renderVideoCoverPrompt } from './lib/renderVideoCoverPrompt.js';
 import { parseVideoScript } from './lib/parseVideoScript.js';
 import { localDateString } from './lib/localDate.js';
+import { envNumber } from './lib/envNumber.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(__dirname, '..');
@@ -55,8 +56,8 @@ const POST_HISTORY_PATH = resolveConfigPath('POST_HISTORY_PATH', './data/post-hi
 const OUTPUT_DIR = resolveConfigPath('OUTPUT_DIR', './output');
 const PRODUCT_NAME = process.env.PRODUCT_NAME?.trim() || 'RidgeHQ';
 const BLOG_BASE_URL = process.env.BLOG_BASE_URL?.trim() || 'https://www.ridgehq.app/blog';
-const PRODUCTHUNT_COOLDOWN_DAYS = Number(process.env.PRODUCTHUNT_COOLDOWN_DAYS) || 2;
-const PRODUCTHUNT_DISCUSSION_COOLDOWN_DAYS = Number(process.env.PRODUCTHUNT_DISCUSSION_COOLDOWN_DAYS) || 4;
+const PRODUCTHUNT_COOLDOWN_DAYS = envNumber('PRODUCTHUNT_COOLDOWN_DAYS', 2);
+const PRODUCTHUNT_DISCUSSION_COOLDOWN_DAYS = envNumber('PRODUCTHUNT_DISCUSSION_COOLDOWN_DAYS', 4);
 
 async function loadHistory() {
   try {
