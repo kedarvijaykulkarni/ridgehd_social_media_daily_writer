@@ -36,6 +36,16 @@ export function selectTopic(knowledgeBase, history) {
   return scored[0].entry;
 }
 
+// One output folder per day, so a same-day re-run replaces that day's run:
+// its history entries are dropped before selection (otherwise drafts that
+// were just overwritten would still count as coverage, and today's
+// Product Hunt cooldown would block its own retry).
+export function withoutRunsOn(history, date) {
+  const posts = history.posts ?? [];
+  const kept = posts.filter((p) => p.date !== date);
+  return { history: { ...history, posts: kept }, replaced: posts.length - kept.length };
+}
+
 // Appends the day's pick to history and recomputes cycle_number: once every
 // `status: shipped` entry's derived used_count is >= cycle_number, the cycle
 // increments and rotation starts over (this is what eventually lets

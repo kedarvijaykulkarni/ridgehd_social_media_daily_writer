@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 import 'dotenv/config';
 import { Command } from 'commander';
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { selectTopic, recordUsage } from './selectTopic.js';
+import { selectTopic, recordUsage, withoutRunsOn } from './selectTopic.js';
 import { loadKnowledgeBase } from './loadKnowledgeBase.js';
 import { selectFocus } from './seoFocus.js';
 import {
@@ -81,7 +81,14 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
       `(${Object.entries(byStatus).map(([s, n]) => `${n} ${s}`).join(', ')})`,
   );
 
-  const history = await loadHistory();
+  const date = localDateString();
+  const { history, replaced } = withoutRunsOn(await loadHistory(), date);
+  if (replaced) {
+    console.log(
+      `${LOG} ${date} already has ${replaced} run(s) in history — this run replaces them ` +
+        `(one output folder per day${dryRun ? '; dry run, so nothing is replaced yet' : ''}).`,
+    );
+  }
 
   const topic = selectTopic(knowledgeBase, history);
   const priorUsedCount = (history.posts ?? []).filter((p) => p.topic_id === topic.id).length;
@@ -105,7 +112,6 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
     reddit: formatReddit(shared),
   };
 
-  const date = localDateString();
   const socialText = renderSocialText({ topic, date, drafts, productName: PRODUCT_NAME, focus });
 
   // 1-minute video script: one more Ollama pass, built from the same shared
@@ -222,22 +228,22 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
 
   const runDir = path.join(OUTPUT_DIR, date);
   await mkdir(runDir, { recursive: true });
-  const writes = [
-    writeFile(path.join(runDir, 'social-posts.txt'), socialText),
-    writeFile(path.join(runDir, 'image-prompt.txt'), imagePromptText),
-    writeFile(path.join(runDir, 'video-script.txt'), videoScriptText),
-    writeFile(path.join(runDir, 'video-cover-image.txt'), coverPromptText),
-  ];
-  if (longForm) {
-    writes.push(
-      writeFile(path.join(runDir, 'blog-post.md'), blogPostMd),
-      writeFile(path.join(runDir, 'linkedin-article.md'), linkedinArticleMd),
-    );
-  }
-  if (productHuntText) {
-    writes.push(writeFile(path.join(runDir, 'producthunt-post.txt'), productHuntText));
-  }
-  await Promise.all(writes);
+  const files = {
+    'social-posts.txt': socialText,
+    'image-prompt.txt': imagePromptText,
+    'video-script.txt': videoScriptText,
+    'video-cover-image.txt': coverPromptText,
+    'blog-post.md': blogPostMd,
+    'linkedin-article.md': linkedinArticleMd,
+    'producthunt-post.txt': productHuntText,
+  };
+  // Files this run doesn't produce are removed, so a same-day re-run can't
+  // leave an earlier run's blog/Product Hunt draft beside a different topic.
+  await Promise.all(
+    Object.entries(files).map(([name, text]) =>
+      text === null ? rm(path.join(runDir, name), { force: true }) : writeFile(path.join(runDir, name), text),
+    ),
+  );
 
   const updatedHistory = recordUsage({ knowledgeBase, history, topic, date, focus, producthuntFormat: phFormat, producthuntDiscussion: phDiscussion });
   await mkdir(path.dirname(POST_HISTORY_PATH), { recursive: true });
