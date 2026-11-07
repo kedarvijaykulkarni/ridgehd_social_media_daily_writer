@@ -23,6 +23,9 @@ test('loadCharacter / resolveVisualMode', () => {
   assert.equal(resolveVisualMode('', CHARACTER), 'character');
   assert.equal(resolveVisualMode('product', CHARACTER), 'product');
   assert.throws(() => resolveVisualMode('hologram', CHARACTER), /must be/);
+  // Both explicit modes need a presenter; unset VIDEO_CHARACTER keeps the old output.
+  assert.throws(() => resolveVisualMode('product', null), /needs a presenter/);
+  assert.throws(() => resolveVisualMode('character', null), /needs a presenter/);
   assert.ok(isProductFootage('product', 3));
   assert.ok(!isProductFootage('product', 0));
   assert.ok(!isProductFootage('character', 3));
@@ -59,8 +62,9 @@ test('wardrobe is required only when a presenter is used', () => {
 test('every presenter clip repeats character + wardrobe + voice; footage clips are flagged', () => {
   const txt = renderVideoScript({ topic: TOPIC, date: 'd', video: VIDEO, script: SCRIPT, character: CHARACTER, mode: 'product' });
   assert.match(txt, /PRESENTER LOCK/);
-  assert.equal(txt.match(/^Character \(identical in every clip/gm).length, 3); // clips 1, 2, 6
-  assert.equal(txt.match(/^Wardrobe \(identical in every clip, never changes\): Navy rash vest, board shorts\.$/gm).length, 3);
+  assert.equal(txt.match(/^Character \(identical in every clip/gm).length, 6);
+  assert.equal(txt.match(/^Character \(identical in every clip — off-screen in this clip, voice-over only\)/gm).length, 3);
+  assert.equal(txt.match(/^Wardrobe \(identical in every clip, never changes\): Navy rash vest, board shorts\.$/gm).length, 6);
   assert.equal(txt.match(/^Human voice \(identical in every clip\): Warm male, 30s\.$/gm).length, 6);
   assert.equal(txt.match(/\[PRODUCT FOOTAGE\]/g).length, 3);
   assert.match(txt, /^Dialogue, spoken once by the character on camera, lip-synced, nothing else: "A0"$/m);
@@ -77,4 +81,25 @@ test('image-prompt.txt gets a character keyframe only with a character', () => {
   assert.match(withC, /CHARACTER KEYFRAME/);
   assert.ok(withC.includes('Navy rash vest'));
   assert.doesNotMatch(renderImagePrompt({ topic: TOPIC, date: 'd', imagePrompt: 'x' }), /CHARACTER KEYFRAME/);
+});
+
+test('product mode cuts into the footage once and resumes on the last presenter frame', () => {
+  const txt = renderVideoScript({ topic: TOPIC, date: 'd', video: VIDEO, script: SCRIPT, character: CHARACTER, mode: 'product' });
+  const clip = (n) => txt.slice(txt.indexOf(`CLIP ${n} of`)).split('\n\n')[0];
+  assert.match(clip(2), /^Start frame: .*continuing without a cut: E0$/m);
+  assert.match(clip(3), /^Start frame: Cut to your real product screen recording/m);
+  assert.match(clip(4), /^Start frame: .*continuing without a cut: E2$/m);
+  assert.match(clip(6), /^Start frame: Cut back to the presenter, .*\(end of clip 2\): E1$/m);
+});
+
+test('product mode rejects footage visuals that skip the prefix or invent UI text/numbers', () => {
+  const opts = { withWardrobe: true, mode: 'product', productName: 'AquaRoster' };
+  const footage = (v) => ({ ...SCRIPT, segments: SCRIPT.segments.map((s, i) => ([2, 3, 4].includes(i) ? { ...s, visual: v } : s)) });
+  const ok = footage('Screen recording of the real AquaRoster product: the booking calendar.');
+  assert.doesNotThrow(() => validateVideoScriptShape(ok, 6, opts));
+  assert.throws(() => validateVideoScriptShape(SCRIPT, 6, opts), /segment 2 is product footage/);
+  assert.throws(() => validateVideoScriptShape(footage('Screen recording of the real AquaRoster product: a "Book now" button.'), 6, opts), /product footage/);
+  assert.throws(() => validateVideoScriptShape(footage('Screen recording of the real AquaRoster product: revenue up 40%.'), 6, opts), /product footage/);
+  // Character mode doesn't apply the footage rule.
+  assert.doesNotThrow(() => validateVideoScriptShape(SCRIPT, 6, { withWardrobe: true, mode: 'character' }));
 });

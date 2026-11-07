@@ -14,7 +14,9 @@ export function parseVideoScript(text) {
     topic: {
       id: id || 'unknown',
       headline: rest.join(' — ') || title,
-      status: /^⚠️ ROADMAP/m.test(text) ? 'planned' : 'shipped',
+      // Keep the exact non-shipped status ("planned", "unverified", ...) so the
+      // cover's roadmap warning says the same thing the script did.
+      status: line(/^⚠️ ROADMAP: topic status is "([^"]+)"/m) ?? 'shipped',
     },
     video: { title, description },
     bible: {
@@ -23,5 +25,6 @@ export function parseVideoScript(text) {
       wardrobe: grab(/^Wardrobe \(identical in every clip, never changes\): (.+)$/m),
     },
     identity: grab(/^Character \(identical in every clip[^)]*\): (.+)$/m) ?? null,
+    reference: line(/^Reference image to attach to every generation: (.+)$/m),
   };
 }

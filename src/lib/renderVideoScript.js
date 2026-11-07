@@ -49,11 +49,8 @@ export function renderVideoScript({ topic, date, video, script, productName = 'A
 function continuity({ bible, segments }, { character, mode }) {
   const b = Object.fromEntries(Object.entries(bible).map(([k, v]) => [k, v.trim()]));
   const clips = VIDEO_SEGMENTS.map((s, i) => {
-    const start =
-      i === 0
-        ? 'Opening shot of the film.'
-        : `Begin exactly on this frame, continuing without a cut: ${segments[i - 1].ends_on.trim()}`;
     const footage = isProductFootage(mode, i);
+    const start = startFrame(segments, mode, i);
     const lines = [
       `CLIP ${i + 1} of ${VIDEO_SEGMENTS.length} (${s.time}, 10 seconds) — ${s.label}${footage ? ' [PRODUCT FOOTAGE]' : ''}`,
     ];
@@ -63,9 +60,13 @@ function continuity({ bible, segments }, { character, mode }) {
         'which part of the product to capture; trim the recording to 10 seconds and lay the voice-over on it.',
       );
     }
-    if (character && !footage) {
+    // Footage clips repeat the lock too (as off-screen continuity), so every
+    // clip prompt stands alone and the presenter returns unchanged after it.
+    if (character) {
       lines.push(
-        `Character (identical in every clip — attach the reference image): ${character.identity}`,
+        footage
+          ? `Character (identical in every clip — off-screen in this clip, voice-over only): ${character.identity}`
+          : `Character (identical in every clip — attach the reference image): ${character.identity}`,
         `Wardrobe (identical in every clip, never changes): ${b.wardrobe}`,
       );
     }
@@ -131,6 +132,25 @@ function continuity({ bible, segments }, { character, mode }) {
     'PRODUCTION NOTES',
     ...notes,
   ].join('\n');
+}
+
+// Where clip i starts. Normally the previous clip's end frame, without a cut.
+// In product mode the film cuts once into the real screen recording and once
+// back out; the clip after the footage resumes on the last PRESENTER frame
+// (an end frame of a UI clip can't be continued as a presenter shot).
+function startFrame(segments, mode, i) {
+  if (i === 0) return 'Opening shot of the film.';
+  const footage = isProductFootage(mode, i);
+  const prevFootage = isProductFootage(mode, i - 1);
+  if (footage && !prevFootage) {
+    return 'Cut to your real product screen recording — start at the beginning of the product area named in Action.';
+  }
+  if (!footage && prevFootage) {
+    let last = i - 1;
+    while (last > 0 && isProductFootage(mode, last)) last--;
+    return `Cut back to the presenter, resuming exactly on the last presenter frame (end of clip ${last + 1}): ${segments[last].ends_on.trim()}`;
+  }
+  return `Begin exactly on this frame, continuing without a cut: ${segments[i - 1].ends_on.trim()}`;
 }
 
 // Top-of-file lock: who is on screen, what they wear, how they sound, and what

@@ -30,6 +30,11 @@ export function resolveVisualMode(requested, character) {
   if (mode && mode !== 'character' && mode !== 'product') {
     throw new Error(`VIDEO_VISUAL_MODE must be "character" or "product", got "${requested}"`);
   }
+  // Both modes describe a presenter; without one, an explicit mode would
+  // silently change (or silently ignore) the no-people output, so refuse it.
+  if (mode && !character) {
+    throw new Error(`Video mode "${mode}" needs a presenter: set VIDEO_CHARACTER in .env, or clear VIDEO_VISUAL_MODE / --video-mode`);
+  }
   if (mode === 'product') return 'product';
   return character ? 'character' : 'none';
 }

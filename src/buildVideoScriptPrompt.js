@@ -41,7 +41,9 @@ PRESENTER (fixed identity — copy nothing from it into the bible, it is added f
 ${character.identity}
 `
     : '';
-  const presenterRules = character ? presenterRulesFor({ footageBlocks, productName }) : noPeopleRule(footageBlocks, productName);
+  // Product footage needs a presenter (resolveVisualMode enforces it), so the
+  // no-character prompt is always the original no-people one.
+  const presenterRules = character ? presenterRulesFor({ footageBlocks, productName }) : '- No identifiable people on screen.';
   const wardrobeKey = character
     ? `,
     "wardrobe": "ONE complete outfit for the presenter, chosen to suit THIS setting, climate, weather and activity (name every garment, its colour and fit, footwear and accessories; no logos or readable text). Worn unchanged in every block"`
@@ -125,20 +127,17 @@ function footageList(footageBlocks) {
   return footageBlocks.map(({ s }) => `"${s.time} — ${s.label}"`).join(', ');
 }
 
-function noPeopleRule(footageBlocks, productName) {
-  const lines = ['- No identifiable people on screen.'];
-  if (footageBlocks.length) lines.push(footageRule(footageBlocks, productName));
-  return lines.join('\n');
-}
-
 // Product footage is the user's real screen recording. The model must not
 // invent what the UI looks like (CLAUDE.md rule 4 — claims come from the vault).
+// validateVideoScriptShape enforces the prefix and the no-quotes/no-numbers ban.
+export const footagePrefix = (productName) => `Screen recording of the real ${productName} product:`;
+
 function footageRule(footageBlocks, productName) {
   return (
     `- PRODUCT FOOTAGE blocks (${footageList(footageBlocks)}): the visual is a real screen recording of ` +
-    `${productName} that the producer supplies — begin it with "Screen recording of the real ${productName} product:" ` +
-    'and describe only what the INFORMATION supports (e.g. "the booking calendar", "the staff roster"). ' +
-    'Never describe invented UI text, numbers, prices or screens; never ask for the UI to be AI-generated.'
+    `${productName} that the producer supplies — begin it with "${footagePrefix(productName)}" ` +
+    'and describe only which area of the product to show, in plain words the INFORMATION supports (e.g. the booking calendar, the staff roster). ' +
+    'No quoted UI text, no digits, numbers, prices or percentages, no invented screens; never ask for the UI to be AI-generated.'
   );
 }
 

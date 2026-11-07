@@ -42,7 +42,9 @@ export function renderVideoCoverPrompt({ topic, date, video, bible = {}, charact
     'Background slightly blurred so the subject and text pop; keep the scene recognisably the same place as the video.',
     '',
     'COMPOSITION',
-    '- Subject large on the RIGHT third (head and shoulders to waist), face about 35-40% of frame height, rim-lit with a soft glow.',
+    character
+      ? '- Subject large on the RIGHT third (head and shoulders to waist), face about 35-40% of frame height, rim-lit with a soft glow.'
+      : "- The scene's key object large on the RIGHT third, rim-lit with a soft glow. No people, faces, hands or silhouettes anywhere.",
     '- LEFT two-thirds kept clean for text. Strong contrast, rich saturation, subtle vignette.',
     '- One simple visual cue that matches the topic (e.g. a glowing shield, checkmark, calendar or price tag) — one only, no clutter.',
     '- Palette: deep navy-teal base, ONE sparing coral accent, white text.',
@@ -52,7 +54,7 @@ export function renderVideoCoverPrompt({ topic, date, video, bible = {}, charact
     '- Make ONE key word of the headline coral; the rest white with a thin dark outline/shadow so it reads at 168x94 px.',
     `- Small tag bottom-left: "${SITE_HOST}" (white, small).`,
     '',
-    'AVOID: any other text, watermarks, competitor logos, fake dashboards or numbers, extra people, distorted hands/faces, misspelled words, red "play" buttons, clickbait claims.',
+    `AVOID: any other text, watermarks, competitor logos, fake dashboards or numbers, ${character ? 'extra people, distorted hands/faces' : 'any people or faces'}, misspelled words, red "play" buttons, clickbait claims.`,
   ].join('\n');
 
   const header = [
@@ -68,9 +70,13 @@ export function renderVideoCoverPrompt({ topic, date, video, bible = {}, charact
     RULE,
     'HOW TO USE IN GEMINI',
     RULE,
-    '1. Open Gemini and attach your presenter reference image (the same one used for the video clips), e.g. @Olivia.',
+    character
+      ? '1. Open Gemini and attach your presenter reference image (the same one used for the video clips), e.g. @Olivia.'
+      : '1. Open Gemini. No reference image — this video has no presenter, so the thumbnail has no people.',
     '2. Paste the prompt above. Ask for 3-4 variations and pick the most readable one.',
-    '3. Check: headline spelled right, face matches the reference, outfit matches the video, text legible at thumbnail size (shrink to ~170px wide to test).',
+    character
+      ? '3. Check: headline spelled right, face matches the reference, outfit matches the video, text legible at thumbnail size (shrink to ~170px wide to test).'
+      : '3. Check: headline spelled right, no people in the image, scene matches the video, text legible at thumbnail size (shrink to ~170px wide to test).',
     '4. If text is garbled, regenerate or add the headline afterwards in Canva/Photoshop. Upload as the YouTube custom thumbnail (1280x720, under 2 MB).',
   ].join('\n');
 

@@ -120,7 +120,7 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
   console.log(`${LOG} Video: visual mode "${visualMode}"${character ? ' (presenter from VIDEO_CHARACTER)' : ''}`);
   const script = await callOllamaVideoScript(
     buildVideoScriptPrompt({ topic, shared, video, productName: PRODUCT_NAME, character, mode: visualMode }),
-    { withWardrobe: Boolean(character) },
+    { withWardrobe: Boolean(character), mode: visualMode, productName: PRODUCT_NAME },
   );
   const videoScriptText = renderVideoScript({
     topic, date, video, script, productName: PRODUCT_NAME, character, mode: visualMode,
@@ -279,14 +279,19 @@ program
   .command('cover')
   .description('Write video-cover-image.txt (YouTube thumbnail prompt for Gemini) for an existing output/<date>/ folder')
   .requiredOption('--date <YYYY-MM-DD>', 'Run folder under OUTPUT_DIR')
-  .option('--character-ref <ref>', 'Presenter reference to attach in Gemini, e.g. "@Olivia" (overrides VIDEO_CHARACTER_REF)')
+  .option('--character-ref <ref>', 'Presenter reference to attach in Gemini, e.g. "@Olivia" (overrides the reference recorded in video-script.txt)')
   .action(async (opts) => {
     try {
+      // Strict format: the value is joined into a path, so nothing like
+      // "..\..\x" may reach the filesystem.
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(opts.date)) throw new Error(`--date must be YYYY-MM-DD, got "${opts.date}"`);
       const runDir = path.join(OUTPUT_DIR, opts.date);
       const parsed = parseVideoScript(await readFile(path.join(runDir, 'video-script.txt'), 'utf-8'));
-      const env = loadCharacter();
-      const reference = opts.characterRef?.trim() || env?.reference || null;
-      const identity = env?.identity ?? parsed.identity;
+      // The presenter recorded in that day's script wins over today's .env, so
+      // the cover shows the same person as the video; --character-ref is the
+      // only override.
+      const reference = opts.characterRef?.trim() || parsed.reference;
+      const identity = parsed.identity;
       const character = identity || reference ? { identity, reference } : null;
       const text = renderVideoCoverPrompt({
         topic: parsed.topic, date: opts.date, video: parsed.video, bible: parsed.bible, character, productName: PRODUCT_NAME,

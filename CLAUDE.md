@@ -120,8 +120,14 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
   from `.env`; the model only picks a setting-appropriate `wardrobe` and the
   human `voice`, and the renderer repeats character + wardrobe + voice in every
   clip. `product` mode marks clips 3-5 as the user's real screen recording
-  (the model must not invent UI). `image-prompt.txt` gains a character
-  keyframe. Unset = old no-people behaviour. Not covered by a live Ollama run.
+  (the model must not invent UI — `validateVideoScriptShape` retries footage
+  briefs missing the `Screen recording of the real …` prefix or containing
+  quotes/digits); clip 6 resumes on the last presenter frame. Either mode
+  without `VIDEO_CHARACTER` throws. `image-prompt.txt` gains a character
+  keyframe. Unset = old no-people behaviour. `npm run cover -- --date
+  YYYY-MM-DD` rebuilds `video-cover-image.txt` from that day's
+  `video-script.txt` (its presenter, not today's `.env`). Not covered by a
+  live Ollama run.
 
 ## Rules specific to this app
 

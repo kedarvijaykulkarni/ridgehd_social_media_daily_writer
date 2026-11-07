@@ -1,4 +1,5 @@
-import { VIDEO_SEGMENTS } from './buildVideoScriptPrompt.js';
+import { VIDEO_SEGMENTS, footagePrefix } from './buildVideoScriptPrompt.js';
+import { isProductFootage } from './videoCharacter.js';
 
 const DEFAULT_HOST = 'http://localhost:11434';
 const DEFAULT_MODEL = 'gemma4:latest';
@@ -105,7 +106,10 @@ export function findRepeatedAudio(lines) {
 
 // Video script shape (see buildVideoScriptPrompt.js): exactly one
 // { visual, audio } pair per 10-second block. Exported for unit tests.
-export function validateVideoScriptShape(obj, segmentCount = VIDEO_SEGMENTS.length, { withWardrobe = false } = {}) {
+// `mode: 'product'` also checks the real-footage blocks: they must open with
+// footagePrefix and carry no quoted UI text or numbers (a best-effort guard
+// against invented UI — CLAUDE.md rule 4 — not proof the brief is accurate).
+export function validateVideoScriptShape(obj, segmentCount = VIDEO_SEGMENTS.length, { withWardrobe = false, mode = 'none', productName = 'AquaRoster' } = {}) {
   if (!Array.isArray(obj.segments) || obj.segments.length !== segmentCount) {
     throw new Error(`Ollama video script must have exactly ${segmentCount} segments`);
   }
@@ -118,6 +122,15 @@ export function validateVideoScriptShape(obj, segmentCount = VIDEO_SEGMENTS.leng
   const bad = obj.segments.findIndex((s) => !s || !filled(s.visual) || !filled(s.audio) || !filled(s.ends_on));
   if (bad !== -1) {
     throw new Error(`Ollama video script segment ${bad} is missing a visual, audio or ends_on line`);
+  }
+  const prefix = footagePrefix(productName).toLowerCase();
+  const badFootage = obj.segments.findIndex(
+    (s, i) => isProductFootage(mode, i) && (!s.visual.trim().toLowerCase().startsWith(prefix) || /["“”0-9$€£%]/.test(s.visual)),
+  );
+  if (badFootage !== -1) {
+    throw new Error(
+      `Ollama video script segment ${badFootage} is product footage: its visual must start with "${footagePrefix(productName)}" and contain no quoted UI text or numbers`,
+    );
   }
   const dup = findRepeatedAudio(obj.segments.map((s) => s.audio));
   if (dup) {
@@ -185,8 +198,10 @@ export async function callOllamaArticle(prompt, opts = {}) {
 
 // Video script: the 1-minute script object (buildVideoScriptPrompt).
 // `opts.withWardrobe`: a presenter is on screen, so the bible must fix an outfit.
+// `opts.mode` / `opts.productName`: product mode validates the footage blocks.
 export async function callOllamaVideoScript(prompt, opts = {}) {
-  return requestParsed(prompt, opts, (obj) => validateVideoScriptShape(obj, undefined, { withWardrobe: opts.withWardrobe }));
+  const { withWardrobe, mode, productName } = opts;
+  return requestParsed(prompt, opts, (obj) => validateVideoScriptShape(obj, undefined, { withWardrobe, mode, productName }));
 }
 
 // Product Hunt forum post: the { title, body, cta? } object (buildProductHuntPrompt).
