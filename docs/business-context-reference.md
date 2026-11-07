@@ -29,7 +29,27 @@ topic chunks in the shape the pipeline already expected
 | `wiki/business-context.md` | §2 `✅ Solid and verifiable — sell on this:` bullet list | `status: "shipped"` chunks |
 | `wiki/business-context.md` | §2 `❌ Not yet sellable` table | `status: "planned"` chunks — **except** rows whose consequence says "do not market / do not claim" (e.g. money-moving AI undo), which are dropped entirely |
 | `wiki/competitors.md` | §5 differentiator table row for the AI copilot ("UNCLAIMED") | one `differentiator` chunk |
-| `wiki/pricing.md` | §3 `### ✅ Published pricing` subsection only: its (wrapped) `Page headline:` paragraph + tier table. Stale tier/unit-economics tables elsewhere in the file are ignored; the chunk headline leads with flat monthly pricing, not 0% commission | one `pricing-model` chunk |
+| `wiki/pricing.md` | §3 `### ✅ Published pricing` subsection only: its (wrapped) `Page headline:` paragraph. The tier table is not read (plan prices are not approved for social); stale tier/unit-economics tables elsewhere are ignored; the chunk headline leads with flat monthly pricing, not 0% commission | one `pricing-model` chunk |
+
+## The marketing gate (`src/claimRules.js`)
+
+Those chunks are what the vault says is *built*. What may be *marketed*
+is decided by the owner in `wiki/ai-operations/facts/registry.json`
+(DECISIONS.md #165/#166; schema in `wiki/ai-operations/fact-registry.md`).
+`loadKnowledgeBase` keeps only chunks that `TOPIC_FACTS` maps to a fact
+that is accepted, `audience: public`, marketing `allowed` on the `social`
+channel, not superseded and not past `review_by` — the export's own
+rules. A kept chunk's `detail` becomes the fact's approved `statement`.
+As of 2026-11-07 that leaves two topics: waivers (`feature.waivers`) and
+the pricing model (`commission.direct-bookings`). Every product prompt also
+carries a CLAIM RULES block: the approved statements with their scope
+limits, a ban on presenting anything else as available, and the internal
+writing rules verbatim (limited AI undo, no AI exclusivity, no AquaRoster,
+no SMS).
+
+To put another topic back into rotation, the owner approves a fact for
+`social` in the registry, then the chunk id is mapped in `TOPIC_FACTS`.
+A missing registry, or no approved topic, stops the run.
 
 A missing `## 2.` section, `✅ … sell on this` marker or `❌ Not yet sellable`
 marker in `business-context.md` throws — the optional competitor/pricing

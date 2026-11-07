@@ -68,6 +68,13 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
   markdown scraping keyed to the vault's current section markers; it
   throws (never emits an empty/wrong list) if those markers move or the
   vault is missing. Fixtures + tests: `src/__tests__/`.
+- **`src/claimRules.js`** is the marketing gate on top of the loader: only
+  topics mapped (`TOPIC_FACTS`) to a fact the owner approved for `social`
+  in the vault's `wiki/ai-operations/facts/registry.json` are offered,
+  speaking in that fact's statement; every product prompt carries its
+  CLAIM RULES block (approved facts + internal never-claim rules). Today
+  that is waivers and the pricing model. See
+  `docs/business-context-reference.md`.
 - **`data/post-history.json`** replaced `../../marketing/post-history.json`.
   It's the only file this tool writes besides `output/`. Lives in
   gitignored `data/` — not in the vault (whose pages are immutable sources
@@ -147,7 +154,13 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
    treating a draft as ready to publish, verify any specific technical or
    commercial claim against **`wiki/business-context.md` §2** in the vault
    (`BUSINESS_VAULT_PATH`):
-   - `✅ Solid and verifiable — sell on this` → safe to state present-tense.
+   - **Marketing approval is the registry, not §2.** A ✅ row is *built*;
+     it is only *sellable* on social when `wiki/ai-operations/facts/registry.json`
+     allows it there (DECISIONS #165(4): waivers are the only approved
+     feature claim). `src/claimRules.js` enforces this — don't widen
+     `TOPIC_FACTS` without a registry fact.
+   - `✅ Solid and verifiable — sell on this` → safe to state present-tense
+     once the registry approves it.
    - `❌ Not yet sellable` → never present-tense; roadmap framing only, and
      some rows (money-moving AI undo) must not be marketed even as roadmap
      — the loader already drops those, keep it that way.
@@ -189,6 +202,10 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
   `src/lib/__tests__/renderLinkedInArticle.test.js` — the two long-form
   renderers (frontmatter vs. none, section rendering, roadmap warning).
 - `src/lib/__tests__/hashtags.test.js` — hashtag sanitization regression.
+- `src/__tests__/claimRules.test.js` — registry gate (approved/expired/
+  superseded/other-channel facts, missing registry), approved wording, and
+  the CLAIM RULES block in all four product prompts; fixture
+  `fixtures/vault/wiki/ai-operations/facts/registry.json`.
 - `src/__tests__/validateShape.test.js` — short-form shape normalisation
   (malformed hashtag/subreddit arrays) through all four formatters.
 - `src/__tests__/selectTopic.test.js` — same-day re-run replacement
