@@ -23,14 +23,17 @@ function looksPromotional(text) {
   return PROMOTIONAL_PATTERNS.some((re) => re.test(text));
 }
 
-// Reddit: title <= REDDIT_TITLE_TARGET (informative, not clickbait), body
+// Reddit: title aims for REDDIT_TITLE_TARGET (informative, not clickbait;
+// `meets_title_target` says whether it did) and is only cut at the hard max, body
 // in the conversational register range. No hashtags (not a Reddit
 // convention) — subreddits are passed through for human review instead of
 // auto-posting, since self-promotion rules vary widely and auto-posting
 // risks bans.
 export function formatReddit(shared) {
   const hook = shared.hook_line.trim();
-  const title = truncateToChars(hook, REDDIT_TITLE_TARGET);
+  // Truncate only at the hard limit: cutting at the 100-char target chopped
+  // a 101-char hook mid-word ("0% commissio…"). The target is reported below.
+  const title = truncateToChars(hook, REDDIT_TITLE_MAX);
   const body = composeParts([shared.core_message.trim(), shared.call_to_action.trim()]);
 
   const titleCount = charCount(title);
@@ -52,6 +55,7 @@ export function formatReddit(shared) {
     char_count: { title: titleCount, body: bodyCount },
     limit: { title: REDDIT_TITLE_MAX, body: REDDIT_BODY_MAX },
     within_limit: titleCount <= REDDIT_TITLE_MAX && bodyCount <= REDDIT_BODY_MAX,
+    meets_title_target: titleCount <= REDDIT_TITLE_TARGET,
     hashtags_used: [],
     image_prompt: shared.image_prompt,
     reddit_relevant_subreddits: shared.reddit_relevant_subreddits ?? [],
