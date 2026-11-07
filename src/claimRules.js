@@ -19,12 +19,13 @@ export const CHANNEL = 'social';
 // Which registry fact makes each loader topic sellable. A topic missing here
 // (a new §2 row, a ❌ roadmap row) is not offered until the owner approves a
 // fact for it in the registry and it is mapped here.
+// Not mapped on purpose: 'flat-monthly-pricing-zero-commission'. Its headline
+// ("Flat monthly pricing with no per-staff seat shock") is no registry fact,
+// and commission.direct-bookings is "a supporting point, not the headline" —
+// it still reaches every draft through the CLAIM RULES approved facts. Map
+// the pricing topic once the owner approves a flat-pricing fact for social.
 export const TOPIC_FACTS = {
   'waiver-system': 'feature.waivers',
-  // Flat monthly plans as published positioning; the plan prices themselves
-  // (pricing.monthly-plans) are sales/website only, so the loader keeps them
-  // out of this chunk.
-  'flat-monthly-pricing-zero-commission': 'commission.direct-bookings',
 };
 
 export async function loadRegistry(vaultPath) {

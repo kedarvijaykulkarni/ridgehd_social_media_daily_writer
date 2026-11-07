@@ -12,13 +12,14 @@ const TODAY = '2026-11-07';
 
 test('only topics backed by a fact approved for social are offered (DECISIONS #165(4))', async () => {
   const { chunks, dropped } = await loadKnowledgeBase(FIXTURE_VAULT, { today: TODAY });
-  assert.deepEqual(chunks.map((c) => c.id).sort(), ['flat-monthly-pricing-zero-commission', 'waiver-system']);
-  assert.deepEqual(
-    chunks.map((c) => c.fact_id).sort(),
-    ['commission.direct-bookings', 'feature.waivers'],
-  );
-  // Built but not approved for marketing: scheduling, RLS, the AI copilot, the roadmap row.
-  for (const id of ['rls-multi-tenancy-enforced-at-the-database-level', 'ai-copilot-in-the-operational-core']) {
+  assert.deepEqual(chunks.map((c) => [c.id, c.fact_id]), [['waiver-system', 'feature.waivers']]);
+  // Built but not approved for marketing: RLS, the AI copilot, the roadmap
+  // row — and the pricing topic, whose headline no fact approves.
+  for (const id of [
+    'rls-multi-tenancy-enforced-at-the-database-level',
+    'ai-copilot-in-the-operational-core',
+    'flat-monthly-pricing-zero-commission',
+  ]) {
     assert.ok(dropped.some((c) => c.id === id), `${id} must be dropped`);
   }
   assert.ok(!chunks.some((c) => c.status !== 'shipped'), 'no roadmap topic is approved');
