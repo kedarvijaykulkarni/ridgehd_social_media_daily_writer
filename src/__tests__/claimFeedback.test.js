@@ -45,3 +45,11 @@ test('drift never fails the run: a still-dirty retry is kept, a broken retry fal
   stubOllama(t, [dirty, 'not json at all']);
   assert.equal((await callOllama('P', { host: 'http://stub', claimCheck: claimProblems })).core_message, dirty.core_message);
 });
+
+test('a shape-retry answer gets the claim check too', async (t) => {
+  const prompts = stubOllama(t, ['not json', dirty, clean]);
+  const shared = await callOllama('P', { host: 'http://stub', claimCheck: claimProblems });
+  assert.equal(prompts.length, 3, 'malformed -> flagged -> claim feedback');
+  assert.match(prompts[2], /broke the CLAIM RULES/);
+  assert.equal(shared.core_message, clean.core_message);
+});

@@ -183,13 +183,16 @@ async function requestParsed(prompt, opts, validate) {
       `Return ONLY one complete, valid JSON object with every required key present. ` +
       `No markdown fences. No preamble. No explanation before or after the JSON.`;
     const second = await requestOllama(host, model, stricter);
+    let parsed;
     try {
-      return validate(parseModelResponse(second));
+      parsed = validate(parseModelResponse(second));
     } catch (secondErr) {
       throw new Error(
         `Failed to parse Ollama response as JSON after retry. First attempt: ${firstErr.message}. Retry attempt: ${secondErr.message}`,
       );
     }
+    // The shape retry's answer gets the same claim check as a first answer.
+    return withClaimFeedback(parsed, prompt, opts, validate, (p) => requestOllama(host, model, p));
   }
 }
 
