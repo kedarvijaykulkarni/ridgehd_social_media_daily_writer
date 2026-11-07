@@ -43,7 +43,7 @@ ${character.identity}
     : '';
   // Product footage needs a presenter (resolveVisualMode enforces it), so the
   // no-character prompt is always the original no-people one.
-  const presenterRules = character ? presenterRulesFor({ footageBlocks, productName }) : '- No identifiable people on screen.';
+  const presenterRules = character ? presenterRulesFor({ footageBlocks, productName }) : '- No people on screen at all: no crew, faces, hands or silhouettes (the cover prompt has the same rule).';
   const wardrobeKey = character
     ? `,
     "wardrobe": "ONE complete outfit for the presenter, chosen to suit THIS setting, climate, weather and activity (name every garment, its colour and fit, footwear and accessories; no logos or readable text). Worn unchanged in every block"`
@@ -101,7 +101,8 @@ RULES
   script; each line flows from the previous one and the whole reads as one piece.
 ${presenterRules}
 - The Ending/CTA visual shows the brand, "${SITE_HOST}" and "${CONTACT_EMAIL}";
-  its audio names both.
+  its audio names both and invites people to learn more about the topic. It adds no
+  other fact: no 0% commission, no result, no new feature — the ending is not a payoff.
 
 OUTPUT
 Return ONLY valid JSON, no markdown fences, no preamble, matching exactly —

@@ -37,7 +37,7 @@ test('prompt with a character locks identity, wardrobe, human voice; drops the n
   assert.match(p, /ONLY person on screen/);
   assert.match(p, /"wardrobe"/);
   assert.match(p, /Never robotic/);
-  assert.doesNotMatch(p, /No identifiable people/);
+  assert.doesNotMatch(p, /No people on screen at all/);
   assert.doesNotMatch(p, /PRODUCT FOOTAGE/);
 });
 
@@ -47,9 +47,9 @@ test('product mode marks the demo blocks as real footage', () => {
   assert.match(p, /never ask for the UI to be AI-generated/);
 });
 
-test('no character keeps the old no-people prompt', () => {
+test('no character means no people at all, matching the cover prompt', () => {
   const p = buildVideoScriptPrompt({ topic: TOPIC, shared: SHARED, video: VIDEO });
-  assert.match(p, /No identifiable people on screen/);
+  assert.match(p, /No people on screen at all: no crew, faces, hands or silhouettes/);
   assert.doesNotMatch(p, /"wardrobe"/);
 });
 
