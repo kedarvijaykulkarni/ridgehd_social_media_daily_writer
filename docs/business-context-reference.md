@@ -75,6 +75,13 @@ architecture, and the `COPY_RULES` categories: legal/compliance,
 mandatory/blocking, workflow/integration/replacement, results, operator
 persona, numbers) at the top of `social-posts.txt`. It misses paraphrases
 and flags harmless uses — human review before posting is still the control.
+The same flags (minus the noisy number rule) also drive **one retry** per
+model answer: the model is shown the offending phrases and asked again.
+A still-flagged retry is kept and flagged; a broken one falls back to the
+first answer — drift never fails the run. Long-form is kept to 500–800
+words, because longer briefs on a three-fact topic were padded with
+invented claims. The cover headline comes from the topic headline, never
+from model copy.
 
 To put another topic back into rotation, the owner approves a fact for
 `social` in the registry, then the chunk id is mapped in `TOPIC_FACTS`.

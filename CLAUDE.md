@@ -103,7 +103,9 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
   Same ✅/❌ claim rail as the short-form path (rule 4). `BLOG_BASE_URL`
   (`.env`, default `https://www.ridgehq.app/blog`) only feeds the blog
   post's `canonical_url`. `src/callOllama.js` shares one request/parse/
-  retry helper between `callOllama` (short) and `callOllamaArticle` (long).
+  retry helper between `callOllama` (short) and `callOllamaArticle` (long);
+  with `opts.claimCheck` it also retries once, quoting phrases that break
+  the claim rules (never failing the run on them).
 - **`--producthunt`** (`generate` flag; `npm run generate:ph`, combinable
   with `--long-form`) writes a draft for RidgeHQ's own Product Hunt forum
   (`src/productHunt.js`'s `FORUM_URL`). This is the only draft type that can
@@ -219,6 +221,8 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
   heuristic (every model-written field) and its `social-posts.txt` header.
 - `src/__tests__/coverCommand.test.js` — `cover` (`src/coverCommand.js`):
   dropped topic refused, stale stored claims flagged, wrong name refused.
+- `src/__tests__/claimFeedback.test.js` — claim-feedback retry (stubbed
+  fetch): retried with quoted phrases, clean not retried, drift never fails.
 - `src/__tests__/validateShape.test.js` — short-form shape normalisation
   (malformed hashtag/subreddit arrays) through all four formatters.
 - `src/__tests__/selectTopic.test.js` — same-day re-run replacement
