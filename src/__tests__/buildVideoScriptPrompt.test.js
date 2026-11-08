@@ -50,3 +50,20 @@ test('the Ending/CTA adds no fact, so 0% commission cannot become the payoff', (
   const p = buildVideoScriptPrompt({ topic: { ...PLANNED, status: 'shipped' }, shared: SHARED, video: VIDEO });
   assert.match(p, /It adds no\s+other fact: no 0% commission, no result, no new feature/);
 });
+
+test('enforces visual progression across the 6 narrative segments', () => {
+  const p = buildVideoScriptPrompt({ topic: PLANNED, shared: SHARED, video: VIDEO });
+  assert.match(p, /VISUAL PROGRESSION/);
+  assert.match(p, /Hook establishes/);
+  assert.match(p, /Ending\/CTA provides a clean closing card/);
+  assert.match(p, /Never freeze on a single static prop/);
+});
+
+test('demands accurate digital intake and natural speech cadence', () => {
+  const p = buildVideoScriptPrompt({ topic: PLANNED, shared: SHARED, video: VIDEO });
+  assert.match(p, /ACCURATE DIGITAL INTAKE/);
+  assert.match(p, /typed e-signature/);
+  assert.match(p, /Never depict handwritten cursive finger scribbles/);
+  assert.match(p, /NATURAL SPEECH CADENCE/);
+  assert.match(p, /130-140 WPM/);
+});
