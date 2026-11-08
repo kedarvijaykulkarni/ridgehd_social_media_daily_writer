@@ -90,6 +90,14 @@ RULES
   camera moves or one element changes per block. Never introduce a new
   location, time of day, or art style. Block N must begin exactly where
   block N-1 ended.
+- VISUAL PROGRESSION: While maintaining continuity within the single setting and look,
+  advance the visual story across the six blocks to match their labels (Hook establishes
+  the environment -> Problem reveals the friction or operational context -> Main action
+  introduces the solution/station -> Demo captures the specific workflow -> Payoff shows
+  the operational flow running smoothly -> Ending/CTA provides a clean closing card).
+  Use purposeful camera movement (dolly tracking, slow push-in, lateral glide, subtle
+  rack focus) and subtle atmospheric life (water movement, morning light angle, breeze,
+  interface glow). Never freeze on a single static prop or repeat the same camera angle.
 - NO REPEATED DIALOGUE: all six audio lines must be different. Never copy,
   reuse or lightly reword a line from another block — each one adds a NEW point
   (hook → problem → what it does → how it helps → payoff → CTA), and no phrase
@@ -103,6 +111,14 @@ ${presenterRules}
 - The Ending/CTA visual shows the brand, "${SITE_HOST}" and "${CONTACT_EMAIL}";
   its audio names both and invites people to learn more about the topic. It adds no
   other fact: no 0% commission, no result, no new feature — the ending is not a payoff.
+- ACCURATE DIGITAL INTAKE: Any visual depicting digital waiver completion must show a
+  typed e-signature (typing the participant's legal name on screen) and clean verification
+  checkmarks. Never depict handwritten cursive finger scribbles, distorted signature drawing,
+  or fake complex charts.
+- NATURAL SPEECH CADENCE: The audio script must flow naturally when read aloud by human TTS
+  at 130-140 WPM. The ending CTA must phrase website/email contact naturally for speech
+  (e.g. "visit ${SITE_HOST} or reach out to our team at ${CONTACT_EMAIL}"). Never write awkward
+  literal spelled-out punctuation like "dot app" or "at Ridge HQ dot app" in the copy text.
 
 OUTPUT
 Return ONLY valid JSON, no markdown fences, no preamble, matching exactly —

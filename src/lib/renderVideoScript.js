@@ -110,6 +110,8 @@ function continuity({ bible, segments }, { character, mode }) {
         '- Wardrobe: if a clip changes the outfit, re-run it — do not fix it in editing.',
         '- Best visual consistency: use image-to-video. Feed each clip the last frame of',
         '  the previous clip as its first-frame image (clip 1: the character keyframe still).',
+        '- Gemini / Veo video generation: paste each clip prompt with 16:9 aspect ratio at 24fps.',
+        '- Gemini / TTS audio: generate narration at 130-140 WPM; pronounce brand as "Ridge H-Q".',
         '- Keep one seed / one model / one aspect ratio and resolution for all six clips.',
         '- Add one fixed music bed in editing; do not generate music per clip.',
       ]
@@ -119,6 +121,8 @@ function continuity({ bible, segments }, { character, mode }) {
         '  silent clips. Do not let each clip generate its own voice.',
         '- Best visual consistency: use image-to-video. Feed each clip the last frame of',
         '  the previous clip as its first-frame image (clip 1: a still of the opening shot).',
+        '- Gemini / Veo video generation: paste each clip prompt with 16:9 aspect ratio at 24fps.',
+        '- Gemini / TTS audio: generate narration at 130-140 WPM; pronounce brand as "Ridge H-Q".',
         '- Keep one seed / one model / one aspect ratio and resolution for all six clips.',
         '- Add one fixed music bed in editing; do not generate music per clip.',
       ];
