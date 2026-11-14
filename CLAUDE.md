@@ -171,8 +171,8 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
    (`BUSINESS_VAULT_PATH`):
    - **Marketing approval is the registry, not §2.** A ✅ row is *built*;
      it is only *sellable* on social when `wiki/ai-operations/facts/registry.json`
-     allows it there (DECISIONS #165(4): waivers are the only approved
-     feature claim). `src/claimRules.js` gates topics on it — don't widen
+     allows it there (DECISIONS #165(4) approved waivers; #216 added nine
+     more features, social only). `src/claimRules.js` gates topics on it — don't widen
      `TOPIC_FACTS` without a registry fact.
    - `✅ Solid and verifiable — sell on this` → safe to state present-tense
      once the registry approves it.
