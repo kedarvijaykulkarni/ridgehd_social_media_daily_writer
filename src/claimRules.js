@@ -28,6 +28,16 @@ export const CHANNEL = 'social';
 // the pricing topic once the owner approves a flat-pricing fact for social.
 export const TOPIC_FACTS = {
   'waiver-system': 'feature.waivers',
+  // RidgeHQAPP DECISIONS #216 (2026-11-14): social-only feature facts.
+  'guest-self-check-in-by-qr': 'feature.guest-self-check-in',
+  'gift-vouchers': 'feature.gift-vouchers',
+  'manage-booking-link': 'feature.manage-booking',
+  'request-a-time': 'feature.request-a-time',
+  'session-move-notices': 'feature.session-move-notices',
+  'gear-maintenance-hold': 'feature.gear-maintenance-hold',
+  'direct-card-payments': 'feature.direct-card-payments',
+  'multi-day-trips-and-room-blocks': 'feature.multi-day-trips',
+  'partner-commission-invoices': 'feature.partner-invoices',
 };
 
 export async function loadRegistry(vaultPath) {

@@ -118,7 +118,7 @@ export function validateVideoScriptShape(obj, segmentCount = VIDEO_SEGMENTS.leng
   if (!Array.isArray(obj.segments) || obj.segments.length !== segmentCount) {
     throw new Error(`Ollama video script must have exactly ${segmentCount} segments`);
   }
-  const bibleKeys = withWardrobe ? ['setting', 'look', 'camera', 'voice', 'wardrobe'] : ['setting', 'look', 'camera', 'voice'];
+  const bibleKeys = withWardrobe ? ['setting', 'look', 'camera', 'voice', 'wardrobe', 'cast'] : ['setting', 'look', 'camera', 'voice'];
   const missingBible = bibleKeys.find(
     (k) => typeof obj.bible?.[k] !== 'string' || !obj.bible[k].trim(),
   );

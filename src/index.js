@@ -9,6 +9,7 @@ import { selectTopic, recordUsage, withoutRunsOn } from './selectTopic.js';
 import { loadKnowledgeBase } from './loadKnowledgeBase.js';
 import { loadRegistry, claimRulesBlock, assertPublicName, claimFlags, claimSources, claimProblems } from './claimRules.js';
 import { selectFocus } from './seoFocus.js';
+import { selectAngle } from './topicAngles.js';
 import {
   selectProductHuntFormat,
   productHuntCooldown,
@@ -104,11 +105,15 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
     );
   }
 
-  const topic = selectTopic(knowledgeBase, history);
+  const picked = selectTopic(knowledgeBase, history);
+  // One approved topic repeats daily; its story angle rotates (topicAngles.js).
+  const angle = selectAngle(picked, history);
+  const topic = angle ? { ...picked, angle_id: angle.id, focus_angle: angle.focus } : picked;
   const priorUsedCount = (history.posts ?? []).filter((p) => p.topic_id === topic.id).length;
   console.log(
     `${LOG} Selected topic "${topic.id}" ` +
-      `(status=${topic.status}, prior used_count=${priorUsedCount}, cycle=${history.cycle_number ?? 1})`,
+      `(status=${topic.status}, prior used_count=${priorUsedCount}, cycle=${history.cycle_number ?? 1}` +
+      `${angle ? `, angle=${angle.id}` : ''})`,
   );
 
   const focus = selectFocus(history);

@@ -1,5 +1,5 @@
 import { VIDEO_SEGMENTS } from '../buildVideoScriptPrompt.js';
-import { isProductFootage, PRODUCT_FOOTAGE_SEGMENTS } from '../videoCharacter.js';
+import { isProductFootage, PRODUCT_FOOTAGE_SEGMENTS, logoRule } from '../videoCharacter.js';
 
 const RULE = '-'.repeat(64);
 
@@ -37,8 +37,8 @@ export function renderVideoScript({ topic, date, video, script, productName = 'R
   );
   const body = [RULE, 'SCRIPT (1 min, from Ollama — edit before recording)', RULE, segments.join('\n\n')].join('\n');
 
-  const presenter = character ? presenterBlock(character, script.bible, mode) : null;
-  return [header.join('\n'), youtube, presenter, body, continuity(script, { character, mode })].filter(Boolean).join('\n\n') + '\n';
+  const presenter = character ? presenterBlock(character, script.bible, mode, productName) : null;
+  return [header.join('\n'), youtube, presenter, body, continuity(script, { character, mode, productName })].filter(Boolean).join('\n\n') + '\n';
 }
 
 // AI video models render each 10-second clip independently, so the setting,
@@ -46,8 +46,9 @@ export function renderVideoScript({ topic, date, video, script, productName = 'R
 // and starts from the previous clip's last frame. The bible comes from the
 // model once; repeating it verbatim per clip is done here, not left to the
 // model, so the repetition can't be skipped.
-function continuity({ bible, segments }, { character, mode }) {
+function continuity({ bible, segments }, { character, mode, productName }) {
   const b = Object.fromEntries(Object.entries(bible).map(([k, v]) => [k, v.trim()]));
+  const logo = logoRule(character, productName);
   const clips = VIDEO_SEGMENTS.map((s, i) => {
     const footage = isProductFootage(mode, i);
     const start = startFrame(segments, mode, i);
@@ -69,6 +70,8 @@ function continuity({ bible, segments }, { character, mode }) {
           : `Character (identical in every clip — attach the reference image): ${character.identity}`,
         `Wardrobe (identical in every clip, never changes): ${b.wardrobe}`,
       );
+      if (b.cast && !footage) lines.push(`Cast (the same people in every clip, doing the activity with the presenter): ${b.cast}`);
+      if (logo && !footage) lines.push(`Logo (attach the logo image to every clip): ${logo}`);
     }
     lines.push(
       `Setting (unchanged in every clip): ${b.setting}`,
@@ -86,7 +89,10 @@ function continuity({ bible, segments }, { character, mode }) {
         `End frame: ${segments[i].ends_on.trim()}`,
         footage
           ? 'No on-screen text other than what the real recording shows. No music lyrics.'
-          : 'Same person, same face, same outfit, same lighting as every other clip. No other people, no scene cuts, no music lyrics, no subtitles.',
+          : b.cast
+            ? 'Same presenter, same cast, same faces, same outfits, same lighting as every other clip. No people beyond the cast, no scene cuts, no music lyrics, no subtitles. ' +
+              "Any tablet or phone is held in someone's hands, never resting on a surface; hand-held gear keeps the same type and count in every frame."
+            : 'Same person, same face, same outfit, same lighting as every other clip. No other people, no scene cuts, no music lyrics, no subtitles.',
       );
     } else {
       lines.push(
@@ -108,6 +114,9 @@ function continuity({ bible, segments }, { character, mode }) {
         '  voice for all six lines (one take, then lip-sync / audio-to-video per clip). Do not let',
         '  each clip invent its own voice and do not use a default TTS voice.',
         '- Wardrobe: if a clip changes the outfit, re-run it — do not fix it in editing.',
+        ...(character.logo
+          ? [`- Logo: attach ${character.logo} next to the character reference in EVERY clip; re-run any clip whose`, '  embroidered logo is redrawn, misspelled or replaced by another mark.']
+          : []),
         '- Best visual consistency: use image-to-video. Feed each clip the last frame of',
         '  the previous clip as its first-frame image (clip 1: the character keyframe still).',
         '- Gemini / Veo video generation: paste each clip prompt with 16:9 aspect ratio at 24fps.',
@@ -159,7 +168,7 @@ function startFrame(segments, mode, i) {
 
 // Top-of-file lock: who is on screen, what they wear, how they sound, and what
 // is real product footage vs. the character. Identity text comes from .env.
-function presenterBlock(character, bible, mode) {
+function presenterBlock(character, bible, mode, productName) {
   const lines = [
     RULE,
     'PRESENTER LOCK (same in every clip — do not edit between clips)',
@@ -168,7 +177,9 @@ function presenterBlock(character, bible, mode) {
     `Wardrobe: ${bible.wardrobe.trim()}`,
     `Human voice: ${bible.voice.trim()}`,
   ];
+  if (bible.cast) lines.push(`Cast: ${bible.cast.trim()}`);
   if (character.reference) lines.push(`Reference image to attach to every generation: ${character.reference}`);
+  if (character.logo) lines.push(`Logo reference image to attach to every generation: ${character.logo}`, `Logo rule: ${logoRule(character, productName)}`);
   lines.push(
     mode === 'product'
       ? `Visual mode: PRODUCT — clips ${PRODUCT_FOOTAGE_SEGMENTS.map((i) => i + 1).join(', ')} use your real product screen recording; the character opens and closes the film and the same voice runs throughout.`

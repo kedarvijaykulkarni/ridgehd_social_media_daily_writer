@@ -43,10 +43,14 @@ ${character.identity}
     : '';
   // Product footage needs a presenter (resolveVisualMode enforces it), so the
   // no-character prompt is always the original no-people one.
-  const presenterRules = character ? presenterRulesFor({ footageBlocks, productName }) : '- No people on screen at all: no crew, faces, hands or silhouettes, and no action that needs a person (loading, carrying, handling) — objects are shown at rest (the cover prompt has the same rule).';
+  const presenterRules = character ? presenterRulesFor({ footageBlocks, productName, character }) : '- No people on screen at all: no crew, faces, hands or silhouettes, and no action that needs a person (loading, carrying, handling) — objects are shown at rest (the cover prompt has the same rule).';
+  const branding = character?.logo
+    ? `the ONLY branding is the ${productName} logo, embroidered — name where (e.g. left chest, cap front, PFD shoulder); no other logos or readable text`
+    : 'no logos or readable text';
   const wardrobeKey = character
     ? `,
-    "wardrobe": "ONE complete outfit for the presenter, chosen to suit THIS setting, climate, weather and activity (name every garment, its colour and fit, footwear and accessories; no logos or readable text). Worn unchanged in every block"`
+    "wardrobe": "ONE complete outfit for the presenter, chosen to suit THIS setting, climate, weather and activity, including the safety gear the presenter needs to take part in the activity herself (name every garment, its colour and fit, footwear and accessories; ${branding}). Worn unchanged in every block",
+    "cast": "the 2-4 supporting participants who take part in the activity with the presenter (guests and/or crew): for EACH person their role, age range, look and outfit (crew outfits: ${branding}). The same people, in the same outfits, in every block"`
     : '';
   const voiceHint = character
     ? 'the presenter\'s ONE real human speaking voice: gender, age range, accent, pitch, pace, warmth, natural breathing — e.g. warm male, 30s, neutral international English, calm conversational pace. Never robotic, synthetic or text-to-speech sounding'
@@ -160,16 +164,31 @@ function footageRule(footageBlocks, productName) {
   );
 }
 
-function presenterRulesFor({ footageBlocks, productName }) {
+function presenterRulesFor({ footageBlocks, productName, character }) {
   const rules = [
-    '- PRESENTER: the person in PRESENTER is the ONLY person on screen and is the one speaking. ' +
-      'Same face, age, build, hair and skin tone in every block — never a new or different person, no crowd of extras.',
+    '- PRESENTER: the person in PRESENTER is the lead and the ONLY one speaking. ' +
+      'Same face, age, build, hair and skin tone in every block — never a new or different person.',
+    '- CAST: the bible\'s "cast" are the only other people on screen — real participants doing the activity WITH the presenter ' +
+      '(gearing up, listening to the briefing, signing, paddling/riding together). Same people and outfits in every block; ' +
+      'they never speak to camera and never replace the presenter. No crowd of extras beyond the cast.',
+    '- HANDS-ON REALISM: people physically do things. Whenever a tablet or phone appears, a person HOLDS it in their hands ' +
+      '(the presenter cradles it in one hand and taps with the other, or hands it to a participant who holds it to sign) — ' +
+      'it is never left on a rock, table, bench or any other surface, and never floats. Every hand-held object (tablet, paddle, ' +
+      'rope, board) keeps the same type, count and hand position from frame to frame. The presenter takes part in the real ' +
+      'activity of this setting with the cast in the final on-camera blocks (at least the Ending/CTA), with correct technique and safety gear.',
     '- WARDROBE: the bible\'s "wardrobe" is ONE outfit suited to the setting, climate and activity, worn unchanged in ' +
       'every block (same garments, colours, fit; nothing added, removed or swapped). Name it again in every visual.',
     '- VOICE: the presenter speaks the audio line to camera, lip-synced, in the one human voice from the bible — ' +
       'natural conversational phrasing with real breath and rhythm, short sentences, contractions allowed. ' +
       'Each visual states where the presenter stands, gaze, gesture and expression for that block.',
   ];
+  if (character?.logo) {
+    rules.push(
+      `- LOGO: a ${productName} logo image is attached to every generation. It is the only logo in the film: embroidered on the ` +
+        'presenter\'s and crew\'s gear (as named in wardrobe/cast) and shown on the Ending/CTA card. Describe it only as ' +
+        `"the ${productName} logo" — never describe or invent its shapes, colours or lettering, and add no other brand marks.`,
+    );
+  }
   if (footageBlocks.length) {
     rules.push(
       footageRule(footageBlocks, productName),

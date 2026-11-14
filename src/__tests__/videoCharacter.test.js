@@ -5,12 +5,13 @@ import { buildVideoScriptPrompt } from '../buildVideoScriptPrompt.js';
 import { validateVideoScriptShape } from '../callOllama.js';
 import { renderVideoScript } from '../lib/renderVideoScript.js';
 import { renderImagePrompt } from '../lib/renderImagePrompt.js';
+import { renderVideoCoverPrompt } from '../lib/renderVideoCoverPrompt.js';
 
 const CHARACTER = { identity: 'Aarav, 34, lean build, short black hair, warm brown skin, trimmed beard', reference: 'aarav.png' };
 const SHARED = { hook_line: 'h', core_message: 'c', call_to_action: 'a', image_prompt: 'i' };
 const VIDEO = { title: 'T', description: 'D' };
 const TOPIC = { id: 't', status: 'shipped', headline: 'T' };
-const BIBLE = { setting: 'Dock.', look: 'Sunny.', camera: 'Dolly.', voice: 'Warm male, 30s.', wardrobe: 'Navy rash vest, board shorts.' };
+const BIBLE = { setting: 'Dock.', look: 'Sunny.', camera: 'Dolly.', voice: 'Warm male, 30s.', wardrobe: 'Navy rash vest, board shorts.', cast: 'Two guests in rash vests.' };
 const SCRIPT = {
   bible: BIBLE,
   segments: [0, 1, 2, 3, 4, 5].map((i) => ({ visual: `V${i}`, audio: `A${i}`, ends_on: `E${i}` })),
@@ -18,7 +19,8 @@ const SCRIPT = {
 
 test('loadCharacter / resolveVisualMode', () => {
   assert.equal(loadCharacter({}), null);
-  assert.deepEqual(loadCharacter({ VIDEO_CHARACTER: ' Aarav ', VIDEO_CHARACTER_REF: ' a.png ' }), { identity: 'Aarav', reference: 'a.png' });
+  assert.deepEqual(loadCharacter({ VIDEO_CHARACTER: ' Aarav ', VIDEO_CHARACTER_REF: ' a.png ' }), { identity: 'Aarav', reference: 'a.png', logo: null });
+  assert.equal(loadCharacter({ VIDEO_CHARACTER: 'A', VIDEO_LOGO_REF: ' logo.png ' }).logo, 'logo.png');
   assert.equal(resolveVisualMode(undefined, null), 'none');
   assert.equal(resolveVisualMode('', CHARACTER), 'character');
   assert.equal(resolveVisualMode('product', CHARACTER), 'product');
@@ -34,7 +36,11 @@ test('loadCharacter / resolveVisualMode', () => {
 test('prompt with a character locks identity, wardrobe, human voice; drops the no-people rule', () => {
   const p = buildVideoScriptPrompt({ topic: TOPIC, shared: SHARED, video: VIDEO, character: CHARACTER, mode: 'character' });
   assert.ok(p.includes(CHARACTER.identity));
-  assert.match(p, /ONLY person on screen/);
+  assert.match(p, /the ONLY one speaking/);
+  assert.match(p, /"cast"/);
+  assert.match(p, /never left on a rock, table, bench or any other surface/);
+  assert.match(p, /no logos or readable text/);
+  assert.doesNotMatch(p, /- LOGO:/);
   assert.match(p, /"wardrobe"/);
   assert.match(p, /Never robotic/);
   assert.doesNotMatch(p, /No people on screen at all/);
@@ -102,4 +108,34 @@ test('product mode rejects footage visuals that skip the prefix or invent UI tex
   assert.throws(() => validateVideoScriptShape(footage('Screen recording of the real RidgeHQ product: revenue up 40%.'), 6, opts), /product footage/);
   // Character mode doesn't apply the footage rule.
   assert.doesNotThrow(() => validateVideoScriptShape(SCRIPT, 6, { withWardrobe: true, mode: 'character' }));
+});
+
+const LOGO_CHAR = { ...CHARACTER, logo: 'ridgehq-logo.png' };
+
+test('a logo reference makes the attached logo the only branding, in every output', () => {
+  const p = buildVideoScriptPrompt({ topic: TOPIC, shared: SHARED, video: VIDEO, character: LOGO_CHAR, mode: 'character', productName: 'RidgeHQ' });
+  assert.match(p, /ONLY branding is the RidgeHQ logo, embroidered/);
+  assert.match(p, /- LOGO: a RidgeHQ logo image is attached/);
+  assert.doesNotMatch(p, /no logos or readable text/);
+
+  const txt = renderVideoScript({ topic: TOPIC, date: 'd', video: VIDEO, script: SCRIPT, character: LOGO_CHAR, mode: 'character' });
+  assert.match(txt, /^Logo reference image to attach to every generation: ridgehq-logo\.png$/m);
+  assert.equal(txt.match(/^Logo \(attach the logo image to every clip\): .*ridgehq-logo\.png/gm).length, 6);
+
+  const key = renderImagePrompt({ topic: TOPIC, date: 'd', imagePrompt: 'x', character: LOGO_CHAR, bible: BIBLE });
+  assert.ok(key.includes('attached logo image (ridgehq-logo.png)'));
+  assert.doesNotMatch(key, /no text, no logos/);
+  const cover = renderVideoCoverPrompt({ topic: TOPIC, date: 'd', video: VIDEO, bible: BIBLE, character: LOGO_CHAR });
+  assert.ok(cover.includes('attached logo image (ridgehq-logo.png)'));
+  assert.match(cover, /any logo other than the attached one/);
+});
+
+test('the cast is repeated in every on-camera clip and is required with a presenter', () => {
+  const txt = renderVideoScript({ topic: TOPIC, date: 'd', video: VIDEO, script: SCRIPT, character: CHARACTER, mode: 'product' });
+  assert.match(txt, /^Cast: Two guests in rash vests\.$/m);
+  // Footage clips 3-5 are screen recordings: no cast line there.
+  assert.equal(txt.match(/^Cast \(the same people in every clip/gm).length, 3);
+  assert.match(txt, /held in someone's hands, never resting on a surface/);
+  const noCast = { ...SCRIPT, bible: { ...BIBLE, cast: '' } };
+  assert.throws(() => validateVideoScriptShape(noCast, 6, { withWardrobe: true }), /cast/);
 });

@@ -37,7 +37,7 @@ export async function writeCover({ outputDir, vaultPath, date, characterRef, pro
   // only override.
   const reference = characterRef?.trim() || parsed.reference;
   const identity = parsed.identity;
-  const character = identity || reference ? { identity, reference } : null;
+  const character = identity || reference ? { identity, reference, logo: parsed.logo } : null;
   const cover = renderVideoCoverPrompt({
     topic: parsed.topic, date, video: parsed.video, bible: parsed.bible, character, productName,
   });

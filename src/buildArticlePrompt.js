@@ -71,7 +71,7 @@ PRIMARY TOPIC (do not deviate from this fact set):
 - Headline: ${topic.headline}
 - Detail: ${topic.detail}
 - Audience angle: ${topic.audience_angle}
-- Status: ${topic.status}
+${topic.focus_angle ? `- This run's angle: ${topic.focus_angle} (the other approved points may support it)\n` : ''}- Status: ${topic.status}
 - ${statusRule}
 
 SUPPORTING MATERIAL (all SHIPPED — you MAY reference these to add depth and
