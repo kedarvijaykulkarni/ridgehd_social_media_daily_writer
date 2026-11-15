@@ -1,4 +1,5 @@
-import { VIDEO_SEGMENTS } from '../buildVideoScriptPrompt.js';
+import { VIDEO_SEGMENTS, SITE_HOST } from '../buildVideoScriptPrompt.js';
+import { CONTACT_EMAIL } from '../seoFocus.js';
 import { isProductFootage, PRODUCT_FOOTAGE_SEGMENTS, logoRule } from '../videoCharacter.js';
 
 const RULE = '-'.repeat(64);
@@ -80,6 +81,9 @@ function continuity({ bible, segments }, { character, mode, productName }) {
       `Start frame: ${start}`,
       `Action: ${segments[i].visual.trim()}`,
     );
+    if (!footage) {
+      lines.push('Realism lock: live-action photorealism, natural texture and motion; unchanged light direction, weather and shadows. No glowing streams, floating graphics or generated UI. Device screens face their holder and remain unreadable.');
+    }
     if (character) {
       lines.push(
         footage
@@ -143,6 +147,10 @@ function continuity({ bible, segments }, { character, mode, productName }) {
     clips.join('\n\n'),
     '',
     'PRODUCTION NOTES',
+    '- Reference filenames are reminders only: this CLI does not load or attach images. Attach the actual files in your generation tool.',
+    '- Approve an opening keyframe with the final wardrobe, props and environment before animating; use the portrait reference for identity.',
+    `- Closing card: add the original brand logo, ${SITE_HOST} and ${CONTACT_EMAIL} in editing over the final hold; do not generate this text inside the video.`,
+    '- Check each clip and every join for face, fingers, lip-sync, supporting hand, prop count, cast positions, logo distortion and lighting drift. Measure the actual audio duration before rendering.',
     ...notes,
   ].join('\n');
 }

@@ -13,7 +13,7 @@
 // impressions — keep them to phrases the linked page actually serves.
 
 export const SITE_URL = 'https://www.ridgehq.app';
-// Shown and spoken in the video script's closing CTA.
+// Shown on the editor-added video closing card.
 export const CONTACT_EMAIL = 'social@ridgehq.app';
 
 // Always present on every hashtag-bearing platform and in long-form tags.

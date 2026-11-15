@@ -142,14 +142,26 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
   briefs missing the `Screen recording of the real …` prefix or containing
   quotes/digits); clip 6 resumes on the last presenter frame. Either mode
   without `VIDEO_CHARACTER` throws. `image-prompt.txt` gains a character
-  keyframe. The bible also carries a fixed `cast` (2-4 participants doing the
-  activity with the presenter, never speaking) and the prompt bans tablets/phones
+  keyframe. The bible also carries a fixed `cast` (presenter only unless the topic
+  needs supporting participants, never speaking) and the prompt bans tablets/phones
   resting on surfaces — someone holds them. `VIDEO_LOGO_REF` (optional) makes the
   attached logo image the only branding, embroidered on presenter/crew gear,
   named in every clip, the keyframe and the cover. Unset = old no-people behaviour. `npm run cover -- --date
   YYYY-MM-DD` rebuilds `video-cover-image.txt` from that day's
   `video-script.txt` (its presenter, not today's `.env`). Not covered by a
-  live Ollama run.
+  live Ollama run by the unit suite. Video prompts take the selected topic's approved
+  detail and the vertical's physical scene, not the social image's visual metaphor.
+  Waiver demo guidance is conditional on the waiver topic. Photorealism, fixed light
+  and weather, simple actions and unreadable AI device screens are prompt rules;
+  only real product footage may demonstrate UI. Validation retries audio above
+  20 words per clip (16 for the closing CTA); measure actual speech separately.
+  Add the original logo, website and email closing card in editing. Reference
+  filenames are reminders, never loaded or attached by the CLI.
+  `src/videoTopicDirection.js` chooses a topic-specific filming brief from the ten
+  eligible facts; it grants no claim approval. Both short and long-form commands
+  call this same video pipeline. `src/__tests__/generateLongVideo.test.js` exercises
+  the package's `generate:long` command with stubbed Ollama responses, checking
+  Brain fact/audience/scene inputs and the written video and blog outputs.
 
 ## Rules specific to this app
 

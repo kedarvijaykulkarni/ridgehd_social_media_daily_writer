@@ -139,14 +139,14 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
   };
 
   // 1-minute video script: one more Ollama pass, built from the same shared
-  // object (headline + image prompt + hook/core message/CTA).
+  // topic fact + vertical's physical scene + shared hook/core message/CTA.
   const video = videoMeta({ topic, shared });
   console.log(`${LOG} Video: generating 1-minute script for "${topic.id}"...`);
   const character = loadCharacter();
   const visualMode = resolveVisualMode(videoMode ?? process.env.VIDEO_VISUAL_MODE, character);
   console.log(`${LOG} Video: visual mode "${visualMode}"${character ? ' (presenter from VIDEO_CHARACTER)' : ''}`);
   const script = await callOllamaVideoScript(
-    buildVideoScriptPrompt({ topic, shared, video, productName: PRODUCT_NAME, character, mode: visualMode, claimRules }),
+    buildVideoScriptPrompt({ topic, shared, video, scene: focus.vertical.scene, audience: focus.vertical.name, productName: PRODUCT_NAME, character, mode: visualMode, claimRules }),
     { withWardrobe: Boolean(character), mode: visualMode, productName: PRODUCT_NAME, ...claimRetry },
   );
   Object.assign(generated, claimSources('video-script.txt + video-cover-image.txt', script));
