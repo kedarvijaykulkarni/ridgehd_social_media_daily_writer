@@ -171,6 +171,26 @@ character keyframe. Two visual modes (`VIDEO_VISUAL_MODE`, or per run
 Either mode without `VIDEO_CHARACTER` is an error. Leave both unset for the
 original no-people video.
 
+Video scenes use the selected topic's registry-approved detail and the rotated
+vertical's physical location. They do not inherit the social image's illustrative
+style or metaphor. All six blocks stay on that topic; waiver-signing guidance is
+included only for the waiver topic. Presenter scenes use live-action photorealism,
+fixed lighting/weather, simple actions and unreadable device screens. Supporting
+cast is optional. Use `product` mode for a real UI demonstration.
+`src/videoTopicDirection.js` supplies a distinct filming brief for each of the ten
+eligible Brain topics (for example, payment administration, guest arrival, gear
+maintenance and trip planning). These briefs direct the scene; they never approve
+product claims. `generate`, `generate:long` and their dry-run variants all use this
+same video pipeline, including the selected vertical's audience and location.
+
+Audio validation retries lines over 20 whitespace-separated words (16 for the
+closing CTA). This is a timing budget, not a measured speech duration: check the
+actual recording, especially the spoken website. The email and original logo go
+on a closing card added in editing. Reference filenames are reminders only; the
+CLI never loads or attaches those images. Approve a keyframe with the final outfit
+and environment, attach the images manually, and inspect each rendered clip and
+join. Prompt rules cannot guarantee topic accuracy or visual continuity.
+
 ### YouTube cover prompt
 
 Every `generate` also writes `video-cover-image.txt`, a Gemini thumbnail

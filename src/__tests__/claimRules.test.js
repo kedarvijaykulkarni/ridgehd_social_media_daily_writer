@@ -195,6 +195,7 @@ test('every prompt also carries the copy rules found missing in the 2026-11-07 o
   const { COPY_RULES } = await import('../claimRules.js');
   const block = claimRulesBlock(await loadRegistry(FIXTURE_VAULT), TODAY);
   for (const rule of COPY_RULES) assert.ok(block.includes(rule), rule.slice(0, 40));
+  assert.match(block, /Unless explicitly stated in an approved fact above, do not claim/);
   for (const term of [/guarantees/, /mandatory/, /check-in/, /replaces other tools/, /first-person operator experience/, /closing payoff/]) {
     assert.match(block, term);
   }

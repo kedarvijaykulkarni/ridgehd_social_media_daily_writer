@@ -1,4 +1,5 @@
 import { SITE_HOST } from '../buildVideoScriptPrompt.js';
+import { logoRule } from '../videoCharacter.js';
 
 const RULE = '-'.repeat(64);
 
@@ -20,6 +21,7 @@ export function renderVideoCoverPrompt({ topic, date, video, bible = {}, charact
           : 'Use the attached reference image as the presenter — keep the face, hair, skin tone and build exactly the same.',
         character.identity ? `Presenter: ${character.identity}.` : null,
         `Outfit: ${bible.wardrobe?.trim() || 'an outfit suited to the setting below (same outfit as the video)'}.`,
+        logoRule(character, productName),
         'Expression: confident, relieved, slightly smiling, looking straight into the camera. Natural skin texture, correct hands.',
       ].filter(Boolean)
     : ['No people in the image — make the scene itself the hero.'];
@@ -56,7 +58,7 @@ export function renderVideoCoverPrompt({ topic, date, video, bible = {}, charact
     '- Make ONE key word of the headline coral; the rest white with a thin dark outline/shadow so it reads at 168x94 px.',
     `- Small tag bottom-left: "${SITE_HOST}" (white, small).`,
     '',
-    `AVOID: any other text, watermarks, competitor logos, fake dashboards or numbers, ${character ? 'extra people, distorted hands/faces' : 'any people or faces'}, misspelled words, red "play" buttons, clickbait claims.`,
+    `AVOID: any other text, watermarks, ${character?.logo ? 'any logo other than the attached one' : 'competitor logos'}, fake dashboards or numbers, ${character ? 'extra people, distorted hands/faces' : 'any people or faces'}, misspelled words, red "play" buttons, clickbait claims.`,
   ].join('\n');
 
   const header = [
@@ -73,7 +75,7 @@ export function renderVideoCoverPrompt({ topic, date, video, bible = {}, charact
     'HOW TO USE IN GEMINI',
     RULE,
     character
-      ? '1. Open Gemini and attach your presenter reference image (the same one used for the video clips), e.g. @Olivia.'
+      ? `1. Open Gemini and attach your presenter reference image (the same one used for the video clips), e.g. @Olivia${character.logo ? `, plus the logo image ${character.logo}` : ''}.`
       : '1. Open Gemini. No reference image — this video has no presenter, so the thumbnail has no people.',
     '2. Paste the prompt above. Ask for 3-4 variations and pick the most readable one.',
     character

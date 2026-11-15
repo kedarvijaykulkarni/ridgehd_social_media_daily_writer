@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { validateVideoScriptShape } from '../callOllama.js';
+import { validateVideoScriptShape, callOllamaVideoScript } from '../callOllama.js';
 
 const seg = (i) => ({ visual: `visual ${i}`, audio: `audio ${i}`, ends_on: `end ${i}` });
 const bible = { setting: 's', look: 'l', camera: 'c', voice: 'v' };
@@ -41,4 +41,32 @@ test('rejects a script that repeats the same dialogue in two blocks', async () =
   const segments = [0, 1, 2, 3, 4, 5].map((i) => ({ visual: `v${i}`, audio: i >= 3 && i <= 4 ? line : `Unique line number ${i} about topic ${'x'.repeat(i)}`, ends_on: `e${i}` }));
   const bible = { setting: 's', look: 'l', camera: 'c', voice: 'v' };
   assert.throws(() => validateVideoScriptShape({ bible, segments }), /repeat the same dialogue/);
+});
+
+test('enforces speech budgets for both ordinary clips and the closing hold', () => {
+  for (const [index, limit] of [[0, 20], [5, 16]]) {
+    const segments = [0, 1, 2, 3, 4, 5].map(seg);
+    segments[index].audio = Array(limit).fill('word').join(' ');
+    assert.doesNotThrow(() => validateVideoScriptShape({ bible, segments }));
+    segments[index].audio += ' extra';
+    assert.throws(() => validateVideoScriptShape({ bible, segments }), new RegExp(`segment ${index} audio.*at most ${limit}`));
+  }
+});
+
+test('overlong CTA is retried with actionable feedback, never silently truncated', async (t) => {
+  const clean = { bible, segments: [0, 1, 2, 3, 4, 5].map(seg) };
+  const dirty = structuredClone(clean);
+  dirty.segments[5].audio = 'Explore how RidgeHQ streamlines your bookings and operations. Visit ridgehq.app or reach out to our team at social@ridgehq.app to learn more.';
+  const answers = [dirty, clean];
+  const prompts = [];
+  const original = globalThis.fetch;
+  t.after(() => { globalThis.fetch = original; });
+  globalThis.fetch = async (_url, init) => {
+    prompts.push(JSON.parse(init.body).prompt);
+    return { ok: true, json: async () => ({ response: JSON.stringify(answers.shift()) }) };
+  };
+  const result = await callOllamaVideoScript('video prompt', { host: 'http://stub' });
+  assert.deepEqual(result, clean);
+  assert.equal(prompts.length, 2);
+  assert.match(prompts[1], /segment 5 audio.*at most 16 words/);
 });

@@ -54,6 +54,7 @@ export function withoutRunsOn(history, date) {
 // rotation advances independently of the topic rotation.
 export function recordUsage({ knowledgeBase, history, topic, date, focus, producthuntFormat, producthuntDiscussion }) {
   const entry = { date, topic_id: topic.id, angle_used: topic.category };
+  if (topic.angle_id) entry.topic_angle_id = topic.angle_id;
   if (focus) Object.assign(entry, { vertical_id: focus.vertical.id, platform_id: focus.platform.id });
   if (producthuntFormat) entry.producthunt_format_id = producthuntFormat.id;
   if (producthuntDiscussion) entry.producthunt_discussion = true;

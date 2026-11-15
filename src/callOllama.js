@@ -1,4 +1,4 @@
-import { VIDEO_SEGMENTS, footagePrefix } from './buildVideoScriptPrompt.js';
+import { VIDEO_SEGMENTS, VIDEO_AUDIO_MAX_WORDS, VIDEO_CTA_MAX_WORDS, footagePrefix } from './buildVideoScriptPrompt.js';
 import { isProductFootage } from './videoCharacter.js';
 
 const DEFAULT_HOST = 'http://localhost:11434';
@@ -118,7 +118,7 @@ export function validateVideoScriptShape(obj, segmentCount = VIDEO_SEGMENTS.leng
   if (!Array.isArray(obj.segments) || obj.segments.length !== segmentCount) {
     throw new Error(`Ollama video script must have exactly ${segmentCount} segments`);
   }
-  const bibleKeys = withWardrobe ? ['setting', 'look', 'camera', 'voice', 'wardrobe'] : ['setting', 'look', 'camera', 'voice'];
+  const bibleKeys = withWardrobe ? ['setting', 'look', 'camera', 'voice', 'wardrobe', 'cast'] : ['setting', 'look', 'camera', 'voice'];
   const missingBible = bibleKeys.find(
     (k) => typeof obj.bible?.[k] !== 'string' || !obj.bible[k].trim(),
   );
@@ -127,6 +127,13 @@ export function validateVideoScriptShape(obj, segmentCount = VIDEO_SEGMENTS.leng
   const bad = obj.segments.findIndex((s) => !s || !filled(s.visual) || !filled(s.audio) || !filled(s.ends_on));
   if (bad !== -1) {
     throw new Error(`Ollama video script segment ${bad} is missing a visual, audio or ends_on line`);
+  }
+  for (const [i, segment] of obj.segments.entries()) {
+    const limit = i === segmentCount - 1 ? VIDEO_CTA_MAX_WORDS : VIDEO_AUDIO_MAX_WORDS;
+    const words = segment.audio.trim().split(/\s+/).length;
+    if (words > limit) {
+      throw new Error(`Ollama video script segment ${i} audio has ${words} words; use at most ${limit} words to fit ten seconds with pauses`);
+    }
   }
   const prefix = footagePrefix(productName).toLowerCase();
   const badFootage = obj.segments.findIndex(

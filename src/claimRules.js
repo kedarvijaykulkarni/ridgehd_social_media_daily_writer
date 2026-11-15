@@ -28,6 +28,16 @@ export const CHANNEL = 'social';
 // the pricing topic once the owner approves a flat-pricing fact for social.
 export const TOPIC_FACTS = {
   'waiver-system': 'feature.waivers',
+  // RidgeHQAPP DECISIONS #216 (2026-11-14): social-only feature facts.
+  'guest-self-check-in-by-qr': 'feature.guest-self-check-in',
+  'gift-vouchers': 'feature.gift-vouchers',
+  'manage-booking-link': 'feature.manage-booking',
+  'request-a-time': 'feature.request-a-time',
+  'session-move-notices': 'feature.session-move-notices',
+  'gear-maintenance-hold': 'feature.gear-maintenance-hold',
+  'direct-card-payments': 'feature.direct-card-payments',
+  'multi-day-trips-and-room-blocks': 'feature.multi-day-trips',
+  'partner-commission-invoices': 'feature.partner-invoices',
 };
 
 export async function loadRegistry(vaultPath) {
@@ -219,8 +229,8 @@ export const COPY_RULES = [
     'responsible for their own waiver content and process.',
   'Never say a waiver is mandatory or required before booking, check-in or an activity, and never ' +
     'say the product blocks or confirms anything.',
-  'Do not claim integrations, automation, check-in, booking-workflow, audit-trail, archive, tracking ' +
-    'or reporting features, and do not say the product replaces other tools or spreadsheets.',
+  'Unless explicitly stated in an approved fact above, do not claim integrations, automation, check-in, booking-workflow, audit-trail, archive, tracking ' +
+    'or reporting features. Never expand an approved fact into a claim that the product replaces other tools or spreadsheets.',
   'Invent nothing: no numbers, example volumes ("twenty trips a month"), scenarios, customer results ' +
     '("saves hours", "maximize profitability") or first-person operator experience ("as an operator, I know").',
   '0% commission may appear only as a short supporting detail — never as the headline, the closing ' +

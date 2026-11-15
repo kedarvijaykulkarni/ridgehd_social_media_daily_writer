@@ -30,7 +30,7 @@ TODAY'S TOPIC (do not deviate from this fact set):
 - Headline: ${topic.headline}
 - Detail: ${topic.detail}
 - Audience angle: ${topic.audience_angle}
-- Status: ${topic.status}   (if "planned" or "unverified", write in future/roadmap
+${topic.focus_angle ? `- This run's angle: ${topic.focus_angle} (the other approved points may support it)\n` : ''}- Status: ${topic.status}   (if "planned" or "unverified", write in future/roadmap
   framing — e.g. "coming soon" — never as a present-tense claim)
 - Suggested visual theme: ${topic.suggested_visual_theme} — set in ${focus.vertical.scene}
 

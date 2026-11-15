@@ -36,3 +36,10 @@ test('roadmap warning only when the topic is not shipped', () => {
   const shipped = renderVideoScript({ topic: { ...PLANNED, status: 'shipped' }, date: 'd', video: VIDEO, script: SCRIPT });
   assert.doesNotMatch(shipped, /ROADMAP/);
 });
+
+test('isolated clip prompts carry realism instructions and separate editorial graphics', () => {
+  const txt = renderVideoScript({ topic: PLANNED, date: 'd', video: VIDEO, script: SCRIPT });
+  assert.equal(txt.match(/^Realism lock:/gm).length, 6);
+  assert.match(txt, /this CLI does not load or attach images/);
+  assert.match(txt, /Closing card: add the original brand logo, ridgehq.app and social@ridgehq.app in editing/);
+});

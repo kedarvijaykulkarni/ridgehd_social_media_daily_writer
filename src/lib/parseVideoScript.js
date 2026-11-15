@@ -10,6 +10,14 @@ export function parseVideoScript(text) {
   if (!title || !description) throw new Error('video-script.txt has no YouTube Title/Description block');
   const clip1 = text.slice(Math.max(0, text.indexOf('CLIP 1 of')));
   const grab = (re) => clip1.match(re)?.[1]?.trim();
+  const segRe = /(\d+–\d+ sec) — ([^\n]+)\r?\nVisual: ([^\n]+)\r?\nAudio: ([^\n]+)\r?\nEnds on: ([^\n]+)/g;
+  const segments = [...text.matchAll(segRe)].map((m) => ({
+    time: m[1],
+    label: m[2],
+    visual: m[3],
+    audio: m[4],
+    ends_on: m[5],
+  }));
   return {
     topic: {
       id: id || 'unknown',
@@ -19,6 +27,7 @@ export function parseVideoScript(text) {
       status: line(/^⚠️ ROADMAP: topic status is "([^"]+)"/m) ?? 'shipped',
     },
     video: { title, description },
+    segments,
     bible: {
       setting: grab(/^Setting \(unchanged in every clip\): (.+)$/m),
       look: grab(/^Look \(unchanged\): (.+)$/m),
@@ -26,5 +35,6 @@ export function parseVideoScript(text) {
     },
     identity: grab(/^Character \(identical in every clip[^)]*\): (.+)$/m) ?? null,
     reference: line(/^Reference image to attach to every generation: (.+)$/m),
+    logo: line(/^Logo reference image to attach to every generation: (.+)$/m),
   };
 }

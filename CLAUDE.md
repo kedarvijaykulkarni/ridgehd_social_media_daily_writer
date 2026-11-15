@@ -73,7 +73,11 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
   in the vault's `wiki/ai-operations/facts/registry.json` are offered,
   speaking in that fact's statement; every product prompt carries its
   CLAIM RULES block (approved statements + internal never-claim rules).
-  Today that is one topic: waivers. The gate picks topics and instructs the
+  Today that is ten topics: waivers plus the nine social-only `feature.*`
+  facts of RidgeHQAPP DECISIONS #216 (2026-11-14), each mapped from its §2
+  bullet slug. `src/topicAngles.js` also rotates the story angle within the
+  waiver topic (least-recently-used, `topic_angle_id` in history), each angle
+  a part of the approved statement. The gate picks topics and instructs the
   model; it cannot guarantee the output — `claimFlags` marks risky wording
   in `social-posts.txt` for the human review. See
   `docs/business-context-reference.md`.
@@ -138,10 +142,26 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
   briefs missing the `Screen recording of the real …` prefix or containing
   quotes/digits); clip 6 resumes on the last presenter frame. Either mode
   without `VIDEO_CHARACTER` throws. `image-prompt.txt` gains a character
-  keyframe. Unset = old no-people behaviour. `npm run cover -- --date
+  keyframe. The bible also carries a fixed `cast` (presenter only unless the topic
+  needs supporting participants, never speaking) and the prompt bans tablets/phones
+  resting on surfaces — someone holds them. `VIDEO_LOGO_REF` (optional) makes the
+  attached logo image the only branding, embroidered on presenter/crew gear,
+  named in every clip, the keyframe and the cover. Unset = old no-people behaviour. `npm run cover -- --date
   YYYY-MM-DD` rebuilds `video-cover-image.txt` from that day's
   `video-script.txt` (its presenter, not today's `.env`). Not covered by a
-  live Ollama run.
+  live Ollama run by the unit suite. Video prompts take the selected topic's approved
+  detail and the vertical's physical scene, not the social image's visual metaphor.
+  Waiver demo guidance is conditional on the waiver topic. Photorealism, fixed light
+  and weather, simple actions and unreadable AI device screens are prompt rules;
+  only real product footage may demonstrate UI. Validation retries audio above
+  20 words per clip (16 for the closing CTA); measure actual speech separately.
+  Add the original logo, website and email closing card in editing. Reference
+  filenames are reminders, never loaded or attached by the CLI.
+  `src/videoTopicDirection.js` chooses a topic-specific filming brief from the ten
+  eligible facts; it grants no claim approval. Both short and long-form commands
+  call this same video pipeline. `src/__tests__/generateLongVideo.test.js` exercises
+  the package's `generate:long` command with stubbed Ollama responses, checking
+  Brain fact/audience/scene inputs and the written video and blog outputs.
 
 ## Rules specific to this app
 
@@ -163,8 +183,8 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
    (`BUSINESS_VAULT_PATH`):
    - **Marketing approval is the registry, not §2.** A ✅ row is *built*;
      it is only *sellable* on social when `wiki/ai-operations/facts/registry.json`
-     allows it there (DECISIONS #165(4): waivers are the only approved
-     feature claim). `src/claimRules.js` gates topics on it — don't widen
+     allows it there (DECISIONS #165(4) approved waivers; #216 added nine
+     more features, social only). `src/claimRules.js` gates topics on it — don't widen
      `TOPIC_FACTS` without a registry fact.
    - `✅ Solid and verifiable — sell on this` → safe to state present-tense
      once the registry approves it.
@@ -227,6 +247,8 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
   (malformed hashtag/subreddit arrays) through all four formatters.
 - `src/__tests__/selectTopic.test.js` — same-day re-run replacement
   (`withoutRunsOn`).
+- `src/__tests__/topicAngles.test.js` — angle rotation within one topic and
+  the prompt's angle line.
 - `src/platformFormatters/__tests__/reddit.test.js` — Reddit title cut at the
   hard limit; link/hashtag review flag.
 - `src/lib/__tests__/composeText.test.js` — sentence splitting; X hook

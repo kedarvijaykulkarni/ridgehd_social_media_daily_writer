@@ -9,6 +9,7 @@ import { selectTopic, recordUsage, withoutRunsOn } from './selectTopic.js';
 import { loadKnowledgeBase } from './loadKnowledgeBase.js';
 import { loadRegistry, claimRulesBlock, assertPublicName, claimFlags, claimSources, claimProblems } from './claimRules.js';
 import { selectFocus } from './seoFocus.js';
+import { selectAngle } from './topicAngles.js';
 import {
   selectProductHuntFormat,
   productHuntCooldown,
@@ -104,11 +105,15 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
     );
   }
 
-  const topic = selectTopic(knowledgeBase, history);
+  const picked = selectTopic(knowledgeBase, history);
+  // One approved topic repeats daily; its story angle rotates (topicAngles.js).
+  const angle = selectAngle(picked, history);
+  const topic = angle ? { ...picked, angle_id: angle.id, focus_angle: angle.focus } : picked;
   const priorUsedCount = (history.posts ?? []).filter((p) => p.topic_id === topic.id).length;
   console.log(
     `${LOG} Selected topic "${topic.id}" ` +
-      `(status=${topic.status}, prior used_count=${priorUsedCount}, cycle=${history.cycle_number ?? 1})`,
+      `(status=${topic.status}, prior used_count=${priorUsedCount}, cycle=${history.cycle_number ?? 1}` +
+      `${angle ? `, angle=${angle.id}` : ''})`,
   );
 
   const focus = selectFocus(history);
@@ -134,14 +139,14 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
   };
 
   // 1-minute video script: one more Ollama pass, built from the same shared
-  // object (headline + image prompt + hook/core message/CTA).
+  // topic fact + vertical's physical scene + shared hook/core message/CTA.
   const video = videoMeta({ topic, shared });
   console.log(`${LOG} Video: generating 1-minute script for "${topic.id}"...`);
   const character = loadCharacter();
   const visualMode = resolveVisualMode(videoMode ?? process.env.VIDEO_VISUAL_MODE, character);
   console.log(`${LOG} Video: visual mode "${visualMode}"${character ? ' (presenter from VIDEO_CHARACTER)' : ''}`);
   const script = await callOllamaVideoScript(
-    buildVideoScriptPrompt({ topic, shared, video, productName: PRODUCT_NAME, character, mode: visualMode, claimRules }),
+    buildVideoScriptPrompt({ topic, shared, video, scene: focus.vertical.scene, audience: focus.vertical.name, productName: PRODUCT_NAME, character, mode: visualMode, claimRules }),
     { withWardrobe: Boolean(character), mode: visualMode, productName: PRODUCT_NAME, ...claimRetry },
   );
   Object.assign(generated, claimSources('video-script.txt + video-cover-image.txt', script));
