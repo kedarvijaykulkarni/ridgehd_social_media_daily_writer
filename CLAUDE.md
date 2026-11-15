@@ -54,7 +54,7 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
 
   --long-form only: same topic, 2nd Ollama pass
     src/buildArticlePrompt.js → callOllamaArticle → one article object
-      ├─ src/lib/renderBlogPost.js        → output/YYYY-MM-DD/blog-post.md        (frontmatter, company voice, SEO)
+      ├─ src/lib/renderBlogPost.js        → output/YYYY-MM-DD/<slug>.md           (frontmatter, company voice, SEO)
       └─ src/lib/renderLinkedInArticle.js → output/YYYY-MM-DD/linkedin-article.md (first-person hook, no frontmatter)
 
   --producthunt only: same topic, cooldown-gated extra Ollama pass
@@ -103,7 +103,12 @@ BUSINESS_VAULT_PATH (.env)                 external RidgeHQ business Obsidian va
   `buildOllamaPrompt.js`, `buildArticlePrompt.js`, `renderSocialText.js`,
   `renderImagePrompt.js`, and both long-form renderers.
 - **`--long-form`** (`generate` flag; `npm run generate:long`) adds one
-  Ollama pass on the same topic → `blog-post.md` + `linkedin-article.md`.
+  Ollama pass on the same topic → `<slug>.md` + `linkedin-article.md`.
+  The blog filename, frontmatter slug and canonical URL share one normalized slug
+  (`blogSlug` in `renderBlogPost.js`). Same-day reruns remove legacy `blog-post.md`
+  and recognizable generated blog drafts with obsolete slugs; other Markdown is
+  preserved. The `generateLongVideo` integration test covers slug filenames,
+  changed-slug and short-only reruns, and dry-run preservation.
   Same ✅/❌ claim rail as the short-form path (rule 4). `BLOG_BASE_URL`
   (`.env`, default `https://www.ridgehq.app/blog`) only feeds the blog
   post's `canonical_url`. `src/callOllama.js` shares one request/parse/

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import 'dotenv/config';
 import { Command } from 'commander';
-import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, rm, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -29,7 +29,7 @@ import { formatReddit } from './platformFormatters/reddit.js';
 import { renderSocialText } from './lib/renderSocialText.js';
 import { renderImagePrompt } from './lib/renderImagePrompt.js';
 import { renderVideoScript } from './lib/renderVideoScript.js';
-import { renderBlogPost } from './lib/renderBlogPost.js';
+import { renderBlogPost, blogSlug } from './lib/renderBlogPost.js';
 import { renderLinkedInArticle } from './lib/renderLinkedInArticle.js';
 import { renderProductHuntPost, renderProductHuntDiscussion } from './lib/renderProductHuntPost.js';
 import { videoMeta } from './lib/videoMeta.js';
@@ -165,6 +165,7 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
   // Long-form: one extra Ollama pass on the SAME topic -> a website blog
   // post + a LinkedIn article (separate from the short LinkedIn post above).
   let blogPostMd = null;
+  let blogPostFilename = null;
   let linkedinArticleMd = null;
   if (longForm) {
     console.log(`${LOG} Long-form: generating blog post + LinkedIn article for "${topic.id}"...`);
@@ -172,7 +173,8 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
       buildArticlePrompt({ topic, knowledgeBase, history, focus, productName: PRODUCT_NAME, claimRules }),
       { ...claimRetry },
     );
-    Object.assign(generated, claimSources('blog-post.md + linkedin-article.md', article));
+    blogPostFilename = `${blogSlug(article, topic)}.md`;
+    Object.assign(generated, claimSources(`${blogPostFilename} + linkedin-article.md`, article));
     blogPostMd = renderBlogPost({
       topic,
       date,
@@ -248,7 +250,7 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
     console.log(videoScriptText);
     console.log(coverPromptText);
     if (longForm) {
-      console.log('\n=== blog-post.md ===\n');
+      console.log(`\n=== ${blogPostFilename} ===\n`);
       console.log(blogPostMd);
       console.log('\n=== linkedin-article.md ===\n');
       console.log(linkedinArticleMd);
@@ -267,7 +269,8 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
     'image-prompt.txt': imagePromptText,
     'video-script.txt': videoScriptText,
     'video-cover-image.txt': coverPromptText,
-    'blog-post.md': blogPostMd,
+    'blog-post.md': null, // Remove the legacy fixed-name draft on the next run.
+    ...(blogPostFilename ? { [blogPostFilename]: blogPostMd } : {}),
     'linkedin-article.md': linkedinArticleMd,
     'producthunt-post.txt': productHuntText,
   };
@@ -279,13 +282,26 @@ async function runGenerate({ dryRun, longForm, productHunt, videoMode }) {
     ),
   );
 
+  // A same-day rerun may choose a different slug or omit long-form entirely.
+  // Remove only recognizable generated blog drafts; leave other Markdown alone.
+  for (const file of await readdir(runDir, { withFileTypes: true })) {
+    if (!file.isFile() || !file.name.endsWith('.md') || file.name === blogPostFilename || file.name === 'linkedin-article.md') continue;
+    const filename = path.join(runDir, file.name);
+    const text = await readFile(filename, 'utf-8');
+    const frontmatter = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n/)?.[1];
+    const slug = frontmatter?.match(/^slug: "([a-z0-9]+(?:-[a-z0-9]+)*)"\r?$/m)?.[1];
+    if (file.name === `${slug}.md` && /^draft: true\r?$/m.test(frontmatter ?? '') && /<!--\r?\n  Blog post draft —/.test(text)) {
+      await rm(filename);
+    }
+  }
+
   const updatedHistory = recordUsage({ knowledgeBase, history, topic, date, focus, producthuntFormat: phFormat, producthuntDiscussion: phDiscussion });
   await mkdir(path.dirname(POST_HISTORY_PATH), { recursive: true });
   await writeFile(POST_HISTORY_PATH, JSON.stringify(updatedHistory, null, 2));
 
   console.log(
     `${LOG} Wrote drafts to ${runDir}` +
-      `${longForm ? ' (incl. blog-post.md + linkedin-article.md)' : ''}` +
+      `${longForm ? ` (incl. ${blogPostFilename} + linkedin-article.md)` : ''}` +
       `${productHuntText ? ' (incl. producthunt-post.txt)' : ''}`,
   );
   console.log(`${LOG} Updated ${POST_HISTORY_PATH} (cycle_number=${updatedHistory.cycle_number})`);

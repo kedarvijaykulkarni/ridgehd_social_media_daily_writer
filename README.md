@@ -51,10 +51,10 @@ step.
    is the machine's local day. There is one folder per day: a second run on
    the same day **replaces** that day's run — its history entries are
    dropped before topic selection and output files this run doesn't
-   produce (e.g. a `blog-post.md` from an earlier `--long-form` run) are
+   produce (e.g. a `<slug>.md` from an earlier `--long-form` run) are
    removed.
 7. **With `--long-form`**, a second Ollama pass on the *same* topic also
-   writes `blog-post.md` and `linkedin-article.md` — see below.
+   writes `<slug>.md` and `linkedin-article.md` — see below.
 8. **With `--producthunt`**, a third Ollama pass writes `producthunt-post.txt`
    for the RidgeHQ Product Hunt forum — see below. This one can also write
    nothing: it enforces a posting cooldown first.
@@ -66,9 +66,17 @@ normal run does **plus** one extra Ollama call — `src/buildArticlePrompt.js`
 → `src/callOllama.js`'s `callOllamaArticle` → a single article object,
 rendered two ways:
 
+The blog filename matches its normalized frontmatter `slug`: for example,
+`slug: "gear-maintenance-hold-dive-resorts"` produces
+`output/YYYY-MM-DD/gear-maintenance-hold-dive-resorts.md`. The same slug is used
+in the canonical URL. If the model omits the slug, it is derived from the title.
+Same-day reruns remove obsolete generated blog drafts and the legacy
+`blog-post.md`, while preserving other Markdown notes. Dry runs write or remove
+nothing.
+
 | File | Voice | Extras |
 |---|---|---|
-| `blog-post.md` | company / brand voice, opens with the `dek` | YAML frontmatter for the site CMS: `description` (SEO meta ≤155 chars), `slug`, `canonical_url` = `BLOG_BASE_URL/<slug>` (default `https://www.ridgehq.app/blog/<slug>`), `tags`, `keywords`, `date`, `pillar` (`Business Economics` / `Operations` / `Technology` — model's pick, else derived from the topic category), `draft: true`, and a `video:` block (`title` = topic headline, `description` = hook line + core message; `youtubeId` / `uploadDate` / `durationSeconds` left blank to fill after the YouTube upload — the website build rejects the post until they're filled or the block is removed) |
+| `<slug>.md` | company / brand voice, opens with the `dek` | YAML frontmatter for the site CMS: `description` (SEO meta ≤155 chars), `slug`, `canonical_url` = `BLOG_BASE_URL/<slug>` (default `https://www.ridgehq.app/blog/<slug>`), `tags`, `keywords`, `date`, `pillar` (`Business Economics` / `Operations` / `Technology` — model's pick, else derived from the topic category), `draft: true`, and a `video:` block (`title` = topic headline, `description` = hook line + core message; `youtubeId` / `uploadDate` / `durationSeconds` left blank to fill after the YouTube upload — the website build rejects the post until they're filled or the block is removed) |
 | `linkedin-article.md` | opens with a first-person `linkedin_hook` | no frontmatter (LinkedIn's editor is rich text) |
 
 Both share the same `## section` bodies, key-takeaways list, and CTA. Both
@@ -145,7 +153,7 @@ CTA are the information. It returns a Visual + Audio line for each block
 (Hook → Problem → Main action → Demo → Payoff → CTA); the CTA shows and
 names `ridgehq.app` and `CONTACT_EMAIL` (`src/seoFocus.js`). The file opens
 with the YouTube title (topic headline) and description (hook line + core
-message) — the same values `blog-post.md`'s `video:` frontmatter carries,
+message) — the same values the blog's `<slug>.md` `video:` frontmatter carries,
 so upload with exactly those. Like the image prompt, it's a draft for a
 human to produce and upload by hand; non-shipped topics carry a roadmap
 warning.
@@ -256,7 +264,7 @@ trademark. See `CLAUDE.md` and `docs/business-context-reference.md`.
 ```bash
 npm run generate:dry-run        # prints all 4 drafts + image prompt, writes nothing
 npm run generate                # writes output/YYYY-MM-DD/* and updates history
-npm run generate:long           # + blog-post.md and linkedin-article.md
+npm run generate:long           # + <slug>.md and linkedin-article.md
 npm run generate:long:dry-run   # long-form, prints everything, writes nothing
 npm run generate:ph             # + producthunt-post.txt (if not in cooldown)
 npm run generate:ph:dry-run     # producthunt, prints everything, writes nothing
@@ -277,7 +285,7 @@ npm run generate:long -- --producthunt
 
 On Windows, double-click or run `generate-and-show.bat` from this folder to
 generate today's drafts (long-form included) and print `image-prompt.txt`,
-`video-script.txt`, `social-posts.txt`, `blog-post.md` and `linkedin-article.md` in the same
+`video-script.txt`, `social-posts.txt`, the blog's `<slug>.md` and `linkedin-article.md` in the same
 console.
 
 Run `--dry-run` for at least a week and read every output before wiring up
@@ -316,7 +324,7 @@ cost of a mistake is zero.
 | `OLLAMA_MODEL` | `gemma4:latest` | `qwen3.5:35b` is higher quality but much slower; the `*-coder` models aren't a good fit for marketing copy. |
 | `BUSINESS_VAULT_PATH` | `D:\work\RidgeHQAPP\Brain\RidgeHQAPP` | Absolute path to your local RidgeHQ business vault (the dir containing `wiki/`). Read-only. |
 | `PRODUCT_NAME` | `RidgeHQ` | The public brand, templated into prompts and drafts. `AquaRoster` is not a public name. |
-| `BLOG_BASE_URL` | `https://www.ridgehq.app/blog` | Long-form only — builds `canonical_url` (`<base>/<slug>`) in `blog-post.md` frontmatter. |
+| `BLOG_BASE_URL` | `https://www.ridgehq.app/blog` | Long-form only — builds `canonical_url` (`<base>/<slug>`) in `<slug>.md` frontmatter. |
 | `POST_HISTORY_PATH` | `./data/post-history.json` | Read + write. `data/` is gitignored. |
 | `OUTPUT_DIR` | `./output` | Gitignored — daily drafts are transient/reviewable, not source. |
 | `VIDEO_CHARACTER` | *(unset)* | Optional fixed presenter identity (face, age, build, hair, skin tone; not clothing). Unset = no people on screen. |

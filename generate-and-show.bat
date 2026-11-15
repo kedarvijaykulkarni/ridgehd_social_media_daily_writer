@@ -24,7 +24,7 @@ set "RUN_OUTPUT_DIR=%APP_DIR%\output\%RUN_DATE%"
 set "IMAGE_PROMPT=%RUN_OUTPUT_DIR%\image-prompt.txt"
 set "VIDEO_SCRIPT=%RUN_OUTPUT_DIR%\video-script.txt"
 set "SOCIAL_POSTS=%RUN_OUTPUT_DIR%\social-posts.txt"
-set "BLOG_POST=%RUN_OUTPUT_DIR%\blog-post.md"
+set "BLOG_POST="
 set "LINKEDIN_ARTICLE=%RUN_OUTPUT_DIR%\linkedin-article.md"
 
 echo Running social daily generator (with long-form blog + LinkedIn article)...
@@ -73,12 +73,15 @@ if exist "%SOCIAL_POSTS%" (
 echo.
 echo.
 echo ================================================================
-echo blog-post.md
+echo Blog post (slug filename)
 echo ================================================================
+for %%F in ("%RUN_OUTPUT_DIR%\*.md") do (
+  findstr /b /c:"  Blog post draft" "%%~fF" >nul 2>&1 && set "BLOG_POST=%%~fF"
+)
 if exist "%BLOG_POST%" (
   type "%BLOG_POST%"
 ) else (
-  echo Missing file: "%BLOG_POST%"
+  echo Missing blog draft in "%RUN_OUTPUT_DIR%"
 )
 
 echo.

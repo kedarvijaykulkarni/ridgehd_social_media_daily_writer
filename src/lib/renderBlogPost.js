@@ -48,6 +48,13 @@ function slugify(text) {
     .replace(/-+$/g, '');
 }
 
+// Share the normalized slug between frontmatter, canonical URL and filename.
+export function blogSlug(article, topic) {
+  const slug = slugify(article.slug) || slugify(article.title) || slugify(topic.id) || 'post';
+  // Avoid the other Markdown output and Windows device filenames.
+  return /^(?:linkedin-article|con|prn|aux|nul|com[1-9]|lpt[1-9])$/.test(slug) ? `${slug}-post` : slug;
+}
+
 // Case-insensitive de-dupe, first spelling wins.
 function uniq(list) {
   return [...new Map(list.map((t) => [String(t).toLowerCase(), t])).values()];
@@ -63,7 +70,7 @@ function uniq(list) {
 // `video:` block the website embeds above the post.
 export function renderBlogPost({ topic, date, article, productName = 'RidgeHQ', blogBaseUrl, focus, video } = {}) {
   const base = (blogBaseUrl || DEFAULT_BLOG_BASE_URL).replace(/\/+$/, '');
-  const slug = slugify(article.slug) || slugify(article.title);
+  const slug = blogSlug(article, topic);
   const tags = uniq([...(article.tags ?? []), ...(focus ? ['ridgehq', focus.vertical.keywords[0]] : [])]).map((t) =>
     yamlStr(t),
   );
