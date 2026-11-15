@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { renderBlogPost } from '../renderBlogPost.js';
+import { renderBlogPost, blogSlug } from '../renderBlogPost.js';
 
 const ARTICLE = {
   title: 'Running a dive center on an AI copilot',
@@ -19,6 +19,23 @@ const ARTICLE = {
 
 const SHIPPED_TOPIC = { id: 'ai-copilot', status: 'shipped', headline: 'AI copilot for read and scheduling operations' };
 const PLANNED_TOPIC = { id: 'qr-signing', status: 'planned', headline: 'QR-linked waiver signing' };
+
+test('filename slug matches frontmatter and canonical URL, including normalized and fallback slugs', () => {
+  for (const [slug, title, expected] of [
+    ['gear-maintenance-hold-dive-resorts', 'Gear maintenance', 'gear-maintenance-hold-dive-resorts'],
+    ['../../Gear Maintenance!', 'Gear maintenance', 'gear-maintenance'],
+    ['', 'Gear Maintenance Hold', 'gear-maintenance-hold'],
+    ['!!!', '???', 'ai-copilot'],
+    ['linkedin-article', 'Article', 'linkedin-article-post'],
+    ['CON', 'Article', 'con-post'],
+  ]) {
+    const article = { ...ARTICLE, slug, title };
+    assert.equal(blogSlug(article, SHIPPED_TOPIC), expected);
+    const md = renderBlogPost({ topic: SHIPPED_TOPIC, date: '2026-11-15', article });
+    assert.ok(md.includes(`slug: "${expected}"`));
+    assert.ok(md.includes(`canonical_url: "https://www.ridgehq.app/blog/${expected}"`));
+  }
+});
 
 test('renders an H1 title and one H2 per section', () => {
   const md = renderBlogPost({ topic: SHIPPED_TOPIC, date: '2026-09-04', article: ARTICLE, productName: 'RidgeHQ' });

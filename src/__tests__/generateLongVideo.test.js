@@ -37,7 +37,7 @@ test('generate:long sends Brain topic and audience context to Ollama and writes 
     bible: { setting: 'Kayak reception beside the dock.', look: 'Natural afternoon daylight.', camera: 'Eye-level medium shot.', voice: 'Warm female voice.', wardrobe: 'Navy jacket.', cast: 'None; presenter only' },
     segments: audio.map((line, i) => ({ visual: `Maya addresses camera at the kayak reception, gesture ${i}.`, audio: line, ends_on: 'Maya facing camera, hands at waist level.' })),
   };
-  const article = { title: 'Digital waivers', sections: [{ heading: 'Typed signing', body: shared.core_message }] };
+  const article = { title: 'Digital waivers', slug: 'waivers-kayak-schools', sections: [{ heading: 'Typed signing', body: shared.core_message }] };
   const preload = path.join(temp, 'ollama-stub.mjs');
   await writeFile(preload, `import { appendFile } from 'node:fs/promises';
 const answers = ${JSON.stringify([shared, script, article])};
@@ -50,7 +50,8 @@ globalThis.fetch = async (_url, init) => {
   const [runtime, ...args] = pkg.scripts['generate:long'].split(' ');
   assert.equal(runtime, 'node');
   const output = path.join(temp, 'output');
-  const { stdout } = await execFileAsync(process.execPath, ['--import', pathToFileURL(preload).href, ...args], {
+  const command = ['--import', pathToFileURL(preload).href, ...args];
+  const options = {
     cwd: root,
     env: {
       ...process.env,
@@ -61,7 +62,8 @@ globalThis.fetch = async (_url, init) => {
       VIDEO_CHARACTER_REF: 'maya-reference.png', VIDEO_LOGO_REF: '', VIDEO_VISUAL_MODE: 'character',
     },
     maxBuffer: 1024 * 1024,
-  });
+  };
+  const { stdout } = await execFileAsync(process.execPath, command, options);
   const prompts = (await readFile(promptLog, 'utf8')).trim().split('\n').map(JSON.parse);
   assert.equal(prompts.length, 3, 'short-form, video and long-form passes');
   const videoPrompt = prompts[1];
@@ -79,5 +81,30 @@ globalThis.fetch = async (_url, init) => {
   assert.ok(saved.includes(script.bible.setting));
   assert.ok(saved.includes(audio[3]));
   assert.equal(saved.match(/^Realism lock:/gm).length, 6);
-  assert.match(await readFile(path.join(output, date, 'blog-post.md'), 'utf8'), /Digital waivers/);
+  const runDir = path.join(output, date);
+  const blog = await readFile(path.join(runDir, 'waivers-kayak-schools.md'), 'utf8');
+  assert.match(blog, /^slug: "waivers-kayak-schools"$/m);
+  assert.match(blog, /Digital waivers/);
+  await assert.rejects(readFile(path.join(runDir, 'blog-post.md')), { code: 'ENOENT' });
+
+  await writeFile(path.join(runDir, 'notes.md'), 'My review notes.');
+  await writeFile(path.join(runDir, 'blog-post.md'), 'Legacy fixed-name draft.');
+  const historyBefore = await readFile(path.join(temp, 'history.json'), 'utf8');
+  const dry = await execFileAsync(process.execPath, [...command, '--dry-run'], options);
+  assert.match(dry.stdout, /=== waivers-kayak-schools.md ===/);
+  assert.equal(await readFile(path.join(temp, 'history.json'), 'utf8'), historyBefore);
+  assert.equal(await readFile(path.join(runDir, 'blog-post.md'), 'utf8'), 'Legacy fixed-name draft.');
+
+  const stub = await readFile(preload, 'utf8');
+  const updatedArticle = { ...article, slug: 'digital-waivers-kayak-schools' };
+  await writeFile(preload, stub.replace(JSON.stringify([shared, script, article]), JSON.stringify([shared, script, updatedArticle])));
+  await execFileAsync(process.execPath, command, options);
+  await assert.rejects(readFile(path.join(runDir, 'waivers-kayak-schools.md')), { code: 'ENOENT' });
+  await assert.rejects(readFile(path.join(runDir, 'blog-post.md')), { code: 'ENOENT' });
+  assert.match(await readFile(path.join(runDir, 'digital-waivers-kayak-schools.md'), 'utf8'), /^slug: "digital-waivers-kayak-schools"$/m);
+
+  await execFileAsync(process.execPath, command.filter(arg => arg !== '--long-form'), options);
+  await assert.rejects(readFile(path.join(runDir, 'digital-waivers-kayak-schools.md')), { code: 'ENOENT' });
+  await assert.rejects(readFile(path.join(runDir, 'linkedin-article.md')), { code: 'ENOENT' });
+  assert.equal(await readFile(path.join(runDir, 'notes.md'), 'utf8'), 'My review notes.');
 });
